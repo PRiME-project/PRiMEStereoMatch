@@ -1,7 +1,7 @@
 # PRiMEStereoMatch
 
 <p align="center">
-<img src="docs/de_examples.png" alt="Examples Image Pairs" width=80%>
+<img src="docs/de_examples.png" alt="Examples Image Pairs" width=100%>
 </p>
 
 ## Theoretical Background

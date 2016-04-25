@@ -1,1 +1,1 @@
-# PRiME_StereoMatch
+# PRiMEStereoMatch

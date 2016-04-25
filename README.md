@@ -9,7 +9,9 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 * Disparity Selection - winner-takes-all minimum cost search and corresponding disparity selection.  
 * Post Processing - left-right occlusion check, invalid pixel removal and weight-median filtering.  
 
-<img src="docs/de_bd.png" alt="Disparity esitmation process block diagram" width=60% style"text-align:center">
+<p align="center">
+<img src="docs/de_bd.png" alt="Disparity esitmation process block diagram" width=60%>
+</p>
 
 ## Implementation Details
 

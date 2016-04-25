@@ -1,5 +1,9 @@
 # PRiMEStereoMatch
 
+<p align="center">
+<img src="docs/de_examples.png" alt="Examples Image Pairs" width=80%>
+</p>
+
 ## Theoretical Background
 
 A heterogeneous and fully parallel stereo matching algorithm for depth estimation. Stereo Matching is based on the disparity estimation algorithm, an algorithm designed to calculate 3D depth information about a scene from a pair of 2D images captured by a stereoscopic camera. The algorithm contains the following stages:

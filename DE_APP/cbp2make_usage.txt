@@ -1,0 +1,63 @@
+Usage syntax:
+
+	Generate makefile:
+		cbp2make -in <project_file> [-cfg <configuration>] [-out <makefile>]
+			 [-unix] [-windows] [-mac] [--all-os] [-targets "<target1>[,<target2>[, ...]]"]
+			 [--flat-objects] [--flat-objpath] [--wrap-objects] [--wrap-options]
+			 [--with-deps] [--keep-objdir] [--keep-outdir] [--target-case keep|lower|upper]
+			 [--macros-case keep|lower|upper] [--quote-path auto|never|always]
+		cbp2make -list -in <project_file_list> [-cfg <configuration>]
+			 [-unix] [-windows] [-mac] [--all-os] [-targets "<target1>[,<target2>[, ...]]"]
+			 [--flat-objects] [--flat-objpath] [--wrap-objects] [--wrap-options]
+			 [--with-deps] [--keep-objdir] [--keep-outdir] [--target-case keep|lower|upper]
+
+			 [--macros-case keep|lower|upper] [--quote-path auto|never|always]
+	Manage toolchains:
+		cbp2make --config toolchain --add [-unix|-windows|-mac] -chain <toolchain>
+		cbp2make --config toolchain --remove [-unix|-windows|-mac] -chain <toolchain>
+
+	Manage build tools:
+		cbp2make --config tool --add [-unix|-windows|-mac] -chain <toolchain>
+			 -tool <tool> -type <type> <tool options>
+		cbp2make --config tool --remove [-unix|-windows|-mac] -chain <toolchain>
+			 -tool <tool>
+
+	Tool types:	 pp=preprocessor as=assembler cc=compiler rc=resource compiler
+			 sl=static linker dl=dynamic linker el=executable linker
+			 nl=native linker
+	Tool options (common):
+			 -desc <description> -program <executable> -command <command_template>
+			 -mkv <make_variable> -srcext <source_extensions> -outext <output_extension>
+			 -quotepath <yes|no> -fullpath <yes|no> -unixpath <yes|no>
+	Tool options (compiler):
+			 -incsw <include_switch> -defsw <define_switch> -deps <yes|no>
+	Tool options (linker):
+			 -ldsw <library_dir_switch> -llsw <link_library_switch> -lpfx <library_prefix>
+			 -lext <library_extension> -objext <object_extension> -lflat <yes|no>
+
+	Manage platforms:
+		cbp2make --config platform [-unix|-windows|-mac] [-pwd <print_dir_command>]
+			 [-cd <change_dir_command>] [-rm <remove_file_command>]
+			 [-rmf <remove_file_forced>] [-rmd <remove_dir_command>]
+			 [-cp <copy_file_command>] [-mv <move_file_command>]
+			 [-md <make_dir_command>] [-mdf <make_dir_forced>]
+			 [-make <default_make_tool>]
+
+	Manage global compiler variables:
+		cbp2make --config variable --add [-set <set_name>] -name <var_name>
+			 [-desc <description>] [-field <field_name>] -value <var_value>
+		cbp2make --config variable --remove [-set <set_name>] [-name <var_name>]
+			 [-field <field_name>]
+
+	Manage options:
+		cbp2make --config options --default-options "<options>"
+		cbp2make --config show
+
+	Common options:
+		cbp2make --local	// use configuration from current directory
+		cbp2make --global	// use configuration from home directory
+		cbp2make --verbose	// show project information
+		cbp2make --quiet	// hide all messages
+		cbp2make --help		// display this message
+		cbp2make --version	// display version information
+

@@ -1,0 +1,331 @@
+/*---------------------------------------------------------------------------
+   CVF.cpp - Cost Volume Filter Code
+           - Guided Image Filter
+           - Box Filter
+  ---------------------------------------------------------------------------
+   Author: Charan Kumar
+   Email: EE14MTECH01008@iith.ac.in
+   Editor: Charles Leech
+   Email: cl19g10 [at] ecs.soton.ac.uk
+  ---------------------------------------------------------------------------*/
+#include "CVF.h"
+
+float get_rt_cvf(){
+	struct timespec realtime;
+	clock_gettime(CLOCK_MONOTONIC,&realtime);
+	return (float)(realtime.tv_sec*1000000+realtime.tv_nsec/1000);
+}
+
+CVF::CVF(void)
+{
+    //fprintf(stderr, "OpenCV Guided Image Filtering method for Cost Computation\n" );
+}
+CVF::~CVF(void){}
+
+void *CVF::filterCV_thread(void *thread_arg)
+{
+    struct filterCV_TD *t_data;
+    t_data = (struct filterCV_TD *) thread_arg;
+    const Mat guideImg = *t_data->guideImg;
+    const Mat pImg = *t_data->costVol;
+    Mat* costVol = t_data->costVol;
+
+    //*costVol = GuidedFilter_cv(guideImg, pImg); // ~ 8.5 sec
+    *costVol = GuidedFilter_cv_v2(guideImg, pImg); // ~7.5 sec
+
+    return (void*)0;
+}
+
+void CVF::filterCV(const Mat& Img, Mat& costVol)
+{
+    costVol = GuidedFilter_cv(Img, costVol);
+    return;
+}
+
+Mat GuidedFilter_cv(const Mat& I, const Mat& p)
+{
+    Size r = Size(R_WIN,R_WIN);
+    float eps = EPS;
+    //float time_start = get_rt_cvf();
+
+	// filter signal must be 1 channel
+	CV_Assert( p.type() == CV_32FC1 );
+    //printf("1 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+	int H = I.rows;
+    int W = I.cols;
+	Mat N = Mat::ones( H, W, CV_32FC1 );
+	boxFilter( N, N, -1, r );
+	//printf("2 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    // color guidence
+    // image must in RGB format
+
+    Mat rgb[ 3 ];
+    split( I, rgb );
+    Mat mean_I[ 3 ];
+    for( int c = 0; c < 3; c ++ ) {
+        boxFilter( rgb[c], mean_I[c], -1, r );
+        mean_I[c] /= N;
+    }
+    //printf("3 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    Mat mean_p;
+    boxFilter( p, mean_p, -1, r );
+    mean_p /= N;
+    Mat tmp;
+    Mat mean_Ip[ 3 ];
+    for( int c = 0; c < 3; c ++ ) {
+        multiply( rgb[ c ], p, tmp );
+        boxFilter( tmp, mean_Ip[c], -1, r );
+        mean_Ip[ c ] /= N;
+    }
+    //printf("4 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    /*% covariance of (I, p) in each local patch.*/
+    Mat cov_Ip[ 3 ];
+    for( int c = 0; c < 3; c ++ ) {
+        multiply( mean_I[ c ], mean_p, tmp );
+        cov_Ip[ c ] = mean_Ip[ c ] - tmp;
+    }
+    //printf("5 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    //  % variance of I in each local patch: the matrix Sigma in Eqn (14).
+    //	% Note the variance in each local patch is a 3x3 symmetric matrix:
+    //  %           rr, rg, rb
+    //	%   Sigma = rg, gg, gb
+    //	%           rb, gb, bb
+    Mat var_I[ 6 ];
+    int varIdx = 0;
+    for( int c = 0; c < 3; c ++ ) {
+        for( int c_p = c; c_p < 3; c_p ++ ) {
+            multiply( rgb[ c ], rgb[ c_p ], tmp );
+            boxFilter( tmp, var_I[varIdx], -1, r );
+            var_I[ varIdx ] /= N;
+            multiply( mean_I[ c ], mean_I[ c_p ], tmp );
+            var_I[ varIdx ] -= tmp;
+            varIdx ++;
+        }
+    }
+
+    //printf("6 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    Mat a[ 3 ];
+    for( int c = 0; c < 3; c ++  ) {
+        a[ c ] = Mat::zeros( H, W, CV_32FC1 );
+    }
+
+    //printf("7 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    for( int y = 0; y < H; y ++ ) {
+        float* vData[ 6 ];
+        for( int v = 0; v < 6; v ++ ) {
+            vData[ v ] = ( float* ) var_I[ v ].ptr<float>( y );
+        }
+        float* cData[ 3 ];
+        for( int c = 0; c < 3; c ++ ) {
+            cData[ c ] = ( float * ) cov_Ip[ c ].ptr<float>( y );
+        }
+        float* aData[ 3 ];
+        for( int c = 0; c < 3; c++  ) {
+            aData[ c ] = ( float* ) a[ c ].ptr<float>( y );
+        }
+        for( int x = 0; x < W; x ++ ) {
+            float c0 = cData[ 0 ][ x ];
+            float c1 = cData[ 1 ][ x ];
+            float c2 = cData[ 2 ][ x ];
+            float a11 = vData[ 0 ][ x ] + eps;
+            float a12 = vData[ 1 ][ x ];
+            float a13 = vData[ 2 ][ x ];
+            float a21 = vData[ 1 ][ x ];
+            float a22 = vData[ 3 ][ x ] + eps;
+            float a23 = vData[ 4 ][ x ];
+            float a31 = vData[ 2 ][ x ];
+            float a32 = vData[ 4 ][ x ];
+            float a33 = vData[ 5 ][ x ] + eps;
+            float DET = a11 * ( a33 * a22 - a32 * a23 ) -
+                a21 * ( a33 * a12 - a32 * a13 ) +
+                a31 * ( a23 * a12 - a22 * a13 );
+            DET = 1 / DET;
+            aData[ 0 ][ x ] = DET * (
+                c0 * ( a33 * a22 - a32 * a23 ) +
+                c1 * ( a31 * a23 - a33 * a21 ) +
+                c2 * ( a32 * a21 - a31 * a22 )
+                );
+            aData[ 1 ][ x ] = DET * (
+                c0 * ( a32 * a13 - a33 * a12 ) +
+                c1 * ( a33 * a11 - a31 * a13 ) +
+                c2 * ( a31 * a12 - a32 * a11 )
+                );
+            aData[ 2 ][ x ] = DET * (
+                c0 * ( a23 * a12 - a22 * a13 ) +
+                c1 * ( a21 * a13 - a23 * a11 ) +
+                c2 * ( a22 * a11 - a21 * a12 )
+                );
+        }
+    }
+
+    //printf("8 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    Mat b = mean_p.clone();
+    for( int c = 0; c < 3; c ++ ) {
+        multiply( a[ c ], mean_I[ c ], tmp );
+        b -= tmp;
+    }
+
+    //printf("9 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    Mat q;
+    boxFilter( b, q, -1, r );
+    for( int c = 0; c < 3; c ++ ) {
+        boxFilter( a[c], tmp, -1, r );
+        multiply( tmp, rgb[ c ], tmp );
+        q += tmp;
+    }
+    //printf("10 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+    //exit(1);
+    q /= N;
+
+    return q;
+}
+
+Mat GuidedFilter_cv_v2(const Mat& I, const Mat& p) //as above but without N
+{
+    Size r = Size(R_WIN,R_WIN);
+    float eps = EPS;
+    //float time_start = get_rt_cvf();
+
+	// filter signal must be 1 channel
+	CV_Assert( p.type() == CV_32FC1 );
+    //printf("1 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+	int H = I.rows;
+    int W = I.cols;
+	//printf("2 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    // color guidence
+    // image must in RGB format
+
+    Mat rgb[ 3 ];
+    split( I, rgb );
+    Mat mean_I[ 3 ];
+    for( int c = 0; c < 3; c ++ ) {
+        boxFilter( rgb[c], mean_I[c], -1, r );
+    }
+    //printf("3 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    Mat mean_p;
+    boxFilter( p, mean_p, -1, r );
+
+    Mat tmp;
+    Mat mean_Ip[ 3 ];
+    for( int c = 0; c < 3; c ++ ) {
+        multiply( rgb[ c ], p, tmp );
+        boxFilter( tmp, mean_Ip[c], -1, r );
+    }
+    //printf("4 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    /*% covariance of (I, p) in each local patch.*/
+    Mat cov_Ip[ 3 ];
+    for( int c = 0; c < 3; c ++ ) {
+        multiply( mean_I[ c ], mean_p, tmp );
+        cov_Ip[ c ] = mean_Ip[ c ] - tmp;
+    }
+    //printf("5 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    //  % variance of I in each local patch: the matrix Sigma in Eqn (14).
+    //	% Note the variance in each local patch is a 3x3 symmetric matrix:
+    //  %           rr, rg, rb
+    //	%   Sigma = rg, gg, gb
+    //	%           rb, gb, bb
+    Mat var_I[ 6 ];
+    int varIdx = 0;
+    for( int c = 0; c < 3; c ++ ) {
+        for( int c_p = c; c_p < 3; c_p ++ ) {
+            multiply( rgb[ c ], rgb[ c_p ], tmp );
+            boxFilter( tmp, var_I[varIdx], -1, r );
+            multiply( mean_I[ c ], mean_I[ c_p ], tmp );
+            var_I[ varIdx ] -= tmp;
+            varIdx ++;
+        }
+    }
+
+    //printf("6 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    Mat a[ 3 ];
+    for( int c = 0; c < 3; c ++  ) {
+        a[ c ] = Mat::zeros( H, W, CV_32FC1 );
+    }
+
+    //printf("7 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    for( int y = 0; y < H; y ++ ) {
+        float* vData[ 6 ];
+        for( int v = 0; v < 6; v ++ ) {
+            vData[ v ] = ( float* ) var_I[ v ].ptr<float>( y );
+        }
+        float* cData[ 3 ];
+        for( int c = 0; c < 3; c ++ ) {
+            cData[ c ] = ( float * ) cov_Ip[ c ].ptr<float>( y );
+        }
+        float* aData[ 3 ];
+        for( int c = 0; c < 3; c++  ) {
+            aData[ c ] = ( float* ) a[ c ].ptr<float>( y );
+        }
+        for( int x = 0; x < W; x ++ ) {
+            float c0 = cData[ 0 ][ x ];
+            float c1 = cData[ 1 ][ x ];
+            float c2 = cData[ 2 ][ x ];
+            float a11 = vData[ 0 ][ x ] + eps;
+            float a12 = vData[ 1 ][ x ];
+            float a13 = vData[ 2 ][ x ];
+            float a21 = vData[ 1 ][ x ];
+            float a22 = vData[ 3 ][ x ] + eps;
+            float a23 = vData[ 4 ][ x ];
+            float a31 = vData[ 2 ][ x ];
+            float a32 = vData[ 4 ][ x ];
+            float a33 = vData[ 5 ][ x ] + eps;
+            float DET = a11 * ( a33 * a22 - a32 * a23 ) -
+                a21 * ( a33 * a12 - a32 * a13 ) +
+                a31 * ( a23 * a12 - a22 * a13 );
+            DET = 1 / DET;
+            aData[ 0 ][ x ] = DET * (
+                c0 * ( a33 * a22 - a32 * a23 ) +
+                c1 * ( a31 * a23 - a33 * a21 ) +
+                c2 * ( a32 * a21 - a31 * a22 )
+                );
+            aData[ 1 ][ x ] = DET * (
+                c0 * ( a32 * a13 - a33 * a12 ) +
+                c1 * ( a33 * a11 - a31 * a13 ) +
+                c2 * ( a31 * a12 - a32 * a11 )
+                );
+            aData[ 2 ][ x ] = DET * (
+                c0 * ( a23 * a12 - a22 * a13 ) +
+                c1 * ( a21 * a13 - a23 * a11 ) +
+                c2 * ( a22 * a11 - a21 * a12 )
+                );
+        }
+    }
+
+    //printf("8 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    Mat b = mean_p.clone();
+    for( int c = 0; c < 3; c ++ ) {
+        multiply( a[ c ], mean_I[ c ], tmp );
+        b -= tmp;
+    }
+
+    //printf("9 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+
+    Mat q;
+    boxFilter( b, q, -1, r );
+    for( int c = 0; c < 3; c ++ ) {
+        boxFilter( a[c], tmp, -1, r );
+        multiply( tmp, rgb[ c ], tmp );
+        q += tmp;
+    }
+    //printf("10 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+    //exit(1);
+
+    return q;
+}

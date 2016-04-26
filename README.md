@@ -60,5 +60,32 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 * Image disparity estimation is achieved using for example:
 	* `./bin/Release/DE_APP STEREO_GIF IMAGE left_img.png right_img.png`
 
+* The first time the application is deployed using a stereo camera, the RECALIBRATE and RECAPTURE flags must be set in order to capture chessboard image to calculate the intrinsic and extrinsic parameters.
+* This process only needs to be repeated if the relative orientations of the left and right cameras are changed or a different resolution is specified.
+* Once the intrinsic and extrinsic parameters have been calucalted and saved to .yml files, the application can be re-run with the same camera without needing to recalibrate as teh parameters will be loaded from these files. The files can be found in the data directory.
+
 ## Additional Resources
 * [Configuring OpenCL on the ODROID-XU3](http://granolamatt.com/working/2015/02/configure-opencl-on-odroid-xu3/)
+
+### Directory Structure
+
+```
+DE_APP		- Project top level directory
+
+folders:
+	assets			- OpenCL kernel files
+	bin			- binary executable files
+	common			- OpenCL common utility functions (C) ARM
+	data			- program data including input images, stereo camera parameters, calibration images, etc
+	include			- Project header files (h/hpp)
+	src			- Project source files (c/cpp)
+	
+files:
+	cbp2make.linux-x86_64 	- codeblocks to makefile synthesis tool (for x86_64 PC)
+	cbp2make_usage.txt	- cbp2make tool manual
+	DE_APP.cbp		- Code::Blocks project file
+	DE_APP.depend		- Code::Blocks settings file
+	DE_APP.layout		- Code::Blocks settings file
+	main.cpp		- main C++ file
+	Makefile		- project Makefile
+```

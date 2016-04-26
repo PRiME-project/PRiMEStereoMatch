@@ -25,11 +25,20 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 * Support for live video disparity estimation using the OpenCV VideoCapture interface as well as standard static image computation.
 * Embedded support for experimentation with the OpenCV standard Semi-Global Block Matching (SGBM) algorithm.
 
-## Installation & Deployment
+## Installation
 
+### Prerequisites
+* Hardware:
+	* Development Platform - optionally but ideally including OpenCL compatible devices
+* Software:
+	* OpenCV 3.0.0 - [Installation in Linux instructions](http://docs.opencv.org/2.4/doc/tutorials/introduction/linux_install/linux_install.html)
+	* [optional] OpenCL runtime and library
+### Compilation 
 * Download project folder and transfer to platform
 * Enter the base directory using `cd DE_APP`
 * Natively compile the project using `make -j8`. Adjust -j8 to suit the number of simultaneous threads supported on your platform.
+
+### Deployment
 * Run the application using `./bin/Release/DE_APP <program arguments>`
 * The following program arguments must be specified:
 	* Matching Algorithm type: 

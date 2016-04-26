@@ -1,7 +1,7 @@
 # PRiMEStereoMatch
 
 <p align="center">
-<img src="docs/de_examples.png" alt="Examples Image Pairs" width=90%>
+<img src="docs/de_examples.png" alt="Examples Image Pairs" width=80%>
 </p>
 
 ## Theoretical Background
@@ -14,7 +14,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 * Post Processing - left-right occlusion check, invalid pixel removal and weight-median filtering.  
 
 <p align="center">
-<img src="docs/de_bd.png" alt="Disparity esitmation process block diagram" width=50%>
+<img src="docs/de_bd.png" alt="Disparity estimation process block diagram" width=50%>
 </p>
 
 ## Implementation Details
@@ -29,9 +29,9 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 
 * Download project folder and transfer to platform
 * Enter the base directory using `cd DE_APP`
-* Natively compile the project using `make -j8`. Adjust -j8 to suit the number of simulationeous threads supported on your platform.
+* Natively compile the project using `make -j8`. Adjust -j8 to suit the number of simultaneous threads supported on your platform.
 * Run the application using `./bin/Release/DE_APP <program arguments>`
-* The folowing program arguments must be specificied:
+* The following program arguments must be specified:
 	* Matching Algorithm type: 
 		* STEREO_GIF - Guided Image Filter
 		* STEREO_SGBM - Semi Global Block Matching
@@ -39,11 +39,11 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 		* VIDEO
 		* IMAGE <left image filename> <right image filename>
 * When specifying the VIDEO media type, the following optional arguments can be included:
-	* RECALIBRATE - recalculate the intrinsic and extrinsic parameters of the stereo camera. Previously captured chessbaord images mst be supplied if the RECAPTURE falg is not also set.
+	* RECALIBRATE - recalculate the intrinsic and extrinsic parameters of the stereo camera. Previously captured chessboard images must be supplied if the RECAPTURE flag is not also set.
 	* RECAPTURE - record chessboard image pairs in preparation for calibration. A chessboard image must be presented in front of the stereo camera and in full view of both cameras.
 * For example, to run with the guided image filter algorithm using a stereo camera, specify:
 	* `./bin/Release/DE_APP STEREO_GIF VIDEO`
 * To run with calibration and capture beforehand, specify:
 	* `./bin/Release/DE_APP STEREO_GIF VIDEO RECALIBRATE RECAPTURE`
-* Image disparity estimation is acheived using for example:
+* Image disparity estimation is achieved using for example:
 	* `./bin/Release/DE_APP STEREO_GIF IMAGE left_img.png right_img.png`

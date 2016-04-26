@@ -36,9 +36,10 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* [optional] OpenCL Library (-lOpenCL)
 
 ### Compilation 
-* Download project folder and transfer to platform
-* Enter the base directory using `cd DE_APP`
-* Natively compile the project using `make -j8`. Adjust -j8 to suit the number of simultaneous threads supported on your platform.
+* Download project folder to your platform.
+* Enter the base directory using `cd DE_APP`.
+* Natively compile the project using `make -j8`. 
+	* Adjust -j8 to suit the number of simultaneous threads supported on your platform.
 
 ### Deployment
 * Run the application using `./bin/Release/DE_APP <program arguments>`

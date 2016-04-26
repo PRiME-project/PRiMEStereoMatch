@@ -21,7 +21,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 
 * All stages of the algorithm are developed in both C++ and OpenCL.  
 	* C++ parallelism is introduced via the POSIX threads (pthreads) library. Disparity level parallelism, enabling up to 64 concurrent threads, is supported.  
-	* OpenCL parallelism is inherent through the concurrent execution of kernels on the OpenCL-compatible device. The optimum level of parallelism will be device-specific.  
+	* OpenCL parallelism is inherent through the concurrent execution of kernels on an OpenCL-compatible device. The optimum level of parallelism will be device-specific.  
 * Support for live video disparity estimation using the OpenCV VideoCapture interface as well as standard static image computation.
 * Embedded support for experimentation with the OpenCV standard Semi-Global Block Matching (SGBM) algorithm.
 

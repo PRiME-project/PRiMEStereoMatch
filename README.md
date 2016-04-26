@@ -67,7 +67,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 ## Additional Resources
 * [Configuring OpenCL on the ODROID-XU3](http://granolamatt.com/working/2015/02/configure-opencl-on-odroid-xu3/)
 
-### Directory Structure
+## Directory Structure
 
 ```
 DE_APP		- Project top level directory

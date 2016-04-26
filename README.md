@@ -58,3 +58,6 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* `./bin/Release/DE_APP STEREO_GIF VIDEO RECALIBRATE RECAPTURE`
 * Image disparity estimation is achieved using for example:
 	* `./bin/Release/DE_APP STEREO_GIF IMAGE left_img.png right_img.png`
+
+## Additional Resources
+* [Configuring OpenCL on the ODROID-XU3](http://granolamatt.com/working/2015/02/configure-opencl-on-odroid-xu3/)

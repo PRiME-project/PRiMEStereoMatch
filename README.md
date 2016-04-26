@@ -74,18 +74,18 @@ DE_APP		- Project top level directory
 
 folders:
 	assets			- OpenCL kernel files
-	bin			- binary executable files
+	bin				- binary executable files
 	common			- OpenCL common utility functions (C) ARM
 	data			- program data including input images, stereo camera parameters, calibration images, etc
 	include			- Project header files (h/hpp)
-	src			- Project source files (c/cpp)
+	src				- Project source files (c/cpp)
 	
 files:
 	cbp2make.linux-x86_64 	- codeblocks to makefile synthesis tool (for x86_64 PC)
-	cbp2make_usage.txt	- cbp2make tool manual
-	DE_APP.cbp		- Code::Blocks project file
-	DE_APP.depend		- Code::Blocks settings file
-	DE_APP.layout		- Code::Blocks settings file
-	main.cpp		- main C++ file
-	Makefile		- project Makefile
+	cbp2make_usage.txt		- cbp2make tool manual
+	DE_APP.cbp				- Code::Blocks project file
+	DE_APP.depend			- Code::Blocks settings file
+	DE_APP.layout			- Code::Blocks settings file
+	main.cpp				- main C++ file
+	Makefile				- project Makefile
 ```

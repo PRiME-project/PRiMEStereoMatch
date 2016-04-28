@@ -39,7 +39,7 @@ public:
     cl_kernel kernel;
     cl_device_id device;
     unsigned int numberOfMemoryObjects;
-    cl_mem memoryObjects[6] = {0, 0, 0, 0, 0, 0};
+    cl_mem memoryObjects[6];
     cl_int errorNumber;
     cl_event event;
 

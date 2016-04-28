@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="STEREO_GIF VIDEO" />
+				<Option parameters="STEREO_GIF IMAGE data/view1.png data/view5.png" />
 				<Compiler>
 					<Add option="-Wall" />
 					<Add option="-g" />
@@ -26,7 +26,7 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-std=c++11" />
+			<Add option="-std=c++0x" />
 			<Add option="`pkg-config --cflags opencv`" />
 			<Add directory="include" />
 			<Add directory="src" />
@@ -53,7 +53,6 @@
 		<Unit filename="include/PP.h" />
 		<Unit filename="include/StereoCalib.h" />
 		<Unit filename="include/StereoMatch.h" />
-		<Unit filename="include/ZED_settings.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="src/BoxFilter.cpp" />
 		<Unit filename="src/CVC.cpp" />

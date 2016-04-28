@@ -12,7 +12,7 @@ LD = g++
 WINDRES = windres
 
 INC = -Iinclude -Isrc -Icommon
-CFLAGS = -std=c++11 `pkg-config --cflags opencv`
+CFLAGS = -std=c++0x `pkg-config --cflags opencv`
 RESINC = 
 LIBDIR = -L/usr/local/lib
 LIB = 

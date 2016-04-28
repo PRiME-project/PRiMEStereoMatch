@@ -12,8 +12,13 @@ StereoMatch::StereoMatch(int argc, char *argv[], bool gotOpenCLDev)
     //# Setup - check input arguments
     //#############################################################################################################
     printf("Disparity Estimation for Depth Analysis in Stereo Vision Applications.\n");
-
+	end_de = false;
+	maxDis = 64;
+	de_mode = OCV_DE;
+	num_threads = MAX_CPU_THREADS;
+	filter = true;
 	gotOCLDev = gotOpenCLDev;
+
 	inputArgParser(argc, argv);
 
 	//#############################################################################################################
@@ -57,10 +62,10 @@ StereoMatch::StereoMatch(int argc, char *argv[], bool gotOpenCLDev)
 	//Set up display window to hold both input images and both output disparity maps
 	resizeWindow("InputOutput", lFrame.cols*2, lFrame.rows*2); //Rectified image size - not camera resolution size
 	display_container = Mat(lFrame.rows*2, lFrame.cols*2, CV_8UC3);
-	leftInputImg =  Mat(display_container, Rect(0,           0,           lFrame.cols, lFrame.rows)); //Top Left
+	leftInputImg  = Mat(display_container, Rect(0,           0,           lFrame.cols, lFrame.rows)); //Top Left
 	rightInputImg = Mat(display_container, Rect(lFrame.cols, 0,           lFrame.cols, lFrame.rows)); //Top Right
-	leftDispMap =   Mat(display_container, Rect(0,           lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
-	rightDispMap =  Mat(display_container, Rect(lFrame.cols, lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
+	leftDispMap   = Mat(display_container, Rect(0,           lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
+	rightDispMap  = Mat(display_container, Rect(lFrame.cols, lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
 
 	lFrame.copyTo(leftInputImg);
 	rFrame.copyTo(rightInputImg);
@@ -306,147 +311,147 @@ float get_rt(){
 //#############################################################################################################
 int StereoMatch::Compute()
 {
-		printf("Computing Depth Map\n");
-		de_time = get_rt();
-        //#############################################################################################################
-        //# Frame Capture and Preprocessing
-        //#############################################################################################################
-		if(video)
+	printf("Computing Depth Map\n");
+	de_time = get_rt();
+	//#############################################################################################################
+	//# Frame Capture and Preprocessing
+	//#############################################################################################################
+	if(video)
+	{
+		cap >> vFrame; //capture a frame from the camera
+		if(!vFrame.data)
 		{
-			cap >> vFrame; //capture a frame from the camera
-			if(!vFrame.data)
-			{
-				printf("Could not load video frame\n");
-				return -1;
-			}
-
-			lFrame = vFrame(Rect(0,0, vFrame.cols/2,vFrame.rows)); //split the frame into left
-			rFrame = vFrame(Rect(vFrame.cols/2, 0, vFrame.cols/2, vFrame.rows)); //and right images
-
-			if(!lFrame.data || !rFrame.data)
-			{
-				printf("No data in left or right frames\n");
-				return -1;
-			}
-
-			///Applies a generic geometrical transformation to an image.
-			///http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html#remap
-			remap(lFrame, lFrame_rec, mapl[0], mapl[1], INTER_LINEAR);
-			remap(rFrame, rFrame_rec, mapr[0], mapr[1], INTER_LINEAR);
-
-			lFrame = lFrame_rec(cropBox);
-			rFrame = rFrame_rec(cropBox);
-
-			lFrame.copyTo(leftInputImg);
-			rFrame.copyTo(rightInputImg);
-
-			if(MatchingAlgorithm == STEREO_GIF)
-			{
-				cvtColor( lFrame, lFrame, CV_BGR2RGB );
-				cvtColor( rFrame, rFrame, CV_BGR2RGB );
-
-				lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
-				rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
-			}
+			printf("Could not load video frame\n");
+			return -1;
 		}
 
-		//#############################################################################################################
-		//# Start of Disparity Map Creation
-		//#############################################################################################################
-		if(MatchingAlgorithm == STEREO_SGBM)
+		lFrame = vFrame(Rect(0,0, vFrame.cols/2,vFrame.rows)); //split the frame into left
+		rFrame = vFrame(Rect(vFrame.cols/2, 0, vFrame.cols/2, vFrame.rows)); //and right images
+
+		if(!lFrame.data || !rFrame.data)
 		{
-			///OpenCV code
-			ssgbm->compute( lFrame, rFrame, imgDisparity16S );
-			//-- Check its extreme values
-			minMaxLoc( imgDisparity16S, &minVal, &maxVal );
-			imgDisparity16S.convertTo(lDispMap, CV_8UC1, 255/(maxVal - minVal));
-			cvtColor( lDispMap, lDispMap, CV_GRAY2BGR);
-			lDispMap.copyTo(leftDispMap);
+			printf("No data in left or right frames\n");
+			return -1;
 		}
-        else if(MatchingAlgorithm == STEREO_GIF)
-        {
-			SMDE->lImg = lFrame;
-			SMDE->rImg = rFrame;
-			SMDE->threads = num_threads;
 
-			// ******** Cost Volume Construction Code ******** //
-			printf("Cost Volume Construction Started..\n");
+		///Applies a generic geometrical transformation to an image.
+		///http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html#remap
+		remap(lFrame, lFrame_rec, mapl[0], mapl[1], INTER_LINEAR);
+		remap(rFrame, rFrame_rec, mapr[0], mapr[1], INTER_LINEAR);
+
+		lFrame = lFrame_rec(cropBox);
+		rFrame = rFrame_rec(cropBox);
+
+		lFrame.copyTo(leftInputImg);
+		rFrame.copyTo(rightInputImg);
+
+		if(MatchingAlgorithm == STEREO_GIF)
+		{
+			cvtColor( lFrame, lFrame, CV_BGR2RGB );
+			cvtColor( rFrame, rFrame, CV_BGR2RGB );
+
+			lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
+			rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
+		}
+	}
+
+	//#############################################################################################################
+	//# Start of Disparity Map Creation
+	//#############################################################################################################
+	if(MatchingAlgorithm == STEREO_SGBM)
+	{
+		///OpenCV code
+		ssgbm->compute( lFrame, rFrame, imgDisparity16S );
+		//-- Check its extreme values
+		minMaxLoc( imgDisparity16S, &minVal, &maxVal );
+		imgDisparity16S.convertTo(lDispMap, CV_8UC1, 255/(maxVal - minVal));
+		cvtColor( lDispMap, lDispMap, CV_GRAY2BGR);
+		lDispMap.copyTo(leftDispMap);
+	}
+	else if(MatchingAlgorithm == STEREO_GIF)
+	{
+		SMDE->lImg = lFrame;
+		SMDE->rImg = rFrame;
+		SMDE->threads = num_threads;
+
+		// ******** Cost Volume Construction Code ******** //
+		printf("Cost Volume Construction Started..\n");
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		cvc_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+
+		if(de_mode == OCV_DE || !gotOCLDev)
+			SMDE->CostConst_CPU();
+		else
+			SMDE->CostConst_GPU();
+
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		cvc_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+		cvc_time = cvc_end - cvc_start;
+		fprintf(stderr, "Cost Volume Construction Done!\n");
+
+		// ******** Cost Volume Filtering Code ******** //
+		if(filter){
+			fprintf(stderr, "Cost Volume Filtering Started..\n");
 			clock_gettime(CLOCK_MONOTONIC,&realtime);
-			cvc_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+			cvf_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
 
 			if(de_mode == OCV_DE || !gotOCLDev)
-				SMDE->CostConst_CPU();
+				SMDE->CostFilter_CPU();
 			else
-				SMDE->CostConst_GPU();
+				SMDE->CostFilter_GPU();
 
 			clock_gettime(CLOCK_MONOTONIC,&realtime);
-			cvc_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
-			cvc_time = cvc_end - cvc_start;
-			fprintf(stderr, "Cost Volume Construction Done!\n");
+			cvf_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+			cvf_time = cvf_end - cvf_start;
+			fprintf(stderr, "Cost Volume Filtering Done!\n");
+		}
+		// ******** Disparity Selection Code ******** //
+		fprintf(stderr, "Disparity Selection Started...\n");
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		dispsel_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
 
-			// ******** Cost Volume Filtering Code ******** //
-			if(filter){
-				fprintf(stderr, "Cost Volume Filtering Started..\n");
-				clock_gettime(CLOCK_MONOTONIC,&realtime);
-				cvf_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+		if(de_mode == OCV_DE || !gotOCLDev)
+			SMDE->DispSelect_CPU();
+		else
+			SMDE->DispSelect_GPU();
 
-				if(de_mode == OCV_DE || !gotOCLDev)
-					SMDE->CostFilter_CPU();
-				else
-					SMDE->CostFilter_GPU();
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		dispsel_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+		dispsel_time = dispsel_end - dispsel_start;
+		fprintf(stderr, "Disparity Selection Done!\n");
 
-				clock_gettime(CLOCK_MONOTONIC,&realtime);
-				cvf_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
-				cvf_time = cvf_end - cvf_start;
-				fprintf(stderr, "Cost Volume Filtering Done!\n");
-			}
-			// ******** Disparity Selection Code ******** //
-			fprintf(stderr, "Disparity Selection Started...\n");
-			clock_gettime(CLOCK_MONOTONIC,&realtime);
-			dispsel_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
-
-			if(de_mode == OCV_DE || !gotOCLDev)
-				SMDE->DispSelect_CPU();
-			else
-				SMDE->DispSelect_GPU();
-
-			clock_gettime(CLOCK_MONOTONIC,&realtime);
-			dispsel_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
-			dispsel_time = dispsel_end - dispsel_start;
-			fprintf(stderr, "Disparity Selection Done!\n");
-
-			// ******** Post Processing Code ******** //
+		// ******** Post Processing Code ******** //
 //			fprintf(stderr, "Post Processing Disparity Map...\n");
-			clock_gettime(CLOCK_MONOTONIC,&realtime);
-			pp_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		pp_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
 
-			//SMDE->PostProcess();
+		//SMDE->PostProcess();
 
-			clock_gettime(CLOCK_MONOTONIC,&realtime);
-			pp_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		pp_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
 //			fprintf(stderr, "Post Processing Done!\n");
-			pp_time = pp_end - pp_start;
+		pp_time = pp_end - pp_start;
 
-			// ******** Show Disparity Map  ******** //
-			lDispMap = SMDE->getLDisMap();
-			cvtColor( lDispMap, lDispMap, CV_GRAY2BGR);
-			lDispMap.copyTo(leftDispMap);
-			rDispMap = SMDE->getRDisMap();
-			cvtColor( rDispMap, rDispMap, CV_GRAY2BGR);
-			rDispMap.copyTo(rightDispMap);
-			// ******** Show Disparity Map  ******** //
+		// ******** Show Disparity Map  ******** //
+		lDispMap = SMDE->getLDisMap();
+		cvtColor( lDispMap, lDispMap, CV_GRAY2BGR);
+		lDispMap.copyTo(leftDispMap);
+		rDispMap = SMDE->getRDisMap();
+		cvtColor( rDispMap, rDispMap, CV_GRAY2BGR);
+		rDispMap.copyTo(rightDispMap);
+		// ******** Show Disparity Map  ******** //
 
-			printf("CVC Time: %.2f ms\n",cvc_time/1000);
-			printf("CVF Time: %.2f ms\n",cvf_time/1000);
-			printf("DispSel Time: %.2f ms\n",dispsel_time/1000);
-			printf("PP Time: %.2f ms\n",pp_time/1000);
-			printf("DE Time: %.2f ms\n",(get_rt() - de_time)/1000);
+		printf("CVC Time: %.2f ms\n",cvc_time/1000);
+		printf("CVF Time: %.2f ms\n",cvf_time/1000);
+		printf("DispSel Time: %.2f ms\n",dispsel_time/1000);
+		printf("PP Time: %.2f ms\n",pp_time/1000);
+		printf("DE Time: %.2f ms\n",(get_rt() - de_time)/1000);
 
-		}
-		//Perform these steps for all algorithms:
-        imshow("InputOutput", display_container);
+	}
+	//Perform these steps for all algorithms:
+	imshow("InputOutput", display_container);
 
-        return de_time;
+	return de_time;
 }
 
 void StereoMatch::inputArgParser(int argc, char *argv[])

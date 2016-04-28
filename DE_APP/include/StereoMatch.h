@@ -12,14 +12,10 @@ class StereoMatch
 {
 public:
 	//Variables
-	bool end_de = false;
-	bool recaptureChessboards = false;
-	bool recalibrate = false;
+	bool end_de, recaptureChessboards, recalibrate, video, gotOCLDev;
 	char cap_key;
-	bool video = false;
-	bool gotOCLDev = false;
 
-	int MatchingAlgorithm = STEREO_SGBM;
+	int MatchingAlgorithm;
 	Ptr<StereoSGBM> ssgbm;
 	StereoCameraProperties camProps;
 
@@ -29,7 +25,7 @@ public:
     Mat lDispMap, rDispMap;
 
 	//input values
-    int maxDis = 64;
+    int maxDis;
     //stage & process time measurements
     timespec realtime;
     float cvc_time, cvf_time;
@@ -50,9 +46,9 @@ public:
 	Mat imgDisparity16S;
 	//StereoGIF Variables
 	DispEst* SMDE;
-	int de_mode = OCV_DE;
-	int num_threads = MAX_CPU_THREADS;
-	bool filter = true;
+	int de_mode;
+	int num_threads;
+	bool filter;
 
 	char left_img_filename[100];
 	char right_img_filename[100];

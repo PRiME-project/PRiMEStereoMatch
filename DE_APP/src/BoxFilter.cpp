@@ -18,6 +18,8 @@ BoxFilter::BoxFilter(int _height, int _width, int _radius, int _dispRange) :
     kernel = 0;
     device = 0;
     numberOfMemoryObjects = 2;
+    for(int m = 0; m < numberOfMemoryObjects; m++)
+		memoryObjects[m] = 0;
 
 
 	if (!createContext(&context))

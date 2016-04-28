@@ -17,6 +17,8 @@ CVC_cl::CVC_cl(Mat l, const int d) : lImg_ref(l), maxDis(d)
     kernel = 0;
     device = 0;
     numberOfMemoryObjects = 6;
+    for(int m = 0; m < numberOfMemoryObjects; m++)
+		memoryObjects[m] = 0;
 
     if (!createContext(&context))
     {

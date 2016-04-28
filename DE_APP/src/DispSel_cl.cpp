@@ -17,6 +17,8 @@ DispSel_cl::DispSel_cl(Mat l, const int d) : lImg_ref(l), maxDis(d)
     kernel = 0;
     device = 0;
     numberOfMemoryObjects = 4;
+    for(int m = 0; m < numberOfMemoryObjects; m++)
+		memoryObjects[m] = 0;
 
     if (!createContext(&context))
     {

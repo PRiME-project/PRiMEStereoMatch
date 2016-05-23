@@ -35,7 +35,7 @@ void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& disMap)
                     minDis  = d;
                 }
             }
-            disData[x] = minDis;
+            disData[x] = minDis * 4;
         }
     }
 }

@@ -1,25 +1,19 @@
 /*---------------------------------------------------------------------------
-   PP.h - Post Processing Header
+   DispSel.h - Disparity Selection Header
   ---------------------------------------------------------------------------
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 
-#define MED_SZ 19
-#define SIG_CLR 0.1
-#define SIG_DIS 9
+#define DOUBLE_MAX 1e10
 
-//
-// Weighted-Median Post-processing
-//
-class PP
+class DispSel
 {
 public:
-	PP(void);
-	~PP(void);
+	DispSel(void);
+	~DispSel(void);
 
-	void processDM(const Mat& lImg, const Mat& rImg, const int maxDis,
-                    Mat& lDisMap, Mat& rDisMap, Mat& lSeg, Mat& lChk);
+	void CVSelect(Mat* costVol, const int maxDis, Mat& dispMap);
 };
 

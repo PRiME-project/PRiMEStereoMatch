@@ -45,10 +45,12 @@ public:
     CVF_cl* filter_cl;
     DispSel* selector;
     DispSel_cl* selector_cl;
-    PP* postProcessor;
 
     DispEst(Mat l, Mat r, const int d, const int t, bool ocl);
     ~DispEst(void);
+
+    Mat getLDisMap();
+    Mat getRDisMap();
 
     void CostConst();
     void CostConst_CPU();

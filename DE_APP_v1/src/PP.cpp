@@ -206,7 +206,7 @@ void wgtMedian(const Mat& lImg, const Mat& rImg, Mat& lDis, Mat& rDis, int* lVal
             pLValid ++;
         }
     }
-    //printf("Left WGT Med Filtered\n");
+    printf("Left WGT Med Filtered\n");
     // filter right depth
     int* pRValid = rValid;
     for( int y = 0; y < hei; y ++  ) {
@@ -259,65 +259,36 @@ void wgtMedian(const Mat& lImg, const Mat& rImg, Mat& lDis, Mat& rDis, int* lVal
             pRValid ++;
         }
     }
-    //printf("Right WGT Med Filtered\n");
+    printf("Right WGT Med Filtered\n");
 
     //delete [] disHist;
     return;
-}
-
-void saveChk( const int hei, const int wid,  int* lValid, int* rValid )
-{
-	Mat lChk = Mat::zeros( hei, wid, CV_8UC1 );
-	Mat rChk = Mat::zeros( hei, wid, CV_8UC1 );
-	int* pLV = lValid;
-	int* pRV = rValid;
-	for( int y = 0; y < hei; y ++ ) {
-		uchar* lChkData = ( uchar* )( lChk.ptr<uchar>( y ) );
-		uchar* rChkData = ( uchar* )( rChk.ptr<uchar>( y ) );
-		for( int x = 0; x < wid; x ++ ) {
-			if( *pLV ) {
-				lChkData[ x ] = 0;
-			} else{
-				lChkData[ x ] = 255;
-			}
-
-			if( *pRV ) {
-				rChkData[ x ] = 0;
-			} else{
-				rChkData[ x ] = 255;
-			}
-			pLV ++;
-			pRV ++;
-		}
-	}
-	imwrite( "l_chk.png", lChk );
-	imwrite( "r_chk.png", rChk );
 }
 
 void PP::processDM(const Mat& lImg, const Mat& rImg, const int maxDis,
 					Mat& lDisMap, Mat& rDisMap, Mat& lSeg, Mat& lChk)
 {
 	Mat lTmp, rTmp;
-	lImg.convertTo(lTmp, CV_32F);
-	rImg.convertTo(rTmp, CV_32F);
+	lImg.convertTo( lTmp, CV_32F );
+	rImg.convertTo( rTmp, CV_32F );
     int hei = lImg.rows;
     int wid = lImg.cols;
 	int imgSize = hei * wid;
-	int* lValid = new int[imgSize];
-	int* rValid = new int[imgSize];
+	int* lValid = new int[ imgSize ];
+	int* rValid = new int[ imgSize ];
 
 	// iter 3 times
-    //for( int i = 0; i < 3; i ++ ) {
+    for( int i = 0; i < 3; i ++ ) {
+		// save check results
 		lrCheck(lDisMap, rDisMap, lValid, rValid);
-		//fprintf(stderr, "LR Check Done\n");
+		fprintf(stderr, "LR Check Done\n");
 		fillInv(lDisMap, rDisMap, lValid, rValid);
-		//fprintf(stderr, "Fill Inv Done\n");
-		wgtMedian( lTmp, rTmp, lDisMap, rDisMap, lValid, rValid, maxDis);
-		//fprintf(stderr, "Weighted-Median Filter Done\n");
-	//}
+		fprintf(stderr, "Fill Inv Done\n");
+		//wgtMedian( lTmp, rTmp, lDisMap, rDisMap, lValid, rValid, maxDis);
+		//fprintf(stderr, "Weighted-Median Done\n");
+	}
 	//lrCheck( lDisMap, rDisMap, lValid, rValid);
-	//saveChk( hei, wid, lValid, rValid );
-	delete [] lValid;
-	delete [] rValid;
+	//delete [] lValid;
+	//delete [] rValid;
 }
 

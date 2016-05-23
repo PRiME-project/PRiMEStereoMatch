@@ -376,59 +376,69 @@ int StereoMatch::Compute()
 
 		// ******** Cost Volume Construction Code ******** //
 		printf("Cost Volume Construction Started..\n");
-		cvc_time = get_rt();
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		cvc_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
 
 		if(de_mode == OCV_DE || !gotOCLDev)
 			SMDE->CostConst_CPU();
 		else
 			SMDE->CostConst_GPU();
 
-		cvc_time = get_rt() - cvc_time;
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		cvc_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+		cvc_time = cvc_end - cvc_start;
 		fprintf(stderr, "Cost Volume Construction Done!\n");
 
 		// ******** Cost Volume Filtering Code ******** //
 		if(filter){
 			fprintf(stderr, "Cost Volume Filtering Started..\n");
-			cvf_time = get_rt();
+			clock_gettime(CLOCK_MONOTONIC,&realtime);
+			cvf_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
 
 			if(de_mode == OCV_DE || !gotOCLDev)
 				SMDE->CostFilter_CPU();
 			else
 				SMDE->CostFilter_GPU();
 
-			cvf_time = get_rt()- cvf_time;
+			clock_gettime(CLOCK_MONOTONIC,&realtime);
+			cvf_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+			cvf_time = cvf_end - cvf_start;
 			fprintf(stderr, "Cost Volume Filtering Done!\n");
 		}
 		// ******** Disparity Selection Code ******** //
 		fprintf(stderr, "Disparity Selection Started...\n");
-		dispsel_time = get_rt();
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		dispsel_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
 
 		if(de_mode == OCV_DE || !gotOCLDev)
 			SMDE->DispSelect_CPU();
 		else
 			SMDE->DispSelect_GPU();
 
-		dispsel_time = get_rt() - dispsel_time;
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		dispsel_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+		dispsel_time = dispsel_end - dispsel_start;
 		fprintf(stderr, "Disparity Selection Done!\n");
 
 		// ******** Post Processing Code ******** //
-		fprintf(stderr, "Post Processing Disparity Map...\n");
-		pp_time = get_rt();
+//			fprintf(stderr, "Post Processing Disparity Map...\n");
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		pp_start=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
 
-		if(de_mode == OCV_DE || !gotOCLDev)
-			SMDE->PostProcess();
-		else
-			SMDE->PostProcess();
+		//SMDE->PostProcess();
 
-		pp_time = get_rt() - pp_time;
-		fprintf(stderr, "Post Processing Done!\n");
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		pp_end=realtime.tv_sec*1000000+realtime.tv_nsec/1000;
+//			fprintf(stderr, "Post Processing Done!\n");
+		pp_time = pp_end - pp_start;
 
 		// ******** Show Disparity Map  ******** //
-		applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET);
-		lDispMap.copyTo(leftDispMap); //copy to leftDispMap display rectangle
-
-		applyColorMap( SMDE->rDisMap*4, rDispMap, COLORMAP_JET);
-		rDispMap.copyTo(rightDispMap); //copy to rightDispMap display rectangle
+		lDispMap = SMDE->getLDisMap();
+		cvtColor( lDispMap, lDispMap, CV_GRAY2BGR);
+		lDispMap.copyTo(leftDispMap);
+		rDispMap = SMDE->getRDisMap();
+		cvtColor( rDispMap, rDispMap, CV_GRAY2BGR);
+		rDispMap.copyTo(rightDispMap);
 		// ******** Show Disparity Map  ******** //
 
 		printf("CVC Time: %.2f ms\n",cvc_time/1000);

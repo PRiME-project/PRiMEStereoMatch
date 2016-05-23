@@ -15,8 +15,8 @@
  * \param[out] ldispMap - Left Disparity Map.
  * \param[out] rdispMap - Right Disparity Map.
  */
-__kernel void dispsel(__global const float* restrict lcostVol,
-                 	__global const float* restrict rcostVol,
+__kernel void dispsel(__global const double* restrict lcostVol,
+                 	__global const double* restrict rcostVol,
                   	const int height,
                   	const int width,
                   	const int maxDis,
@@ -36,19 +36,20 @@ __kernel void dispsel(__global const float* restrict lcostVol,
 	int costVol_offset;
 
     /* *************** Left Disparity Selection ********************** */
-	float minCost = 1e10; //DOUBLE_MAX
+	double minCost = 1e10; //DOUBLE_MAX
 	char minDis = 0;
 
 	for(int d = 1; d < maxDis; d++)
 	{
-    	float costData = *(lcostVol + ((d * height) + y) * width + x);
+		costVol_offset = ((d * height) + y) * width + x;
+    	double costData = *(lcostVol + costVol_offset);
 		if(costData < minCost)
 		{
 			minCost = costData;
 			minDis = d;
 		}
 	}
-	*(ldispMap + dispMap_offset + x) = minDis;
+	*(ldispMap + dispMap_offset + x) = minDis * 4;
 
 	/* *************** Right Disparity Selection ********************** */
 	minCost = 1e10;
@@ -56,12 +57,13 @@ __kernel void dispsel(__global const float* restrict lcostVol,
 
 	for(int d = 1; d < maxDis; d++)
 	{
-    	float costData = *(rcostVol + ((d * height) + y) * width + x);
+		costVol_offset = ((d * height) + y) * width + x;
+    	double costData = *(rcostVol + costVol_offset);
 		if(costData < minCost)
 		{
 			minCost = costData;
 			minDis = d;
 		}
 	}
-	*(rdispMap + dispMap_offset + x) = minDis;
+	*(rdispMap + dispMap_offset + x) = minDis * 4;
 }

@@ -48,7 +48,7 @@ __kernel void dispsel(__global const float* restrict lcostVol,
 			minDis = d;
 		}
 	}
-	*(ldispMap + dispMap_offset + x) = minDis;
+	*(ldispMap + dispMap_offset + x) = minDis * 4;
 
 	/* *************** Right Disparity Selection ********************** */
 	minCost = 1e10;
@@ -63,5 +63,5 @@ __kernel void dispsel(__global const float* restrict lcostVol,
 			minDis = d;
 		}
 	}
-	*(rdispMap + dispMap_offset + x) = minDis;
+	*(rdispMap + dispMap_offset + x) = minDis * 4;
 }

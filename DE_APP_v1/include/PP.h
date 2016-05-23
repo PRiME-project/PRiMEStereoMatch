@@ -18,7 +18,7 @@ class PP
 public:
 	PP(void);
 	~PP(void);
-
+public:
 	void processDM(const Mat& lImg, const Mat& rImg, const int maxDis,
                     Mat& lDisMap, Mat& rDisMap, Mat& lSeg, Mat& lChk);
 };

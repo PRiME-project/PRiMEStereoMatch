@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="DE_APP" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/DE_APP" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option parameters="STEREO_GIF IMAGE data/view1.png data/view5.png" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/DE_APP" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option parameters="STEREO_GIF  IMAGE data/view1.png data/view5.png " />
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-std=c++0x" />
+			<Add option="`pkg-config --cflags opencv`" />
+			<Add directory="include" />
+			<Add directory="src" />
+			<Add directory="common" />
+		</Compiler>
+		<Linker>
+			<Add option="-lpthread -lrt -lOpenCL" />
+			<Add option="`pkg-config --libs opencv`" />
+			<Add directory="/usr/local/lib" />
+		</Linker>
+		<Unit filename="common/common.cpp" />
+		<Unit filename="common/common.h" />
+		<Unit filename="common/image.cpp" />
+		<Unit filename="common/image.h" />
+		<Unit filename="include/BoxFilter.h" />
+		<Unit filename="include/CVC.h" />
+		<Unit filename="include/CVC_cl.h" />
+		<Unit filename="include/CVF.h" />
+		<Unit filename="include/CVF_cl.h" />
+		<Unit filename="include/ComFunc.h" />
+		<Unit filename="include/DispEst.h" />
+		<Unit filename="include/DispSel.h" />
+		<Unit filename="include/DispSel_cl.h" />
+		<Unit filename="include/PP.h" />
+		<Unit filename="include/StereoCalib.h" />
+		<Unit filename="include/StereoMatch.h" />
+		<Unit filename="main.cpp" />
+		<Unit filename="src/BoxFilter.cpp" />
+		<Unit filename="src/CVC.cpp" />
+		<Unit filename="src/CVC_cl.cpp" />
+		<Unit filename="src/CVF.cpp" />
+		<Unit filename="src/CVF_cl.cpp" />
+		<Unit filename="src/DispEst.cpp" />
+		<Unit filename="src/DispSel.cpp" />
+		<Unit filename="src/DispSel_cl.cpp" />
+		<Unit filename="src/PP.cpp" />
+		<Unit filename="src/StereoCalib.cpp" />
+		<Unit filename="src/StereoMatch.cpp" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

@@ -31,7 +31,6 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
     constructor = new CVC();
     filter = new CVF();
     selector = new DispSel();
-    postProcessor = new PP();
 
     if(useOCL){
 		//OpenCL function constructors
@@ -49,8 +48,6 @@ DispEst::~DispEst(void)
     delete constructor;
     delete filter;
     delete selector;
-    delete postProcessor;
-
     if(useOCL){
 		delete constructor_cl;
 		//constructor_cl_image;
@@ -59,12 +56,24 @@ DispEst::~DispEst(void)
     }
 }
 
+// get left disparity
+Mat DispEst::getLDisMap()
+{
+	return lDisMap;
+}
+// get right disparity
+Mat DispEst::getRDisMap()
+{
+	return rDisMap;
+}
+
 //#############################################################################################################
 //# Cost Volume Construction
 //#############################################################################################################
 void DispEst::CostConst()
 {
     //fprintf(stderr,"Cost Construction Underway..\n");
+    //CVC* constructor = new CVC();
 
     // Build Cost Volume
     for( int d = 0; d < maxDis; d ++ )
@@ -74,6 +83,7 @@ void DispEst::CostConst()
     }
 
     //fprintf(stderr, "Construction Complete\n");
+    //delete constructor;
 }
 
 void DispEst::CostConst_CPU()
@@ -87,6 +97,7 @@ void DispEst::CostConst_CPU()
     buildCV_TD buildCV_TD_Array[maxDis];
 
     //fprintf(stderr,"Cost Construction Underway..\n");
+    //CVC* constructor = new CVC();
 
     for(int level = 0; level <= maxDis/threads; level ++)
 	{
@@ -125,6 +136,7 @@ void DispEst::CostConst_CPU()
         }
 	}
     //fprintf(stderr, "Construction Complete\n");
+    //delete constructor;
 }
 
 void DispEst::CostConst_GPU()
@@ -202,33 +214,41 @@ void DispEst::CostFilter_CPU()
 void DispEst::CostFilter_GPU() //under construction
 {
     //fprintf(stderr, "OpenCL Cost Filtering Underway...\n");
+    //CVF_cl* filter_cl = new CVF_cl();
     filter_cl->filterCV(lImg, lcostVol);
     filter_cl->filterCV(rImg, rcostVol);
+
     //fprintf(stderr, "Filtering Complete\n");
+    //delete filter_cl;
 }
 
 void DispEst::DispSelect_CPU()
 {
     //fprintf(stderr, "Disparity Selection Underway...\n");
+    //DispSel* selector = new DispSel();
     //fprintf(stderr, "Left Selection...\n");
     selector->CVSelect(lcostVol, maxDis, lDisMap);
     //fprintf(stderr, "Right Selection...\n");
     selector->CVSelect(rcostVol, maxDis, rDisMap);
     //fprintf(stderr, "Selection Complete\n");
+    //delete selector;
 }
 
 void DispEst::DispSelect_GPU()
 {
     //fprintf(stderr, "Disparity Selection Underway...\n");
+    //DispSel_cl* selector_cl = new DispSel_cl();
 	//fprintf(stderr, "Selection...\n");
     selector_cl->CVSelect(lcostVol, rcostVol, lDisMap, rDisMap);
     //fprintf(stderr, "Selection Complete\n");
+    //delete selector_cl;
 }
 
 
 void DispEst::PostProcess()
 {
 //    //fprintf(stderr, "Post Processing Underway...\n");
+    PP* postProcessor = new PP();
     postProcessor->processDM(lImg, rImg, maxDis, lDisMap, rDisMap, lSeg, lChk);
 //    //fprintf(stderr, "Post Processing Complete\n");
 }

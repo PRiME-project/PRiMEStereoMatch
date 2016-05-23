@@ -26,9 +26,12 @@ public:
 
 	//input values
     int maxDis;
-
     //stage & process time measurements
-    float cvc_time, cvf_time, dispsel_time, pp_time;
+    timespec realtime;
+    float cvc_time, cvf_time;
+    float cvc_start, cvc_end, cvf_start, cvf_end;
+    float dispsel_time, pp_time;
+    float dispsel_start, dispsel_end, pp_start, pp_end;
     float de_time;
 
     //Frame Holders & Camera object

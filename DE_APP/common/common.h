@@ -19,12 +19,29 @@
  */
 
 /**
+ * \brief Convert OpenCL error numbers to their string form.
+ * \details Uses the error number definitions from cl.h.
+ * \param[in] errorNumber The error number returned from an OpenCL command.
+ * \return A name of the error.
+ */
+std::string errorNumberToString(cl_int errorNumber);
+
+/**
  * \brief Check an OpenCL error number for errors.
  * \details If errorNumber is not CL_SUCESS, the function will print the string form of the error number.
  * \param[in] errorNumber The error number returned from an OpenCL command.
  * \return False if errorNumber != CL_SUCCESS, true otherwise.
  */
-bool checkSuccess(cl_int errorNumber);
+inline bool checkSuccess(cl_int errorNumber)
+{
+    if (errorNumber != CL_SUCCESS)
+    {
+        cerr << "OpenCL error: " << errorNumberToString(errorNumber) << endl;
+        return false;
+    }
+    return true;
+}
+
 
 /**
  * \brief Print the profiling information associated with an OpenCL event.
@@ -89,14 +106,6 @@ bool createCommandQueue(cl_context context, cl_command_queue* commandQueue, cl_d
  * \return False if an error occurred, otherwise true.
  */
 bool createProgram(cl_context context, cl_device_id device, std::string filename, cl_program* program);
-
-/**
- * \brief Convert OpenCL error numbers to their string form.
- * \details Uses the error number definitions from cl.h.
- * \param[in] errorNumber The error number returned from an OpenCL command.
- * \return A name of the error.
- */
-std::string errorNumberToString(cl_int errorNumber);
 
 /**
  * \brief Query an OpenCL device to see if it supports an extension.

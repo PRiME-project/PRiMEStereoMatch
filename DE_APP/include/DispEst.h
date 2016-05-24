@@ -29,14 +29,15 @@ public:
     int threads;
     bool useOCL;
 
+	//CVC & CVF
     Mat* lcostVol;
     Mat* rcostVol;
-
-    //DispSel & PP
+    //DispSel
     Mat lDisMap;
     Mat rDisMap;
-    Mat lSeg;
-    Mat lChk;
+    //PP
+    Mat lValid;
+    Mat rValid;
 
     CVC* constructor;
     CVC_cl* constructor_cl;
@@ -61,5 +62,5 @@ public:
     void DispSelect_CPU();
     void DispSelect_GPU();
 
-    void PostProcess();
+    void PostProcess_CPU();
 };

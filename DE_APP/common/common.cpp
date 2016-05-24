@@ -352,15 +352,15 @@ bool createProgram(cl_context context, cl_device_id device, string filename, cl_
     return true;
 }
 
-inline bool checkSuccess(cl_int errorNumber)
-{
-    if (errorNumber != CL_SUCCESS)
-    {
-        cerr << "OpenCL error: " << errorNumberToString(errorNumber) << endl;
-        return false;
-    }
-    return true;
-}
+//inline bool checkSuccess(cl_int errorNumber)
+//{
+//    if (errorNumber != CL_SUCCESS)
+//    {
+//        cerr << "OpenCL error: " << errorNumberToString(errorNumber) << endl;
+//        return false;
+//    }
+//    return true;
+//}
 
 string errorNumberToString(cl_int errorNumber)
 {

@@ -8,9 +8,74 @@
 
 DispSel::DispSel(void)
 {
-    //fprintf(stderr, "Winner-Takes-All Disparity Selection\n" );
+    //printf("Winner-Takes-All Disparity Selection\n" );
 }
 DispSel::~DispSel(void) {}
+
+void *DS_X(void *thread_arg)
+{
+	struct DS_X_TD *t_data;
+	t_data = (struct DS_X_TD *) thread_arg;
+    //Matricies
+	Mat* costVol = t_data->costVol;
+	Mat* dispMap = t_data->dispMap;
+    //Variables
+	int y = t_data->y;
+	int maxDis = t_data->maxDis;
+
+	int wid = dispMap->cols;
+	uchar* dispData = (uchar*) dispMap->ptr<uchar>(y);
+
+	for(int x = 0; x < wid; x++)
+	{
+		float minCost = DOUBLE_MAX;
+		int    minDis  = 0;
+
+		for(int d = 1; d < maxDis; d++)
+		{
+			float* costData = ( float* )costVol[d].ptr<float>(y);
+			if( costData[x] < minCost )
+			{
+				minCost = costData[x];
+				minDis  = d;
+			}
+		}
+		dispData[x] = minDis;
+	}
+}
+
+void DispSel::CVSelect_thread(Mat* costVol, const int maxDis, Mat& dispMap, int threads)
+{
+    int hei = dispMap.rows;
+
+	//Set up threads for x-loop
+    void* status;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    pthread_t DS_X_threads[hei];
+    DS_X_TD DS_X_TD_Array[hei];
+
+    for(int level = 0; level <= hei/threads; level ++)
+	{
+        //Handle remainder if threads is not power of 2.
+	    int block_size = (level < hei/threads) ? threads : (hei%threads);
+
+	    for(int iter=0; iter < block_size; iter++)
+	    {
+	        int d = level*threads + iter;
+            DS_X_TD_Array[d] = {costVol, &dispMap, d, maxDis};
+            pthread_create(&DS_X_threads[d], &attr, DS_X, (void *)&DS_X_TD_Array[d]);
+            //printf("Selecting Disparity @ y = %d\n", d);
+	    }
+        for(int iter=0; iter < block_size; iter++)
+	    {
+	        int d = level*threads + iter;
+            pthread_join(DS_X_threads[d], &status);
+            //printf("Joining Disparity Selection @ y = %d\n", d);
+        }
+	}
+}
 
 void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& disMap)
 {
@@ -35,8 +100,7 @@ void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& disMap)
                     minDis  = d;
                 }
             }
-            disData[x] = minDis;
+            disData[x] = minDis * 4;
         }
     }
 }
-

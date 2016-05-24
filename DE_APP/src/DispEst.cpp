@@ -9,7 +9,7 @@
 DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
     : lImg(l), rImg(r), maxDis(d), threads(t), useOCL(ocl)
 {
-    //fprintf(stderr, "Disparity Estimation for Stereo Matching\n" );
+    //printf("Disparity Estimation for Stereo Matching\n" );
 
     hei = lImg.rows;
     wid = lImg.cols;
@@ -24,8 +24,9 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 
     lDisMap = Mat::zeros(hei, wid, CV_8UC1);
     rDisMap = Mat::zeros(hei, wid, CV_8UC1);
-    lSeg = Mat::zeros(hei, wid, CV_8UC3);
-    lChk = Mat::zeros(hei, wid, CV_8UC1);
+
+    lValid = Mat::zeros(hei, wid, CV_8UC1);
+    rValid = Mat::zeros(hei, wid, CV_8UC1);
 
 	//C++ pthreads function constructors
     constructor = new CVC();
@@ -64,16 +65,12 @@ DispEst::~DispEst(void)
 //#############################################################################################################
 void DispEst::CostConst()
 {
-    //fprintf(stderr,"Cost Construction Underway..\n");
-
     // Build Cost Volume
     for( int d = 0; d < maxDis; d ++ )
     {
         constructor->buildCV_left(lImg, rImg, d, lcostVol[d]);
         constructor->buildCV_right(rImg, lImg, d, rcostVol[d]);
     }
-
-    //fprintf(stderr, "Construction Complete\n");
 }
 
 void DispEst::CostConst_CPU()
@@ -85,8 +82,6 @@ void DispEst::CostConst_CPU()
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     pthread_t BCV_threads[maxDis];
     buildCV_TD buildCV_TD_Array[maxDis];
-
-    //fprintf(stderr,"Cost Construction Underway..\n");
 
     for(int level = 0; level <= maxDis/threads; level ++)
 	{
@@ -124,7 +119,6 @@ void DispEst::CostConst_CPU()
             pthread_join(BCV_threads[d], &status);
         }
 	}
-    //fprintf(stderr, "Construction Complete\n");
 }
 
 void DispEst::CostConst_GPU()
@@ -147,7 +141,6 @@ void DispEst::CostFilter()
 
 void DispEst::CostFilter_CPU()
 {
-    //fprintf(stderr, "Cost Filtering Underway...\n");
     //Set up threads and thread attributes
     void *status;
     pthread_attr_t attr;
@@ -166,13 +159,13 @@ void DispEst::CostFilter_CPU()
 	        int d = level*threads + iter;
             filterCV_TD_Array[d] = {&lImg, &lcostVol[d]};
             pthread_create(&FCV_threads[d], &attr, CVF::filterCV_thread, (void *)&filterCV_TD_Array[d]);
-            //fprintf(stderr, "Filtering Left CV @ Disparity %d\n", d);
+            //printf("Filtering Left CV @ Disparity %d\n", d);
 	    }
         for(int iter=0; iter < block_size; iter++)
 	    {
 	        int d = level*threads + iter;
             pthread_join(FCV_threads[d], &status);
-            //fprintf(stderr, "Joining Left CV @ Disparity %d\n", d);
+            //printf("Joining Left CV @ Disparity %d\n", d);
         }
 	}
 	for(int level = 0; level <= maxDis/threads; level ++)
@@ -185,50 +178,45 @@ void DispEst::CostFilter_CPU()
 	        int d = level*threads + iter;
             filterCV_TD_Array[d] = {&rImg, &rcostVol[d]};
             pthread_create(&FCV_threads[d], &attr, CVF::filterCV_thread, (void *)&filterCV_TD_Array[d]);
-            //fprintf(stderr, "Filtering Right CV @ Disparity %d\n", d);
+            //printf("Filtering Right CV @ Disparity %d\n", d);
 	    }
         for(int iter=0; iter < block_size; iter++)
 	    {
 	        int d = level*threads + iter;
             pthread_join(FCV_threads[d], &status);
-            //fprintf(stderr, "Joining Right CV @ Disparity %d\n", d);
+            //printf("Joining Right CV @ Disparity %d\n", d);
         }
 	}
-
-    //fprintf(stderr, "Filtering Complete\n");
-    //delete filter;
 }
 
 void DispEst::CostFilter_GPU() //under construction
 {
-    //fprintf(stderr, "OpenCL Cost Filtering Underway...\n");
+    //printf("OpenCL Cost Filtering Underway...\n");
     filter_cl->filterCV(lImg, lcostVol);
     filter_cl->filterCV(rImg, rcostVol);
-    //fprintf(stderr, "Filtering Complete\n");
+    //printf("Filtering Complete\n");
 }
 
 void DispEst::DispSelect_CPU()
 {
-    //fprintf(stderr, "Disparity Selection Underway...\n");
-    //fprintf(stderr, "Left Selection...\n");
-    selector->CVSelect(lcostVol, maxDis, lDisMap);
-    //fprintf(stderr, "Right Selection...\n");
-    selector->CVSelect(rcostVol, maxDis, rDisMap);
-    //fprintf(stderr, "Selection Complete\n");
+    //printf("Left Selection...\n");
+    //selector->CVSelect(lcostVol, maxDis, lDisMap);
+    selector->CVSelect_thread(lcostVol, maxDis, lDisMap, threads);
+
+    //printf("Right Selection...\n");
+    //selector->CVSelect(rcostVol, maxDis, rDisMap);
+    selector->CVSelect_thread(rcostVol, maxDis, rDisMap, threads);
 }
 
 void DispEst::DispSelect_GPU()
 {
-    //fprintf(stderr, "Disparity Selection Underway...\n");
-	//fprintf(stderr, "Selection...\n");
+	//printf("Left & Right Selection...\n");
     selector_cl->CVSelect(lcostVol, rcostVol, lDisMap, rDisMap);
-    //fprintf(stderr, "Selection Complete\n");
 }
 
-
-void DispEst::PostProcess()
+void DispEst::PostProcess_CPU()
 {
-//    //fprintf(stderr, "Post Processing Underway...\n");
-    postProcessor->processDM(lImg, rImg, maxDis, lDisMap, rDisMap, lSeg, lChk);
-//    //fprintf(stderr, "Post Processing Complete\n");
+    //printf("Post Processing Underway...\n");
+    postProcessor->processDM(lImg, rImg, lDisMap, rDisMap, lValid, rValid, maxDis, threads);
+    //printf("Post Processing Complete\n");
 }

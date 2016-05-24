@@ -15,5 +15,7 @@ public:
 	~DispSel(void);
 
 	void CVSelect(Mat* costVol, const int maxDis, Mat& dispMap);
+	void CVSelect_thread(Mat* costVol, const int maxDis, Mat& dispMap, int threads);
 };
 
+struct DS_X_TD{Mat* costVol; Mat* dispMap; int y; int maxDis;};

@@ -5,10 +5,9 @@
    Email: cl19g10 [at] ecs.soton.ac.uk
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
+#include "BoxFilter.h"
 #include "common.h"
 #include "image.h"
-
-#include "BoxFilter.h"
 
 #define R_WIN 9
 #define EPS 0.0001

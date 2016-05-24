@@ -19,7 +19,9 @@ public:
 	PP(void);
 	~PP(void);
 
-	void processDM(const Mat& lImg, const Mat& rImg, const int maxDis,
-                    Mat& lDisMap, Mat& rDisMap, Mat& lSeg, Mat& lChk);
+	void processDM(const Mat& lImg, const Mat& rImg, Mat& lDisMap, Mat& rDisMap,
+					Mat& lValid, Mat& rValid, const int maxDis, int threads);
 };
+
+struct WM_row_TD{const Mat* Img; Mat* Dis; uchar *pValid; int y; int maxDis;};
 

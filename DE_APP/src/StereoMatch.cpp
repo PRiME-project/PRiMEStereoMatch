@@ -365,7 +365,7 @@ int StereoMatch::Compute()
 		//-- Check its extreme values
 		minMaxLoc( imgDisparity16S, &minVal, &maxVal );
 		imgDisparity16S.convertTo(lDispMap, CV_8UC1, 255/(maxVal - minVal));
-		cvtColor( lDispMap, lDispMap, CV_GRAY2BGR);
+		applyColorMap( lDispMap, lDispMap, COLORMAP_JET);
 		lDispMap.copyTo(leftDispMap);
 	}
 	else if(MatchingAlgorithm == STEREO_GIF)
@@ -384,11 +384,11 @@ int StereoMatch::Compute()
 			SMDE->CostConst_GPU();
 
 		cvc_time = get_rt() - cvc_time;
-		fprintf(stderr, "Cost Volume Construction Done!\n");
+		printf("Cost Volume Construction Done!\n");
 
 		// ******** Cost Volume Filtering Code ******** //
 		if(filter){
-			fprintf(stderr, "Cost Volume Filtering Started..\n");
+			printf("Cost Volume Filtering Started..\n");
 			cvf_time = get_rt();
 
 			if(de_mode == OCV_DE || !gotOCLDev)
@@ -397,10 +397,10 @@ int StereoMatch::Compute()
 				SMDE->CostFilter_GPU();
 
 			cvf_time = get_rt()- cvf_time;
-			fprintf(stderr, "Cost Volume Filtering Done!\n");
+			printf("Cost Volume Filtering Done!\n");
 		}
 		// ******** Disparity Selection Code ******** //
-		fprintf(stderr, "Disparity Selection Started...\n");
+		printf("Disparity Selection Started...\n");
 		dispsel_time = get_rt();
 
 		if(de_mode == OCV_DE || !gotOCLDev)
@@ -409,19 +409,19 @@ int StereoMatch::Compute()
 			SMDE->DispSelect_GPU();
 
 		dispsel_time = get_rt() - dispsel_time;
-		fprintf(stderr, "Disparity Selection Done!\n");
+		printf("Disparity Selection Done!\n");
 
 		// ******** Post Processing Code ******** //
-		fprintf(stderr, "Post Processing Disparity Map...\n");
+		printf("Post Processing Disparity Map...\n");
 		pp_time = get_rt();
 
 		if(de_mode == OCV_DE || !gotOCLDev)
-			SMDE->PostProcess();
+			SMDE->PostProcess_CPU();
 		else
-			SMDE->PostProcess();
+			SMDE->PostProcess_CPU();
 
 		pp_time = get_rt() - pp_time;
-		fprintf(stderr, "Post Processing Done!\n");
+		printf("Post Processing Done!\n");
 
 		// ******** Show Disparity Map  ******** //
 		applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET);

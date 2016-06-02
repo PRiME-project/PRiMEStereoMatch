@@ -14,7 +14,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 * Post Processing - left-right occlusion check, invalid pixel removal and weight-median filtering.  
 
 <p align="center">
-<img src="docs/de_bd.png" alt="Disparity estimation process block diagram" width=50%>
+<img src="docs/de_bd.png" alt="Disparity estimation process block diagram" width=70%>
 </p>
 
 ## Implementation Details

@@ -94,7 +94,7 @@ files:
 
 ### Code
 
-Reference Code used as the basis for some C++ DE functions (GNU Public License) - [CrossScaleStereo](https://github.com/rookiepig/CrossScaleStereo)
+ [CrossScaleStereo](https://github.com/rookiepig/CrossScaleStereo) - The basis for some C++ DE functions (GNU Public License)
 
 ### Literature
 

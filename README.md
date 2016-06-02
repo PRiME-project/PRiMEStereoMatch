@@ -31,15 +31,15 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 * Hardware:
 	* Development Platform - optionally but ideally including OpenCL compatible devices
 * Software:
-	* OpenCV 3.0.0 - [Installation in Linux instructions](http://docs.opencv.org/2.4/doc/tutorials/introduction/linux_install/linux_install.html)
+	* OpenCV 2.4 or later - [Installation in Linux instructions](http://docs.opencv.org/2.4/doc/tutorials/introduction/linux_install/linux_install.html)
 	* pthread and realtime libraries (lpthread, lrt)
 	* [optional] OpenCL Library (-lOpenCL)
 
 ### Compilation 
 * Download project folder to your platform.
 * Enter the base directory using `cd DE_APP`.
-* Natively compile the project using `make -j8`. 
-	* Adjust -j8 to suit the number of simultaneous threads supported on your platform.
+* Natively compile the project using `make -jN`. 
+	* Se N to the number of simultaneous threads supported on your compilation platform, e.g. 8.
 
 ### Deployment
 * Run the application using `./bin/Release/DE_APP <program arguments>`
@@ -75,7 +75,7 @@ DE_APP		- Project top level directory
 folders:
 	assets			- OpenCL kernel files
 	bin				- binary executable files
-	common			- OpenCL common utility functions (C) ARM
+	common			- OpenCL common utility/helper functions (C) ARM Ltd
 	data			- program data including input images, stereo camera parameters, calibration images, etc
 	include			- Project header files (h/hpp)
 	src				- Project source files (c/cpp)
@@ -89,3 +89,14 @@ files:
 	main.cpp				- main C++ file
 	Makefile				- project Makefile
 ```
+
+## References
+Reference Code used as the basis for some C++ DE functions (GNU Public License) - [CrossScaleStereo](https://github.com/rookiepig/CrossScaleStereo)
+
+<a name="Hosni2011CVPR">[Hosni2011CVPR]</a>: C. Rhemann, A. Hosni, M. Bleyer, C. Rother, and M. Gelautz. Fast cost-volume filtering for visual correspondence and beyond. In CVPR, 2011
+
+<a name="Hosni2011ICME">[Hosni2011ICME]</a>: A. Hosni, M. Bleyer, C. Rhemann, M. Gelautz and C. Rother, Real-time local stereo matching using guided image filtering, in Multimedia and Expo (ICME), 2011 IEEE International Conference on, Barcelona, 2011. 
+
+<a name="Ttofis2014">[Ttofis2014]</a>: C. Ttofis and T. Theocharides, High-quality real-time hardware stereo matching based on guided image filtering, in Design, Automation and Test in Europe Conference and Exhibition (DATE), Dresden, 2014. 
+
+<a name="He2012">[He2012]</a>: K. He, J. Sun and X. Tang, Guided Image Filtering, Pattern Analysis and Machine Intelligence, IEEE Transactions on, pp. 1397-1409, 02 October 2012. 

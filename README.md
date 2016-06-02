@@ -96,7 +96,7 @@ files:
 
 Reference Code used as the basis for some C++ DE functions (GNU Public License) - [CrossScaleStereo](https://github.com/rookiepig/CrossScaleStereo)
 
-###Literature
+### Literature
 
 <a name="Hosni2011CVPR">[Hosni2011CVPR]</a>: C. Rhemann, A. Hosni, M. Bleyer, C. Rother, and M. Gelautz. Fast cost-volume filtering for visual correspondence and beyond. In CVPR, 2011
 

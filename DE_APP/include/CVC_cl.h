@@ -6,7 +6,6 @@
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 #include "common.h"
-#include "image.h"
 
 // CVPR 11
 #define BORDER_THRES 0.011764
@@ -29,28 +28,24 @@ public:
     //Data Variables
     Mat lGray, rGray;
 	Mat lGrdX, rGrdX;
-	Mat tmp;
 	int maxDis;
 
 	//OpenCL Variables
-	cl_context context;
-    cl_command_queue commandQueue;
+    cl_context* context;
+	cl_command_queue* commandQueue;
     cl_program program;
     cl_kernel kernel;
-    cl_device_id device;
-    unsigned int numberOfMemoryObjects;
-    cl_mem memoryObjects[6];
     cl_int errorNumber;
     cl_event event;
 
     cl_int width, height, channels, dispRange;
     size_t bufferSize_color, bufferSize_grad, bufferSize_costVol;
-    //cl_float* lImgData, *rImgData, *lGrdXData, *rGrdXData; //Input buffers
     size_t globalWorksize[3];
-    //cl_float* lcost_cl,  *rcost_cl; //Output buffers
 
-    CVC_cl(Mat l, const int d);
+	enum buff_id {CVC_LIMG = 0, CVC_RIMG, CVC_LGRDX, CVC_RGRDX, CV_LCV, CV_RCV, DS_LDM, DS_RDM};
+
+    CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id device, Mat l, const int d);
     ~CVC_cl(void);
 
-	int buildCV(const Mat& lImg, const Mat& rImg, Mat* lcostVol, Mat* rcostVol);
+	int buildCV(const Mat& lImg, const Mat& rImg, cl_mem* memoryObjects);
 };

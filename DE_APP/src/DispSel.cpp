@@ -42,6 +42,7 @@ void *DS_X(void *thread_arg)
 		}
 		dispData[x] = minDis;
 	}
+	return (void*)0;
 }
 
 void DispSel::CVSelect_thread(Mat* costVol, const int maxDis, Mat& dispMap, int threads)
@@ -75,6 +76,7 @@ void DispSel::CVSelect_thread(Mat* costVol, const int maxDis, Mat& dispMap, int 
             //printf("Joining Disparity Selection @ y = %d\n", d);
         }
 	}
+	return;
 }
 
 void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& disMap)
@@ -103,4 +105,5 @@ void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& disMap)
             disData[x] = minDis * 4;
         }
     }
+    return;
 }

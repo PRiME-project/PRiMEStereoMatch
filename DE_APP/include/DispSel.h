@@ -6,7 +6,7 @@
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 
-#define DOUBLE_MAX 1e10
+#define DOUBLE_MAX 1e5
 
 class DispSel
 {

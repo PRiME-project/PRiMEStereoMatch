@@ -1,9 +1,10 @@
 /*---------------------------------------------------------------------------
-   cvf.cl - OpenCL Boxfilter Kernel
+   boxfilter_vector16.cl - OpenCL Boxfilter Kernel
   ---------------------------------------------------------------------------
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
   ---------------------------------------------------------------------------*/
+
 /**
  * \brief Volume BoxFiltering kernel function.
  * \param[in] pIn -  Input data.
@@ -33,7 +34,6 @@ __kernel void boxfilter(__global const float* pIn,
 	float16 row[9][9];
 	float16 res[1];
 
-	#pragma unroll
 	for (int r=0; r<load_rows; r++)
 	{
 			row[r][0] = vload16(0, pIn + offset + width*r);
@@ -47,13 +47,10 @@ __kernel void boxfilter(__global const float* pIn,
 			row[r][7] = (float16)(row[r][0].s789abcde, row[r][8].s789abcde);
 	}
 
-	#pragma unroll
 	for (int r=0; r<9; r++)
 	{
-		#pragma unroll
 		for (int c=0; c<9; c++)
 		{
-			#pragma unroll
 			for (int i=0; i<calc_rows; i++)
 			{
 				res[i] += row[r+i][c];
@@ -61,11 +58,9 @@ __kernel void boxfilter(__global const float* pIn,
 		}
 	}
 
-	#pragma unroll
 	for (int i=0; i<calc_rows; i++)
 	{
 		res[i] /= 81;
 		vstore16(res[i], 0, pOut + offset + width*i + 4);
 	}
 }
-

@@ -12,7 +12,8 @@
  * \param[out] pOut - Output filtered data.
  */
 __kernel void boxfilter(__global const float* pIn,
-						const int radius,
+						const int width,
+						const int height,
                   		__global float* pOut)
 {
     /* [Kernel size] */
@@ -26,8 +27,8 @@ __kernel void boxfilter(__global const float* pIn,
     const int x = get_global_id(0);
     const int y = get_global_id(1);
     const int d = get_global_id(2);
-    const int width = get_global_size(0);
-    const int height = get_global_size(1);
+    //const int width = get_global_size(0);
+    //const int height = get_global_size(1);
 
     const int offset = (((d * height) + y) * width) + x;
 
@@ -36,9 +37,9 @@ __kernel void boxfilter(__global const float* pIn,
 	float16 row_below = vload16(0, pIn + offset + width*2);
 
 //	mem obj + img col & row + centre of filter kernel = x
-	*(pOut + offset + width + (radius-1)/2 + 1) = 
+	*(pOut + offset + width + (9-1)/2 + 1) = 
 		(row_above.s0 + row_above.s1 + row_above.s2 + row_above.s3 + row_above.s4 + row_above.s5 + row_above.s6 + row_above.s7 + row_above.s8 + 
 		row_middl.s0 + row_middl.s1 + row_middl.s2 + row_middl.s3 + row_middl.s4 + row_middl.s5 + row_middl.s6 + row_middl.s7 + row_middl.s8 + 
 		row_below.s0 + row_below.s1 + row_below.s2 + row_below.s3 + row_below.s4 + row_below.s5 + row_below.s6 + row_below.s7 + row_below.s8)/ 
-		(radius*radius);
+		81;
 }

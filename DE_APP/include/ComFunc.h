@@ -11,12 +11,10 @@
 #include <stdint.h>
 #include <sstream>
 #include <cstddef>
-
 #include <string>
 #include <time.h>
 #include <unistd.h>
 #include <math.h>
-
 #include <ctime>
 #include <chrono>
 
@@ -29,6 +27,8 @@
 #else
 #include <CL/cl.h>
 #endif
+#include <CL/cl_ext.h>
+
 //OpenCV Header
 #include <opencv2/opencv.hpp>
 
@@ -44,6 +44,8 @@
 
 #define MAX_GPU_THREADS 256
 #define MIN_GPU_THREADS 4
+
+#define OCL_STATS 0
 
 using namespace cv;
 using namespace std;

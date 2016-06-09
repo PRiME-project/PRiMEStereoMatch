@@ -4,7 +4,7 @@
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
   ---------------------------------------------------------------------------*/
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+//#pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
 /**
  * \brief Disparity Estimation kernel function.
@@ -15,13 +15,13 @@
  * \param[out] ldispMap - Left Disparity Map.
  * \param[out] rdispMap - Right Disparity Map.
  */
-__kernel void dispsel(__global const float* restrict lcostVol,
-                 	__global const float* restrict rcostVol,
+__kernel void dispsel(__global const float* lcostVol,
+                 	__global const float* rcostVol,
                   	const int height,
                   	const int width,
                   	const int maxDis,
-                  	__global char* restrict ldispMap,
-                  	__global char* restrict rdispMap)
+                  	__global char* ldispMap,
+                  	__global char* rdispMap)
 {
     /* [Kernel size] */
     /*
@@ -36,7 +36,7 @@ __kernel void dispsel(__global const float* restrict lcostVol,
 	int costVol_offset;
 
     /* *************** Left Disparity Selection ********************** */
-	float minCost = 1e10; //DOUBLE_MAX
+	float minCost = 1e5f; //DOUBLE_MAX
 	char minDis = 0;
 
 	for(int d = 1; d < maxDis; d++)
@@ -48,10 +48,10 @@ __kernel void dispsel(__global const float* restrict lcostVol,
 			minDis = d;
 		}
 	}
-	*(ldispMap + dispMap_offset + x) = minDis * 4;
+	*(ldispMap + dispMap_offset + x) = minDis;
 
 	/* *************** Right Disparity Selection ********************** */
-	minCost = 1e10;
+	minCost = 1e5f;
 	minDis = 0;
 
 	for(int d = 1; d < maxDis; d++)
@@ -63,5 +63,5 @@ __kernel void dispsel(__global const float* restrict lcostVol,
 			minDis = d;
 		}
 	}
-	*(rdispMap + dispMap_offset + x) = minDis * 4;
+	*(rdispMap + dispMap_offset + x) = minDis;
 }

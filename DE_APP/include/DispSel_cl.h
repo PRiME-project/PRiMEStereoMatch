@@ -6,9 +6,8 @@
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 #include "common.h"
-#include "image.h"
 
-#define DOUBLE_MAX 1e10
+#define DOUBLE_MAX 1e5
 
 class DispSel_cl
 {
@@ -18,25 +17,22 @@ public:
 	const int maxDis;
 
     //OpenCL Variables
-	cl_context context;
-    cl_command_queue commandQueue;
+    cl_context* context;
+	cl_command_queue* commandQueue;
     cl_program program;
     cl_kernel kernel;
-    cl_device_id device;
-    unsigned int numberOfMemoryObjects;
-    cl_mem memoryObjects[4];
     cl_int errorNumber;
-    //cl_event event;
+    cl_event event;
 
 	cl_int width, height;
-    size_t bufferSize_char, bufferSize_grad, bufferSize_costVol;
-    cl_float* lcostVol_cl,  *rcostVol_cl; //Input buffers
+	size_t bufferSize_2D_C1C, bufferSize_2D_C1F, bufferSize_3D_C1F;
     size_t globalWorksize[2];
-    cl_char* ldispMap_cl, *rdispMap_cl; //Output buffers
 
-	DispSel_cl(Mat l, const int d);
+	enum buff_id {CVC_LIMG = 0, CVC_RIMG, CVC_LGRDX, CVC_RGRDX, CV_LCV, CV_RCV, DS_LDM, DS_RDM};
+
+	DispSel_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id device, Mat l, const int d);
 	~DispSel_cl(void);
 
-	int CVSelect(Mat* lcostVol, Mat* rcostVol, Mat& ldispMap, Mat& rdispMap);
+	int CVSelect(cl_mem* memoryObjects, Mat& ldispMap, Mat& rdispMap);
 };
 

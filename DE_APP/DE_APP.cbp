@@ -22,7 +22,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="STEREO_GIF  IMAGE data/im2.png data/im6.png" />
+				<Option parameters="STEREO_GIF  IMAGE data/im2.png data/im6.png 8" />
 				<Compiler>
 					<Add option="-O3" />
 				</Compiler>
@@ -33,18 +33,13 @@
 			<Add option="`pkg-config --cflags opencv`" />
 			<Add directory="include" />
 			<Add directory="src" />
-			<Add directory="common" />
 		</Compiler>
 		<Linker>
 			<Add option="-lpthread -lrt -lOpenCL" />
+			<Add option="-lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_video -lopencv_objdetect -lopencv_calib3d" />
 			<Add option="`pkg-config --libs opencv`" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="common/common.cpp" />
-		<Unit filename="common/common.h" />
-		<Unit filename="common/image.cpp" />
-		<Unit filename="common/image.h" />
-		<Unit filename="include/BoxFilter.h" />
 		<Unit filename="include/CVC.h" />
 		<Unit filename="include/CVC_cl.h" />
 		<Unit filename="include/CVF.h" />
@@ -56,8 +51,8 @@
 		<Unit filename="include/PP.h" />
 		<Unit filename="include/StereoCalib.h" />
 		<Unit filename="include/StereoMatch.h" />
+		<Unit filename="include/common.h" />
 		<Unit filename="main.cpp" />
-		<Unit filename="src/BoxFilter.cpp" />
 		<Unit filename="src/CVC.cpp" />
 		<Unit filename="src/CVC_cl.cpp" />
 		<Unit filename="src/CVF.cpp" />
@@ -68,6 +63,7 @@
 		<Unit filename="src/PP.cpp" />
 		<Unit filename="src/StereoCalib.cpp" />
 		<Unit filename="src/StereoMatch.cpp" />
+		<Unit filename="src/common.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

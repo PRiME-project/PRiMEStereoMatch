@@ -6,29 +6,29 @@
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 #include "common.h"
-#include "image.h"
 
 class BoxFilter
 {
 public:
 
+	int height, width, dispRange;
+
     //OpenCL Variables
-	cl_context context;
-    cl_command_queue commandQueue;
+    cl_context* context;
+	cl_command_queue* commandQueue;
     cl_program program;
-    cl_kernel kernel;
-    cl_device_id device;
-    unsigned int numberOfMemoryObjects;
-    cl_mem memoryObjects[2];
+    cl_kernel kernel_bf;
     cl_int errorNumber;
     cl_event event;
 
-    cl_int height, width, radius, dispRange;
-    size_t bufferSize;
-    size_t globalWorksize[3];
+    //cl_int height, width, radius, dispRange;
+    size_t bufferSize_char, bufferSize_color, bufferSize_grad, bufferSize_costVol;
+    size_t globalWorksize_bf[3];
 
-	BoxFilter(int _height, int _width, int _radius, int _dispRange);
+	BoxFilter(cl_context* context, cl_command_queue* commandQueue, cl_device_id device,
+				cl_int _height, cl_int _width, cl_int radius, cl_int _dispRange);
 	~BoxFilter(void);
 
-	int filter(Mat *in_ptr, Mat *out_ptr);
+	int filter(cl_mem *cl_in, cl_mem *cl_out);
+	int matMul(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out);
 };

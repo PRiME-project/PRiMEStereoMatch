@@ -16,7 +16,6 @@ StereoMatch::StereoMatch(int argc, char *argv[], bool gotOpenCLDev)
 	maxDis = 64;
 	de_mode = OCV_DE;
 	num_threads = MAX_CPU_THREADS;
-	filter = true;
 	gotOCLDev = gotOpenCLDev;
 
 	inputArgParser(argc, argv);
@@ -294,8 +293,7 @@ int StereoMatch::setupOpenCVSGBM(int channels, int ndisparities)
 	ssgbm->setUniquenessRatio(10);
     ssgbm->setSpeckleWindowSize(100);
     ssgbm->setSpeckleRange(32);
-	ssgbm->setMode(StereoSGBM::MODE_HH);
-	//ssgbm->setMode(StereoSGBM::MODE_SGBM);
+	ssgbm->setMode(StereoSGBM::MODE_HH); // enum{ MODE_SGBM = 0, MODE_HH = 1, MODE_SGBM_3WAY = 2 }
 
     return 0;
 }
@@ -375,53 +373,47 @@ int StereoMatch::Compute()
 		SMDE->threads = num_threads;
 
 		// ******** Cost Volume Construction Code ******** //
-		printf("Cost Volume Construction Started..\n");
-		cvc_time = get_rt();
+		//printf("Cost Volume Construction Started..\n");
 
 		if(de_mode == OCV_DE || !gotOCLDev)
+		{
+			cvc_time = get_rt();
 			SMDE->CostConst_CPU();
-		else
-			SMDE->CostConst_GPU();
+			cvc_time = get_rt() - cvc_time;
 
-		cvc_time = get_rt() - cvc_time;
-		printf("Cost Volume Construction Done!\n");
-
-		// ******** Cost Volume Filtering Code ******** //
-		if(filter){
-			printf("Cost Volume Filtering Started..\n");
 			cvf_time = get_rt();
-
-			if(de_mode == OCV_DE || !gotOCLDev)
-				SMDE->CostFilter_CPU();
-			else
-				SMDE->CostFilter_GPU();
-
+			SMDE->CostFilter_CPU();
 			cvf_time = get_rt()- cvf_time;
-			printf("Cost Volume Filtering Done!\n");
-		}
-		// ******** Disparity Selection Code ******** //
-		printf("Disparity Selection Started...\n");
-		dispsel_time = get_rt();
 
-		if(de_mode == OCV_DE || !gotOCLDev)
+			dispsel_time = get_rt();
 			SMDE->DispSelect_CPU();
+			dispsel_time = get_rt() - dispsel_time;
+
+			pp_time = get_rt();
+			SMDE->PostProcess_CPU();
+			pp_time = get_rt() - pp_time;
+		}
 		else
+		{
+			cvc_time = get_rt();
+			SMDE->CostConst_GPU();
+			cvc_time = get_rt() - cvc_time;
+
+			cvf_time = get_rt();
+			SMDE->CostFilter_GPU();
+			cvf_time = get_rt()- cvf_time;
+
+			dispsel_time = get_rt();
 			SMDE->DispSelect_GPU();
+			dispsel_time = get_rt() - dispsel_time;
 
-		dispsel_time = get_rt() - dispsel_time;
-		printf("Disparity Selection Done!\n");
+			pp_time = get_rt();
+			//SMDE->PostProcess_CPU();
+			pp_time = get_rt() - pp_time;
+		}
 
-		// ******** Post Processing Code ******** //
-		printf("Post Processing Disparity Map...\n");
-		pp_time = get_rt();
-
-		if(de_mode == OCV_DE || !gotOCLDev)
-			SMDE->PostProcess_CPU();
-		else
-			SMDE->PostProcess_CPU();
-
-		pp_time = get_rt() - pp_time;
-		printf("Post Processing Done!\n");
+//		imwrite("lDispMap-pp.png", SMDE->lDisMap*4);
+//		imwrite("rDispMap-pp.png", SMDE->rDisMap*4);
 
 		// ******** Show Disparity Map  ******** //
 		applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET);
@@ -435,7 +427,7 @@ int StereoMatch::Compute()
 		printf("CVF Time: %.2f ms\n",cvf_time/1000);
 		printf("DispSel Time: %.2f ms\n",dispsel_time/1000);
 		printf("PP Time: %.2f ms\n",pp_time/1000);
-		printf("DE Time: %.2f ms\n",(get_rt() - de_time)/1000);
+		printf("DE Time: %.2f ms\n\n",(get_rt() - de_time)/1000);
 
 	}
 	//Perform these steps for all algorithms:
@@ -444,13 +436,13 @@ int StereoMatch::Compute()
 	return de_time;
 }
 
-void StereoMatch::inputArgParser(int argc, char *argv[])
+int StereoMatch::inputArgParser(int argc, char *argv[])
 {
 	if( argc < 3 ) {
         printf("\nPlease specify a Matching Algorithm and Media Type as a minimum requirement:\n" );
-        printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] VIDEO ( [RECALIBRATE?] [RECAPTURE] )\n" );
+        printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] VIDEO ( [RECALIBRATE?] [RECAPTURE] [NUM THREADS] )\n" );
         printf("Usage: \t or");
-        printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
+        printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename ( [NUM THREADS] )\n" );
 		exit(1);
 	}
 
@@ -540,4 +532,10 @@ void StereoMatch::inputArgParser(int argc, char *argv[])
 		printf("Usage: ./<prog_name> [Matching Algorithm] [MEDIA TYPE = VIDEO|IMAGE [image_filenames]] ([RECALIBRATE?] [RECAPTURE])\n" );
 		exit(1);
 	}
+	if(atoi(argv[argc-1]) > 0)
+	{
+		num_threads = atoi(argv[argc-1]);
+		printf("Using %d threads for executing the Application\n", num_threads);
+	}
+	return 1;
 }

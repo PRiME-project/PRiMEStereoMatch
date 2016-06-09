@@ -5,12 +5,11 @@
    Email: cl19g10 [at] ecs.soton.ac.uk
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
-#include "BoxFilter.h"
+//#include "BoxFilter.h"
 #include "common.h"
-#include "image.h"
 
 #define R_WIN 9
-#define EPS 0.0001
+#define EPS 0.0001f
 
 //
 // GIF for Cost Computation
@@ -18,42 +17,60 @@
 class CVF_cl
 {
 public:
+	//OpenCL Variables
+    cl_context* context;
+	cl_command_queue* commandQueue;
+    cl_program program;
+    cl_kernel kernel_mmsd, kernel_mmdd, kernel_mdsd, kernel_bf;
+    cl_kernel kernel_split, kernel_sub, kernel_add, kernel_add_const;
+    cl_int errorNumber;
+    cl_event event;
 
-    Mat Img_ref;
-	int hei;
-    int wid;
-    int maxDis;
+    cl_int width, height, channels, dispRange;
+    size_t bufferSize_2D_C1F, bufferSize_2D_C3F, bufferSize_3D_C1F;
 
-    BoxFilter *bf_2D, *bf_3D;
+    size_t globalWorksize_3D[3], globalWorksize_2D[3];
+    size_t globalWorksize_bf_3D[3], globalWorksize_bf_2D[3];
+    size_t globalWorksize_split[2];
 
-	//Mat are 2D (images) objects
-	Mat rgb[3];
-//	Mat mean_I_r, mean_I_g, mean_I_b;
-//	Mat rgb_rr, rgb_rg, rgb_rb, rgb_gg, rgb_gb, rgb_bb;
-//	Mat rgb_rr_bf, rgb_rg_bf, rgb_rb_bf, rgb_gg_bf, rgb_gb_bf, rgb_bb_bf;
-//	Mat var_I_rr, var_I_rg, var_I_rb, var_I_gg, var_I_gb, var_I_bb;
-//	Mat invrr, invrg, invrb, invgg, invgb, invbb;
-//	Mat covDet;
-	Mat tmp_2DA_r, tmp_2DA_g, tmp_2DA_b;
-	Mat tmp_2DA_rr, tmp_2DA_rg, tmp_2DA_rb;
-	Mat tmp_2DA_gg, tmp_2DA_gb, tmp_2DA_bb;
-	Mat tmp_2DB_rr, tmp_2DB_rg, tmp_2DB_rb;
-	Mat tmp_2DB_gg, tmp_2DB_gb, tmp_2DB_bb;
+	enum buff_id {CVC_LIMG = 0, CVC_RIMG, CVC_LGRDX, CVC_RGRDX, CV_LCV, CV_RCV, DS_LDM, DS_RDM};
 
-	//Mat* are 3D (volume) objects
-	Mat* mean_cv;
-//	Mat *Icv_r, *Icv_g, *Icv_b;
-//	Mat *mean_Icv_r, *mean_Icv_g, *mean_Icv_b;
-//	Mat *cov_Icv_r, *cov_Icv_g, *cov_Icv_b;
-//	Mat *a_r, *a_g, *a_b;
-//	Mat *a_r_bf, *a_g_bf, *a_b_bf;
-	Mat* tmp_3DA_r, *tmp_3DA_g, *tmp_3DA_b;
-	Mat* tmp_3DB_r, *tmp_3DB_g, *tmp_3DB_b;
-	Mat *b, *b_bf;
+	cl_mem Ir, Ig, Ib;
+	cl_mem mean_Ir, mean_Ig, mean_Ib;
+	cl_mem mean_cv;
+//	cl_mem Icv_r, Icv_g, Icv_b;
+//	cl_mem mean_Icv_r, mean_Icv_g, mean_Icv_b;
+//	cl_mem mean_Ir_cv, mean_Ig_cv, mean_Ib_cv;
+//	cl_mem cov_Icv_r, cov_Icv_g, cov_Icv_b;
+	cl_mem Irr, Irg, Irb, Igg, Igb, Ibb;
+	cl_mem mean_Irr, mean_Irg, mean_Irb, mean_Igg, mean_Igb, mean_Ibb;
+	cl_mem var_Irr, var_Irg, var_Irb, var_Igg, var_Igb, var_Ibb;
+	cl_mem inv_rr, inv_rg, inv_rb, inv_gg, inv_gb, inv_bb;
+	cl_mem inv_ggbb, inv_gbrb, inv_rggb, inv_rrbb, inv_rbrg, inv_rrgg;
+	cl_mem inv_gbgb, inv_rgbb, inv_ggrb, inv_rbrb, inv_rrgb, inv_rgrg;
+	cl_mem covDet;
+//	cl_mem a_r, a_rrr, a_rgg, a_rbb;
+//	cl_mem a_g, a_rrg, a_ggg, a_gbb;
+//	cl_mem a_b, a_rbr, a_gbg, a_bbb;
+//	cl_mem mean_Ir_ar, mean_Ig_ag, mean_Ib_ab;
+//	cl_mem mean_ar, mean_ag, mean_ab;
 
-	CVF_cl(Mat I, const int d);
+	cl_mem b, mean_b;
+	cl_mem a_r, a_g, a_b;
+	cl_mem tmp_3DA_r, tmp_3DA_g, tmp_3DA_b;
+	cl_mem tmp_3DB_r, tmp_3DB_g, tmp_3DB_b;
+
+	CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id device, Mat I, const int d);
 	~CVF_cl(void);
 
-	int filterCV(const Mat& Img, Mat* costVol);
-	int filterCV_alpha(const Mat& Img, Mat* costVol);
+	int filterCV(cl_mem* cl_Img, cl_mem* cl_costVol);
+
+	int elementwiseMulSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *globalworksize);
+	int elementwiseMulDD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out);
+	int elementwiseDivSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *globalworksize);
+    int split(cl_mem* cl_Img, cl_mem* cl_Ir, cl_mem* cl_Ig, cl_mem* cl_Ib);
+    int sub(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *globalworksize);
+    int add(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *globalworksize);
+    int add_constant(cl_mem *cl_in_a, float const_add, cl_mem *cl_out);
+    int boxfilter(cl_mem *cl_in, cl_mem *cl_out, size_t *globalworksize);
 };

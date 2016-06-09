@@ -9,6 +9,7 @@
 
 //Functions in main
 bool openCLdevicepoll(void);
+int getmicinfo(void);
 void *getDepthMap(void*);
 void HCI(void);
 
@@ -61,8 +62,8 @@ void *getDepthMap(void *arg)
 	while(!end_de)
 	{
 		sm->Compute();
-		printf("MAIN: DE Computed...\n");
-		printf("MAIN: Press h for help text.\n\n");
+		//printf("MAIN: DE Computed...\n");
+		//printf("MAIN: Press h for help text.\n\n");
 	}
 	return(void*)0;
 }
@@ -73,16 +74,6 @@ void HCI(void)
 	//User interface input handler
     char key = ' ';
     while(key != 'q'){
-        if(key > '0' && key < '9')
-        {
-            if(!sm->de_mode){
-                sm->num_threads = key - '0';
-                printf("| Threading level changed to %d |\n", sm->num_threads);
-            }
-            else{
-                printf("| Threading level can only be set when in OpenCV-CPU Mode |\n");
-            }
-        }
         switch(key){
             case 'h':
             {
@@ -99,8 +90,6 @@ void HCI(void)
                 printf("| Current Options:\n");
                 printf("|   Matching Algorithm: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
                 printf("|   Computation mode: %s\n", sm->de_mode ? "OpenCL" : "pthreads");
-                printf("|   Thread level: %d\n", sm->num_threads);
-                printf("|   Filtering: %s\n", sm->filter ? "ON" : "OFF");
                 printf("|-------------------------------------------------------------------|\n");
                 break;
             }
@@ -119,12 +108,6 @@ void HCI(void)
 					printf("| m: Mode can only be changed when using the STEREO_GIF Matching Algoritm.\n");
 				}
 				break;
-            }
-            case 'f':
-            {
-                sm->filter = !sm->filter;
-                printf("| f: Filtering turned %s |\n", sm->filter ? "ON" : "OFF");
-                break;
             }
         }
         key = waitKey(5);
@@ -145,6 +128,7 @@ bool openCLdevicepoll(void)
     cl_uint maxComputeUnits;
     cl_uint maxWorkGroupSize;
     cl_uint maxWorkItemDims;
+    cl_device_partition_property *partition_properties;
 
     // get all platforms
     clGetPlatformIDs(0, NULL, &platformCount);
@@ -173,6 +157,20 @@ bool openCLdevicepoll(void)
             value = (char*) malloc(valueSize);
             clGetDeviceInfo(devices[j], CL_DEVICE_NAME, valueSize, value, NULL);
             printf("%d. Device: %s\n", j+1, value);
+            free(value);
+
+            // print device type
+            clGetDeviceInfo(devices[j], CL_DEVICE_TYPE, 0, NULL, &valueSize);
+            value = (char*) malloc(valueSize);
+            clGetDeviceInfo(devices[j], CL_DEVICE_TYPE, valueSize, value, NULL);
+            if((int)*value == CL_DEVICE_TYPE_CPU)
+				printf(" %d.%d Device Type: %s\n", j+1, 0, "CPU");
+			else if((int)*value == CL_DEVICE_TYPE_GPU)
+				printf(" %d.%d Device Type: %s\n", j+1, 0, "GPU");
+			else if((int)*value == CL_DEVICE_TYPE_ACCELERATOR)
+				printf(" %d.%d Device Type: %s\n", j+1, 0, "ACCELERATOR");
+			else
+				printf(" %d.%d Device Type: %s\n", j+1, 0, "DEFAULT/ALL");
             free(value);
 
             // print hardware device version
@@ -215,6 +213,9 @@ bool openCLdevicepoll(void)
             clGetDeviceInfo(devices[j], CL_DEVICE_IMAGE_SUPPORT,
                     sizeof(maxWorkItemDims), &maxWorkItemDims, NULL);
             printf(" %d.%d Image Support?: %s\n", j+1, 7, maxWorkItemDims ? "Yes" : "No");
+
+//            clGetDeviceInfo(devices[j], CL_DEVICE_PARTITION_PROPERTIES, sizeof(partition_properties), &partition_properties, NULL);
+//            printf(" %d.%d Partition Properties: %ld\n", j+1, 8, partition_properties[0]);
         }
 
         free(devices);

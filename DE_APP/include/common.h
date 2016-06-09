@@ -82,11 +82,18 @@ std::string imageChannelDataTypeToString(cl_channel_type channelDataType);
 bool cleanUpOpenCL(cl_context context, cl_command_queue commandQueue, cl_program program, cl_kernel kernel, cl_mem* memoryObjects, int numberOfMemoryObjects);
 
 /**
- * \brief Create an OpenCL context on a GPU on the first available platform.
+ * \brief Create an OpenCL context on a device on the first available platform.
  * \param[out] context Pointer to the created OpenCL context.
  * \return False if an error occurred, otherwise true.
  */
 bool createContext(cl_context* context);
+
+/**
+ * \brief Create an OpenCL context for a sub-device of a device on the first available platform.
+ * \param[out] context Pointer to the created OpenCL context.
+ * \return False if an error occurred, otherwise true.
+ */
+bool createSubDeviceContext(cl_context* context, cl_int numComputeUnits);
 
 /**
  * \brief Create an OpenCL command queue for a given context.

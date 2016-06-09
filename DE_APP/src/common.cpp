@@ -7,7 +7,6 @@
  * copies and copies may only be made to the extent permitted
  * by a licensing agreement from ARM Limited.
  */
-#include "ComFunc.h"
 #include "common.h"
 
 using namespace std;
@@ -239,7 +238,60 @@ bool createContext(cl_context* context)
 
     /* Get a context with a GPU device from the platform found above. */
     cl_context_properties contextProperties [] = {CL_CONTEXT_PLATFORM, (cl_context_properties)firstPlatformID, 0};
-    *context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_GPU, NULL, NULL, &errorNumber);
+    //*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_CPU, NULL, NULL, &errorNumber);
+    //*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_GPU, NULL, NULL, &errorNumber);
+    *context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_ACCELERATOR, NULL, NULL, &errorNumber);
+    if (!checkSuccess(errorNumber))
+    {
+        cerr << "Creating an OpenCL context failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool createSubDeviceContext(cl_context* context, cl_int numComputeUnits)
+{
+    cl_int errorNumber = 0;
+    cl_uint numberOfPlatforms = 0;
+    cl_platform_id firstPlatformID = 0;
+
+    /* Retrieve a single platform ID. */
+    if (!checkSuccess(clGetPlatformIDs(1, &firstPlatformID, &numberOfPlatforms)))
+    {
+        cerr << "Retrieving OpenCL platforms failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        return false;
+    }
+
+    if (numberOfPlatforms <= 0)
+    {
+        cerr << "No OpenCL platforms found. " << __FILE__ << ":"<< __LINE__ << endl;
+        return false;
+    }
+
+    /* Get a context with a GPU device from the platform found above. */
+    cl_context_properties contextProperties [] = {CL_CONTEXT_PLATFORM, (cl_context_properties)firstPlatformID, 0};
+
+    cl_uint numDevices;
+    cl_device_id device_id;
+
+	// Get Device ID from selected platform:
+	clGetDeviceIDs( firstPlatformID, CL_DEVICE_TYPE_ACCELERATOR, 1, &device_id, &numDevices);
+
+	// Create two sub-device properties: Partition By Counts
+	//cl_device_partition_property props[] = { CL_DEVICE_PARTITION_BY_COUNTS, 4, CL_DEVICE_PARTITION_BY_COUNTS_LIST_END, 0};
+	cl_device_partition_property props[] = { CL_DEVICE_PARTITION_EQUALLY, 8, 0};
+
+	cl_device_id subdevice_id;
+	cl_uint num_entries = 1;
+	// Create the sub-devices:
+	if (!checkSuccess(clCreateSubDevices(device_id, props, num_entries, &subdevice_id, &numDevices)))
+    {
+        cerr << "Creating an OpenCL Sub Device failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        return false;
+    }
+	// Create the context:
+	*context = clCreateContext(contextProperties, 1, &subdevice_id, NULL, NULL, &errorNumber);
     if (!checkSuccess(errorNumber))
     {
         cerr << "Creating an OpenCL context failed. " << __FILE__ << ":"<< __LINE__ << endl;
@@ -281,7 +333,9 @@ bool createCommandQueue(cl_context context, cl_command_queue* commandQueue, cl_d
     *device = devices[0];
     delete [] devices;
 
+	//const cl_command_queue_properties queue_properties = NULL;
     /* Set up the command queue with the selected device. */
+    //*commandQueue = clCreateCommandQueue(context, *device, &queue_properties, &errorNumber);
     *commandQueue = clCreateCommandQueue(context, *device, CL_QUEUE_PROFILING_ENABLE, &errorNumber);
     if (!checkSuccess(errorNumber))
     {

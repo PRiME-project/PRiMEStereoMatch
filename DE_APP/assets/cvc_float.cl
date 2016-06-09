@@ -57,22 +57,22 @@ __kernel void cvc(__global const float* restrict lImg,
         // three color diff
         lC = fabs(lC - rC);
         // gradient diff
-        grdDiff = fabs( lGX - rGX );
+        grdDiff = fabs(lGX - rGX);
     }
     else
     {
         // three color diff at img boundary
-        lC = fabs( lC - 1.0); //BORDER_CONSTANT = 1.0
+        lC = fabs(lC - 1.0f); //BORDER_CONSTANT = 1.0
         // gradient diff
-        grdDiff = fabs( lGX - 1.0 ); //BORDER_CONSTANT = 1.0
+        grdDiff = fabs(lGX - 1.0f); //BORDER_CONSTANT = 1.0
     }
     clrDiff = (float4)(lC.s0 + lC.s1 + lC.s2,
 					lC.s3 + lC.s4 + lC.s5,
 					lC.s6 + lC.s7 + lC.s8,
-					lC.s9 + lC.sa + lC.sb) * 0.3333333333;
+					lC.s9 + lC.sa + lC.sb) * 0.3333333333f;
 
-    clrDiff = clrDiff > 0.028 ? 0.028 : clrDiff;
-    grdDiff = grdDiff > 0.008 ? 0.008 : grdDiff;
+    clrDiff = clrDiff > 0.028f ? 0.028f : clrDiff;
+    grdDiff = grdDiff > 0.008f ? 0.008f : grdDiff;
     vstore4(0.9 * clrDiff + 0.1 * grdDiff, 0, lcostVol + costVol_offset); //data, offset, addr
 //	*(lcostVol + costVol_offset + 4) = 0.9 * clrDiff.s4 + 0.1 * grdDiff.s4;
 
@@ -94,22 +94,22 @@ __kernel void cvc(__global const float* restrict lImg,
         // three color diff
         lC = fabs(lC - rC);
         // gradient diff
-        grdDiff = fabs( lGX - rGX );
+        grdDiff = fabs(lGX - rGX);
     }
     else
     {
         // three color diff at img boundary
-        lC = fabs( lC - 1.0); //BORDER_CONSTANT = 1.0
+        lC = fabs(lC - 1.0f); //BORDER_CONSTANT = 1.0
         // gradient diff
-        grdDiff = fabs( lGX - 1.0 ); //BORDER_CONSTANT = 1.0
+        grdDiff = fabs(lGX - 1.0f); //BORDER_CONSTANT = 1.0
     }
     clrDiff = (float4)(lC.s0 + lC.s1 + lC.s2,
 					lC.s3 + lC.s4 + lC.s5,
 					lC.s6 + lC.s7 + lC.s8,
-					lC.s9 + lC.sa + lC.sb) * 0.3333333333;
+					lC.s9 + lC.sa + lC.sb) * 0.3333333333f;
 
-    clrDiff = clrDiff > 0.028 ? 0.028 : clrDiff;
-    grdDiff = grdDiff > 0.008 ? 0.008 : grdDiff;
-	vstore4(0.9 * clrDiff + 0.1 * grdDiff, 0, rcostVol + costVol_offset); //data, offset, addr
+    clrDiff = clrDiff > 0.028f ? 0.028f : clrDiff;
+    grdDiff = grdDiff > 0.008f ? 0.008f : grdDiff;
+	vstore4(0.9f * clrDiff + 0.1f * grdDiff, 0, rcostVol + costVol_offset); //data, offset, addr
 	//*(rcostVol + costVol_offset + 4) = 0.9 * clrDiff.s4 + 0.1 * grdDiff.s4;
 }

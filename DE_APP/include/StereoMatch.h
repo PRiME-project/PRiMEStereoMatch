@@ -45,12 +45,9 @@ public:
 	DispEst* SMDE;
 	int de_mode;
 	int num_threads;
-	bool filter;
 
 	char left_img_filename[100];
 	char right_img_filename[100];
-//	char *left_img_filename = "data/view1.png";
-//	char *right_img_filename = "data/view5.png";
 
 	//Function prototypes
 	int Compute(void);
@@ -59,5 +56,5 @@ public:
 	int stereoCameraSetup(void);
 	int captureChessboards(void);
 	int setupOpenCVSGBM(int, int);
-	void inputArgParser(int argc, char *argv[]);
+	int inputArgParser(int argc, char *argv[]);
 };

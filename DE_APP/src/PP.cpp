@@ -304,6 +304,7 @@ void *wgtMed_row(void *thread_arg)
 			DisData[ x ] = filterDep;
 		}
 	}
+	return (void*)0;
 }
 
 void wgtMedian_thread(const Mat& Img, Mat& Dis, Mat& Valid, const int maxDis, const int threads)
@@ -339,6 +340,7 @@ void wgtMedian_thread(const Mat& Img, Mat& Dis, Mat& Valid, const int maxDis, co
             //fprintf(stderr, "Joining WM Filtering @ y = %d\n", d);
         }
 	}
+	return;
 }
 
 void saveChk(Mat& lValid, Mat& rValid)
@@ -369,6 +371,8 @@ void saveChk(Mat& lValid, Mat& rValid)
 	}
 	imwrite( "l_chk.png", lChk );
 	imwrite( "r_chk.png", rChk );
+
+	return;
 }
 
 void PP::processDM(const Mat& lImg, const Mat& rImg, Mat& lDisMap, Mat& rDisMap,
@@ -389,4 +393,5 @@ void PP::processDM(const Mat& lImg, const Mat& rImg, Mat& lDisMap, Mat& rDisMap,
 
 	//lrCheck(lDisMap, rDisMap, lValid, rValid);
 	//saveChk(lValid, rValid);
+	return;
 }

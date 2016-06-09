@@ -11,12 +11,12 @@ AR = ar
 LD = g++
 WINDRES = windres
 
-INC = -Iinclude -Isrc -Icommon
+INC = -Iinclude -Isrc
 CFLAGS = -std=c++0x `pkg-config --cflags opencv`
 RESINC = 
 LIBDIR = -L/usr/local/lib
 LIB = 
-LDFLAGS = -lpthread -lrt -lOpenCL `pkg-config --libs opencv`
+LDFLAGS = -lpthread -lrt -lOpenCL -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_video -lopencv_objdetect -lopencv_calib3d `pkg-config --libs opencv`
 
 INC_DEBUG = $(INC)
 CFLAGS_DEBUG = $(CFLAGS) -Wall -g
@@ -30,7 +30,7 @@ DEP_DEBUG =
 OUT_DEBUG = bin/Debug/DE_APP
 
 INC_RELEASE = $(INC)
-CFLAGS_RELEASE = $(CFLAGS)
+CFLAGS_RELEASE = $(CFLAGS) -O3
 RESINC_RELEASE = $(RESINC)
 RCFLAGS_RELEASE = $(RCFLAGS)
 LIBDIR_RELEASE = $(LIBDIR)
@@ -40,9 +40,9 @@ OBJDIR_RELEASE = obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = bin/Release/DE_APP
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/src/StereoMatch.o $(OBJDIR_DEBUG)/src/StereoCalib.o $(OBJDIR_DEBUG)/src/PP.o $(OBJDIR_DEBUG)/src/DispSel_cl.o $(OBJDIR_DEBUG)/src/DispSel.o $(OBJDIR_DEBUG)/src/DispEst.o $(OBJDIR_DEBUG)/src/CVF_cl.o $(OBJDIR_DEBUG)/src/CVF.o $(OBJDIR_DEBUG)/src/CVC_cl.o $(OBJDIR_DEBUG)/src/CVC.o $(OBJDIR_DEBUG)/src/BoxFilter.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/common/common.o $(OBJDIR_DEBUG)/common/image.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/src/common.o $(OBJDIR_DEBUG)/src/StereoMatch.o $(OBJDIR_DEBUG)/src/StereoCalib.o $(OBJDIR_DEBUG)/src/PP.o $(OBJDIR_DEBUG)/src/DispSel_cl.o $(OBJDIR_DEBUG)/src/DispSel.o $(OBJDIR_DEBUG)/src/DispEst.o $(OBJDIR_DEBUG)/src/CVF_cl.o $(OBJDIR_DEBUG)/src/CVF.o $(OBJDIR_DEBUG)/src/CVC_cl.o $(OBJDIR_DEBUG)/src/CVC.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/src/StereoMatch.o $(OBJDIR_RELEASE)/src/StereoCalib.o $(OBJDIR_RELEASE)/src/PP.o $(OBJDIR_RELEASE)/src/DispSel_cl.o $(OBJDIR_RELEASE)/src/DispSel.o $(OBJDIR_RELEASE)/src/DispEst.o $(OBJDIR_RELEASE)/src/CVF_cl.o $(OBJDIR_RELEASE)/src/CVF.o $(OBJDIR_RELEASE)/src/CVC_cl.o $(OBJDIR_RELEASE)/src/CVC.o $(OBJDIR_RELEASE)/src/BoxFilter.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/common/common.o $(OBJDIR_RELEASE)/common/image.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/src/common.o $(OBJDIR_RELEASE)/src/StereoMatch.o $(OBJDIR_RELEASE)/src/StereoCalib.o $(OBJDIR_RELEASE)/src/PP.o $(OBJDIR_RELEASE)/src/DispSel_cl.o $(OBJDIR_RELEASE)/src/DispSel.o $(OBJDIR_RELEASE)/src/DispEst.o $(OBJDIR_RELEASE)/src/CVF_cl.o $(OBJDIR_RELEASE)/src/CVF.o $(OBJDIR_RELEASE)/src/CVC_cl.o $(OBJDIR_RELEASE)/src/CVC.o
 
 all: debug release
 
@@ -50,9 +50,8 @@ clean: clean_debug clean_release
 
 before_debug: 
 	test -d bin/Debug || mkdir -p bin/Debug
-	test -d $(OBJDIR_DEBUG)/src || mkdir -p $(OBJDIR_DEBUG)/src
 	test -d $(OBJDIR_DEBUG) || mkdir -p $(OBJDIR_DEBUG)
-	test -d $(OBJDIR_DEBUG)/common || mkdir -p $(OBJDIR_DEBUG)/common
+	test -d $(OBJDIR_DEBUG)/src || mkdir -p $(OBJDIR_DEBUG)/src
 
 after_debug: 
 
@@ -60,6 +59,12 @@ debug: before_debug out_debug after_debug
 
 out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
 	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
+
+$(OBJDIR_DEBUG)/main.o: main.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c main.cpp -o $(OBJDIR_DEBUG)/main.o
+
+$(OBJDIR_DEBUG)/src/common.o: src/common.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/common.cpp -o $(OBJDIR_DEBUG)/src/common.o
 
 $(OBJDIR_DEBUG)/src/StereoMatch.o: src/StereoMatch.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/StereoMatch.cpp -o $(OBJDIR_DEBUG)/src/StereoMatch.o
@@ -91,30 +96,16 @@ $(OBJDIR_DEBUG)/src/CVC_cl.o: src/CVC_cl.cpp
 $(OBJDIR_DEBUG)/src/CVC.o: src/CVC.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/CVC.cpp -o $(OBJDIR_DEBUG)/src/CVC.o
 
-$(OBJDIR_DEBUG)/src/BoxFilter.o: src/BoxFilter.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/BoxFilter.cpp -o $(OBJDIR_DEBUG)/src/BoxFilter.o
-
-$(OBJDIR_DEBUG)/main.o: main.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c main.cpp -o $(OBJDIR_DEBUG)/main.o
-
-$(OBJDIR_DEBUG)/common/common.o: common/common.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c common/common.cpp -o $(OBJDIR_DEBUG)/common/common.o
-
-$(OBJDIR_DEBUG)/common/image.o: common/image.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c common/image.cpp -o $(OBJDIR_DEBUG)/common/image.o
-
 clean_debug: 
 	rm -f $(OBJ_DEBUG) $(OUT_DEBUG)
 	rm -rf bin/Debug
-	rm -rf $(OBJDIR_DEBUG)/src
 	rm -rf $(OBJDIR_DEBUG)
-	rm -rf $(OBJDIR_DEBUG)/common
+	rm -rf $(OBJDIR_DEBUG)/src
 
 before_release: 
 	test -d bin/Release || mkdir -p bin/Release
-	test -d $(OBJDIR_RELEASE)/src || mkdir -p $(OBJDIR_RELEASE)/src
 	test -d $(OBJDIR_RELEASE) || mkdir -p $(OBJDIR_RELEASE)
-	test -d $(OBJDIR_RELEASE)/common || mkdir -p $(OBJDIR_RELEASE)/common
+	test -d $(OBJDIR_RELEASE)/src || mkdir -p $(OBJDIR_RELEASE)/src
 
 after_release: 
 
@@ -122,6 +113,12 @@ release: before_release out_release after_release
 
 out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
 	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
+
+$(OBJDIR_RELEASE)/main.o: main.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c main.cpp -o $(OBJDIR_RELEASE)/main.o
+
+$(OBJDIR_RELEASE)/src/common.o: src/common.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/common.cpp -o $(OBJDIR_RELEASE)/src/common.o
 
 $(OBJDIR_RELEASE)/src/StereoMatch.o: src/StereoMatch.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/StereoMatch.cpp -o $(OBJDIR_RELEASE)/src/StereoMatch.o
@@ -153,24 +150,11 @@ $(OBJDIR_RELEASE)/src/CVC_cl.o: src/CVC_cl.cpp
 $(OBJDIR_RELEASE)/src/CVC.o: src/CVC.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/CVC.cpp -o $(OBJDIR_RELEASE)/src/CVC.o
 
-$(OBJDIR_RELEASE)/src/BoxFilter.o: src/BoxFilter.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/BoxFilter.cpp -o $(OBJDIR_RELEASE)/src/BoxFilter.o
-
-$(OBJDIR_RELEASE)/main.o: main.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c main.cpp -o $(OBJDIR_RELEASE)/main.o
-
-$(OBJDIR_RELEASE)/common/common.o: common/common.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c common/common.cpp -o $(OBJDIR_RELEASE)/common/common.o
-
-$(OBJDIR_RELEASE)/common/image.o: common/image.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c common/image.cpp -o $(OBJDIR_RELEASE)/common/image.o
-
 clean_release: 
 	rm -f $(OBJ_RELEASE) $(OUT_RELEASE)
 	rm -rf bin/Release
-	rm -rf $(OBJDIR_RELEASE)/src
 	rm -rf $(OBJDIR_RELEASE)
-	rm -rf $(OBJDIR_RELEASE)/common
+	rm -rf $(OBJDIR_RELEASE)/src
 
 .PHONY: before_debug after_debug clean_debug before_release after_release clean_release
 

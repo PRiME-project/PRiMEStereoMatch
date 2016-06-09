@@ -9,6 +9,7 @@
 
 //Functions in main
 bool openCLdevicepoll(void);
+int getmicinfo(void);
 void *getDepthMap(void*);
 void HCI(void);
 
@@ -61,8 +62,8 @@ void *getDepthMap(void *arg)
 	while(!end_de)
 	{
 		sm->Compute();
-		printf("MAIN: DE Computed...\n");
-		printf("MAIN: Press h for help text.\n\n");
+		//printf("MAIN: DE Computed...\n");
+		//printf("MAIN: Press h for help text.\n\n");
 	}
 	return(void*)0;
 }
@@ -127,7 +128,7 @@ bool openCLdevicepoll(void)
     cl_uint maxComputeUnits;
     cl_uint maxWorkGroupSize;
     cl_uint maxWorkItemDims;
-    //cl_device_partition_property *partition_properties;
+    cl_device_partition_property *partition_properties;
 
     // get all platforms
     clGetPlatformIDs(0, NULL, &platformCount);

@@ -9,20 +9,20 @@
 A heterogeneous and fully parallel stereo matching algorithm for depth estimation. Stereo Matching is based on the disparity estimation algorithm, an algorithm designed to calculate 3D depth information about a scene from a pair of 2D images captured by a stereoscopic camera. The algorithm contains the following stages:
 
 * Cost Volume Construction - weighted absolute difference of colours and gradients function.
-* Cost Volume Filtering - local adaptive support weight (ADSW) Guided Image Filter (GIF) function.  
-* Disparity Selection - winner-takes-all minimum cost search and corresponding disparity selection.  
-* Post Processing - left-right occlusion check, invalid pixel removal and weight-median filtering.  
+* Cost Volume Filtering - ADaptive Support Weight (ADSW) Guided Image Filter (GIF) function.  
+* Disparity Selection - Winner-Takes-All (WTA) minimum cost selection.  
+* Post Processing - left-right occlusion check, invalid pixel replacement and weight-median filtering.  
 
 <p align="center">
-<img src="docs/de_bd.png" alt="Disparity estimation process block diagram" width=85%>
+<img src="docs/de_bd.png" alt="Disparity estimation process block diagram" width=80%>
 </p>
 
 ## Implementation Details
 
-* All stages of the algorithm are developed in both C++ and OpenCL.  
-	* C++ parallelism is introduced via the POSIX threads (pthreads) library. Disparity level parallelism, enabling up to 64 concurrent threads, is supported.  
-	* OpenCL parallelism is inherent through the concurrent execution of kernels on an OpenCL-compatible device. The optimum level of parallelism will be device-specific.  
-* Support for live video disparity estimation using the OpenCV VideoCapture interface as well as standard static image computation.
+* All stages of the algorithm have been developed in both C++ and OpenCL.  
+	* C++ parallelism is introduced via the POSIX threads (pthreads) library. Disparity level parallelism is supported, enabling up to 64 concurrent threads.  
+	* OpenCL parallelism is inherent through the concurrent execution of kernels on an OpenCL-compatible device. The optimum level of parallelism will be bounded by the platform & devices.  
+* Support for live video disparity estimation using the OpenCV VideoCapture interface as well as static image computation.
 * Embedded support for experimentation with the OpenCV standard Semi-Global Block Matching (SGBM) algorithm.
 
 ## Installation

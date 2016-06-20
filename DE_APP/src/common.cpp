@@ -7,9 +7,125 @@
  * copies and copies may only be made to the extent permitted
  * by a licensing agreement from ARM Limited.
  */
+ /*---------------------------------------------------------------------------
+   common.cpp - OpenCL Utility Function Code
+  ---------------------------------------------------------------------------
+   Co-Author: Charles Leech
+   Email: cl19g10 [at] ecs.soton.ac.uk
+  ---------------------------------------------------------------------------*/
 #include "common.h"
 
-using namespace std;
+int openCLdevicepoll(void)
+{
+    printf("\nOpenCL Platform Information:\n");
+
+    char* value;
+    size_t valueSize;
+    cl_uint platformCount;
+    cl_platform_id* platforms;
+    cl_uint deviceCount;
+    cl_device_id* devices;
+    cl_uint maxComputeUnits;
+    cl_uint maxWorkGroupSize;
+    cl_uint maxWorkItemDims;
+    //cl_device_partition_property *partition_properties;
+
+    // get all platforms
+    clGetPlatformIDs(0, NULL, &platformCount);
+
+    if(!platformCount)
+    {
+		printf("No OpenCL Compatible Platforms found\n");
+		return 0;
+	}
+
+    platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
+    clGetPlatformIDs(platformCount, platforms, NULL);
+
+    for (int i = 0; i < (int)platformCount; i++) {
+
+        // get all devices
+        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &deviceCount);
+        devices = (cl_device_id*) malloc(sizeof(cl_device_id) * deviceCount);
+        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, deviceCount, devices, NULL);
+
+        // for each device print critical attributes
+        for (int j = 0; j < (int)deviceCount; j++) {
+
+            // print device name
+            clGetDeviceInfo(devices[j], CL_DEVICE_NAME, 0, NULL, &valueSize);
+            value = (char*) malloc(valueSize);
+            clGetDeviceInfo(devices[j], CL_DEVICE_NAME, valueSize, value, NULL);
+            printf("%d. Device: %s\n", j+1, value);
+            free(value);
+
+            // print device type
+            clGetDeviceInfo(devices[j], CL_DEVICE_TYPE, 0, NULL, &valueSize);
+            value = (char*) malloc(valueSize);
+            clGetDeviceInfo(devices[j], CL_DEVICE_TYPE, valueSize, value, NULL);
+            if((int)*value == CL_DEVICE_TYPE_CPU)
+				printf(" %d.%d Device Type: %s\n", j+1, 0, "CPU");
+			else if((int)*value == CL_DEVICE_TYPE_GPU)
+				printf(" %d.%d Device Type: %s\n", j+1, 0, "GPU");
+			else if((int)*value == CL_DEVICE_TYPE_ACCELERATOR)
+				printf(" %d.%d Device Type: %s\n", j+1, 0, "ACCELERATOR");
+			else
+				printf(" %d.%d Device Type: %s\n", j+1, 0, "DEFAULT/ALL");
+            free(value);
+
+            // print hardware device version
+            clGetDeviceInfo(devices[j], CL_DEVICE_VERSION, 0, NULL, &valueSize);
+            value = (char*) malloc(valueSize);
+            clGetDeviceInfo(devices[j], CL_DEVICE_VERSION, valueSize, value, NULL);
+            printf(" %d.%d Hardware version: %s\n", j+1, 1, value);
+            free(value);
+
+            // print software driver version
+            clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, 0, NULL, &valueSize);
+            value = (char*) malloc(valueSize);
+            clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, valueSize, value, NULL);
+            printf(" %d.%d Software version: %s\n", j+1, 2, value);
+            free(value);
+
+            // print c version supported by compiler for device
+            clGetDeviceInfo(devices[j], CL_DEVICE_OPENCL_C_VERSION, 0, NULL, &valueSize);
+            value = (char*) malloc(valueSize);
+            clGetDeviceInfo(devices[j], CL_DEVICE_OPENCL_C_VERSION, valueSize, value, NULL);
+            printf(" %d.%d OpenCL C version: %s\n", j+1, 3, value);
+            free(value);
+
+            // print parallel compute units
+            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_COMPUTE_UNITS,
+                    sizeof(maxComputeUnits), &maxComputeUnits, NULL);
+            printf(" %d.%d Parallel compute units: %d\n", j+1, 4, maxComputeUnits);
+
+            // print workgroup sizes
+            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_WORK_GROUP_SIZE,
+                    sizeof(maxWorkGroupSize), &maxWorkGroupSize, NULL);
+            printf(" %d.%d Max Work Group Size: %d\n", j+1, 5, maxWorkGroupSize);
+
+            // print workgroup sizes
+            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,
+                    sizeof(maxWorkItemDims), &maxWorkItemDims, NULL);
+            printf(" %d.%d Max Work Item Dimensions: %d\n", j+1, 6, maxWorkItemDims);
+
+            // image support?
+            clGetDeviceInfo(devices[j], CL_DEVICE_IMAGE_SUPPORT,
+                    sizeof(maxWorkItemDims), &maxWorkItemDims, NULL);
+            printf(" %d.%d Image Support?: %s\n", j+1, 7, maxWorkItemDims ? "Yes" : "No");
+
+//            clGetDeviceInfo(devices[j], CL_DEVICE_PARTITION_PROPERTIES, sizeof(partition_properties), &partition_properties, NULL);
+//            printf(" %d.%d Partition Properties: %ld\n", j+1, 8, partition_properties[0]);
+        }
+
+        free(devices);
+    }
+
+    free(platforms);
+    printf("\n");
+
+    return deviceCount;
+}
 
 bool printProfilingInfo(cl_event event)
 {
@@ -41,10 +157,10 @@ bool printProfilingInfo(cl_event event)
         return false;
     }
 
-    cout << "Profiling information:\n";
+    //cout << "Profiling information:\n";
     /* OpenCL returns times in nano seconds. Print out the times in milliseconds (divide by a million). */
-    cout << "Queued time: \t" << (submittedTime - queuedTime) / 1000000.0 << "ms\n";
-    cout << "Wait time: \t" << (startTime - submittedTime) / 1000000.0 << "ms\n";
+    //cout << "Queued time: \t" << (submittedTime - queuedTime) / 1000000.0 << "ms\n";
+    //cout << "Wait time: \t" << (startTime - submittedTime) / 1000000.0 << "ms\n";
     cout << "Run time: \t" << (endTime - startTime) / 1000000.0 << "ms" << endl;
 
     return true;
@@ -87,80 +203,6 @@ bool printSupported2DImageFormats(cl_context context)
     delete[] imageFormats;
 
     return true;
-}
-
-string imageChannelOrderToString(cl_channel_order channelOrder)
-{
-    switch (channelOrder)
-    {
-        case CL_R:
-            return "CL_R";
-        case CL_A:
-            return "CL_A";
-        case CL_RG:
-             return "CL_RG";
-        case CL_RA:
-             return "CL_RA";
-        case CL_RGB:
-            return "CL_RGB";
-        case CL_RGBA:
-            return "CL_RGBA";
-        case CL_BGRA:
-            return "CL_BGRA";
-        case CL_ARGB:
-            return "CL_ARGB";
-        case CL_INTENSITY:
-            return "CL_INTENSITY";
-        case CL_LUMINANCE:
-            return "CL_LUMINANCE";
-        case CL_Rx:
-            return "CL_Rx";
-        case CL_RGx:
-            return "CL_RGx";
-        case CL_RGBx:
-            return "CL_RGBx";
-        default:
-            return "Unknown image channel order";
-    }
-}
-
-string imageChannelDataTypeToString(cl_channel_type channelDataType)
-{
-    switch (channelDataType)
-    {
-        case CL_SNORM_INT8:
-            return "CL_SNORM_INT8";
-        case CL_SNORM_INT16:
-            return "CL_SNORM_INT16";
-        case CL_UNORM_INT8:
-            return "CL_UNORM_INT8";
-        case CL_UNORM_INT16:
-            return "CL_UNORM_INT16";
-        case CL_UNORM_SHORT_565:
-            return "CL_UNORM_SHORT_565";
-        case CL_UNORM_SHORT_555:
-            return "CL_UNORM_SHORT_555";
-        case CL_UNORM_INT_101010:
-            return "CL_UNORM_INT_101010";
-        case CL_SIGNED_INT8:
-            return "CL_SIGNED_INT8";
-        case CL_SIGNED_INT16:
-            return "CL_SIGNED_INT16";
-        case CL_SIGNED_INT32:
-            return "CL_SIGNED_INT32";
-        case CL_UNSIGNED_INT8:
-            return "CL_UNSIGNED_INT8";
-        case CL_UNSIGNED_INT16:
-            return "CL_UNSIGNED_INT16";
-        case CL_UNSIGNED_INT32:
-            return "CL_UNSIGNED_INT32";
-        case CL_HALF_FLOAT:
-            return "CL_HALF_FLOAT";
-        case CL_FLOAT:
-            return "CL_FLOAT";
-        default:
-            return "Unknown image channel data type";
-    }
 }
 
 bool cleanUpOpenCL(cl_context context, cl_command_queue commandQueue, cl_program program, cl_kernel kernel, cl_mem* memoryObjects, int numberOfMemoryObjects)
@@ -236,11 +278,39 @@ bool createContext(cl_context* context)
         return false;
     }
 
-    /* Get a context with a GPU device from the platform found above. */
+	cl_uint deviceCount;
+	// get all devices
+	clGetDeviceIDs(firstPlatformID, CL_DEVICE_TYPE_ALL, 0, NULL, &deviceCount);
+
+	struct {cl_device_type type; const char* name; cl_uint dcount; } devices[] =
+	{
+        { CL_DEVICE_TYPE_CPU, "CL_DEVICE_TYPE_CPU", 0 },
+        { CL_DEVICE_TYPE_GPU, "CL_DEVICE_TYPE_GPU", 0 },
+        { CL_DEVICE_TYPE_ACCELERATOR, "CL_DEVICE_TYPE_ACCELERATOR", 0 }
+	};
+
+    const int NUM_OF_DEVICE_TYPES = sizeof(devices)/sizeof(devices[0]);
+
+	printf("Number of devices available of each type:\n");
+	for(int i = 0; i < NUM_OF_DEVICE_TYPES; ++i)
+	{
+		errorNumber = clGetDeviceIDs(firstPlatformID, devices[i].type, 0, 0, &devices[i].dcount);
+		if(CL_DEVICE_NOT_FOUND == errorNumber)
+		{
+			devices[i].dcount = 0;
+			errorNumber = CL_SUCCESS;
+		}
+		printf("\t%s: %d\n", devices[i].name, devices[i].dcount);
+	}
+
+    /* Get a context with a device from the platform found above. */
     cl_context_properties contextProperties [] = {CL_CONTEXT_PLATFORM, (cl_context_properties)firstPlatformID, 0};
-    //*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_CPU, NULL, NULL, &errorNumber);
-    //*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_GPU, NULL, NULL, &errorNumber);
-    *context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_ACCELERATOR, NULL, NULL, &errorNumber);
+    if(devices[NUM_OF_DEVICE_TYPES-1].dcount > 0) //choose Accelerator as first preference if present
+		*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_ACCELERATOR, NULL, NULL, &errorNumber);
+    else if(devices[NUM_OF_DEVICE_TYPES-2].dcount > 0) //choose GPU as second preference if present
+		*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_GPU, NULL, NULL, &errorNumber);
+	else //choose CPU as last preference
+		*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_CPU, NULL, NULL, &errorNumber);
     if (!checkSuccess(errorNumber))
     {
         cerr << "Creating an OpenCL context failed. " << __FILE__ << ":"<< __LINE__ << endl;
@@ -250,7 +320,7 @@ bool createContext(cl_context* context)
     return true;
 }
 
-bool createSubDeviceContext(cl_context* context, cl_int numComputeUnits)
+bool createSubDeviceContext(cl_context* context, cl_int numComputeUnits) //work in progress
 {
     cl_int errorNumber = 0;
     cl_uint numberOfPlatforms = 0;
@@ -279,13 +349,25 @@ bool createSubDeviceContext(cl_context* context, cl_int numComputeUnits)
 	clGetDeviceIDs( firstPlatformID, CL_DEVICE_TYPE_ACCELERATOR, 1, &device_id, &numDevices);
 
 	// Create two sub-device properties: Partition By Counts
-	//cl_device_partition_property props[] = { CL_DEVICE_PARTITION_BY_COUNTS, 4, CL_DEVICE_PARTITION_BY_COUNTS_LIST_END, 0};
-	cl_device_partition_property props[] = { CL_DEVICE_PARTITION_EQUALLY, 8, 0};
+	/* Examples:
+		cl_device_partition_property props[] = { CL_DEVICE_PARTITION_BY_COUNTS, 4, CL_DEVICE_PARTITION_BY_COUNTS_LIST_END, 0};
+		cl_device_partition_property props[] = { CL_DEVICE_PARTITION_EQUALLY, 8, 0};
+	*/
+	#ifdef CL_VERSION_1_1
+	//cl_device_partition_property_ext pprops[] = { CL_DEVICE_PARTITION_BY_COUNTS_EXT, 4, 4, CL_PROPERTIES_LIST_END_EXT, 0};
+	#else
+	//cl_device_partition_property pprops[] = { CL_DEVICE_PARTITION_BY_COUNTS, 4, CL_DEVICE_PARTITION_BY_COUNTS_LIST_END, 0};
+	#endif /* CL_VERSION_1_1 */
+
+
 
 	cl_device_id subdevice_id;
-	cl_uint num_entries = 1;
 	// Create the sub-devices:
-	if (!checkSuccess(clCreateSubDevices(device_id, props, num_entries, &subdevice_id, &numDevices)))
+	#ifdef CL_VERSION_1_1
+	//if (!checkSuccess(clCreateSubDevicesEXT(device_id, pprops, 1, &subdevice_id, &numDevices)))
+	#else
+	//if (!checkSuccess(clCreateSubDevices(device_id, pprops, 1, &subdevice_id, &numDevices)))
+	#endif /* CL_VERSION_1_1 */
     {
         cerr << "Creating an OpenCL Sub Device failed. " << __FILE__ << ":"<< __LINE__ << endl;
         return false;
@@ -415,6 +497,80 @@ bool createProgram(cl_context context, cl_device_id device, string filename, cl_
 //    }
 //    return true;
 //}
+
+string imageChannelOrderToString(cl_channel_order channelOrder)
+{
+    switch (channelOrder)
+    {
+        case CL_R:
+            return "CL_R";
+        case CL_A:
+            return "CL_A";
+        case CL_RG:
+             return "CL_RG";
+        case CL_RA:
+             return "CL_RA";
+        case CL_RGB:
+            return "CL_RGB";
+        case CL_RGBA:
+            return "CL_RGBA";
+        case CL_BGRA:
+            return "CL_BGRA";
+        case CL_ARGB:
+            return "CL_ARGB";
+        case CL_INTENSITY:
+            return "CL_INTENSITY";
+        case CL_LUMINANCE:
+            return "CL_LUMINANCE";
+        case CL_Rx:
+            return "CL_Rx";
+        case CL_RGx:
+            return "CL_RGx";
+        case CL_RGBx:
+            return "CL_RGBx";
+        default:
+            return "Unknown image channel order";
+    }
+}
+
+string imageChannelDataTypeToString(cl_channel_type channelDataType)
+{
+    switch (channelDataType)
+    {
+        case CL_SNORM_INT8:
+            return "CL_SNORM_INT8";
+        case CL_SNORM_INT16:
+            return "CL_SNORM_INT16";
+        case CL_UNORM_INT8:
+            return "CL_UNORM_INT8";
+        case CL_UNORM_INT16:
+            return "CL_UNORM_INT16";
+        case CL_UNORM_SHORT_565:
+            return "CL_UNORM_SHORT_565";
+        case CL_UNORM_SHORT_555:
+            return "CL_UNORM_SHORT_555";
+        case CL_UNORM_INT_101010:
+            return "CL_UNORM_INT_101010";
+        case CL_SIGNED_INT8:
+            return "CL_SIGNED_INT8";
+        case CL_SIGNED_INT16:
+            return "CL_SIGNED_INT16";
+        case CL_SIGNED_INT32:
+            return "CL_SIGNED_INT32";
+        case CL_UNSIGNED_INT8:
+            return "CL_UNSIGNED_INT8";
+        case CL_UNSIGNED_INT16:
+            return "CL_UNSIGNED_INT16";
+        case CL_UNSIGNED_INT32:
+            return "CL_UNSIGNED_INT32";
+        case CL_HALF_FLOAT:
+            return "CL_HALF_FLOAT";
+        case CL_FLOAT:
+            return "CL_FLOAT";
+        default:
+            return "Unknown image channel data type";
+    }
+}
 
 string errorNumberToString(cl_int errorNumber)
 {

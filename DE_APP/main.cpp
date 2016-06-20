@@ -3,33 +3,36 @@
   ---------------------------------------------------------------------------
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
+   Copyright (c) 2016 Charlie Leech, University of Southampton.
+   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
+#include "common.h"
 #include "StereoMatch.h"
 
 //Functions in main
-bool openCLdevicepoll(void);
+int getmicinfo(void);
 void *getDepthMap(void*);
 void HCI(void);
 
 //Global variables
 StereoMatch *sm;
 bool end_de = false;
-bool gotOpenCLDev = false;
+int nOpenCLDev = 0;
 
 int main(int argc, char** argv)
 {
     //#############################################################################################################
     //# Introduction and Setup - poll for OpenCL devices
     //#############################################################################################################
-	gotOpenCLDev = openCLdevicepoll();
+	nOpenCLDev = openCLdevicepoll();
 
 	//#############################################################################################################
     //# Start Application Processes
     //#############################################################################################################
 	namedWindow("InputOutput", CV_WINDOW_AUTOSIZE );
 	printf("Starting Stereo Matching Application.\n");
-	sm = new StereoMatch(argc, argv, gotOpenCLDev);
+	sm = new StereoMatch(argc, argv, nOpenCLDev);
 
 	//pthread setup
     void *status;
@@ -61,8 +64,8 @@ void *getDepthMap(void *arg)
 	while(!end_de)
 	{
 		sm->Compute();
-		printf("MAIN: DE Computed...\n");
-		printf("MAIN: Press h for help text.\n\n");
+		//printf("MAIN: DE Computed...\n");
+		//printf("MAIN: Press h for help text.\n\n");
 	}
 	return(void*)0;
 }
@@ -95,7 +98,7 @@ void HCI(void)
             case 'm':
             {
 				if(sm->MatchingAlgorithm == STEREO_GIF){
-					if(gotOpenCLDev){
+					if(nOpenCLDev){
 						sm->de_mode = sm->de_mode ? OCV_DE : OCL_DE;
 						printf("| m: Mode changed to %s |\n", sm->de_mode ? "OpenCL on the GPU" : "C++ & pthreads on the CPU");
 					}
@@ -112,116 +115,4 @@ void HCI(void)
         key = waitKey(5);
     }
     return;
-}
-
-bool openCLdevicepoll(void)
-{
-    printf("\nOpenCL Platform Information:\n");
-
-    char* value;
-    size_t valueSize;
-    cl_uint platformCount;
-    cl_platform_id* platforms;
-    cl_uint deviceCount;
-    cl_device_id* devices;
-    cl_uint maxComputeUnits;
-    cl_uint maxWorkGroupSize;
-    cl_uint maxWorkItemDims;
-    //cl_device_partition_property *partition_properties;
-
-    // get all platforms
-    clGetPlatformIDs(0, NULL, &platformCount);
-
-    if(!platformCount)
-    {
-		printf("No OpenCL Compatible Platforms found\n");
-		return false;
-	}
-
-    platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
-    clGetPlatformIDs(platformCount, platforms, NULL);
-
-    for (int i = 0; i < (int)platformCount; i++) {
-
-        // get all devices
-        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &deviceCount);
-        devices = (cl_device_id*) malloc(sizeof(cl_device_id) * deviceCount);
-        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, deviceCount, devices, NULL);
-
-        // for each device print critical attributes
-        for (int j = 0; j < (int)deviceCount; j++) {
-
-            // print device name
-            clGetDeviceInfo(devices[j], CL_DEVICE_NAME, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DEVICE_NAME, valueSize, value, NULL);
-            printf("%d. Device: %s\n", j+1, value);
-            free(value);
-
-            // print device type
-            clGetDeviceInfo(devices[j], CL_DEVICE_TYPE, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DEVICE_TYPE, valueSize, value, NULL);
-            if((int)*value == CL_DEVICE_TYPE_CPU)
-				printf(" %d.%d Device Type: %s\n", j+1, 0, "CPU");
-			else if((int)*value == CL_DEVICE_TYPE_GPU)
-				printf(" %d.%d Device Type: %s\n", j+1, 0, "GPU");
-			else if((int)*value == CL_DEVICE_TYPE_ACCELERATOR)
-				printf(" %d.%d Device Type: %s\n", j+1, 0, "ACCELERATOR");
-			else
-				printf(" %d.%d Device Type: %s\n", j+1, 0, "DEFAULT/ALL");
-            free(value);
-
-            // print hardware device version
-            clGetDeviceInfo(devices[j], CL_DEVICE_VERSION, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DEVICE_VERSION, valueSize, value, NULL);
-            printf(" %d.%d Hardware version: %s\n", j+1, 1, value);
-            free(value);
-
-            // print software driver version
-            clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, valueSize, value, NULL);
-            printf(" %d.%d Software version: %s\n", j+1, 2, value);
-            free(value);
-
-            // print c version supported by compiler for device
-            clGetDeviceInfo(devices[j], CL_DEVICE_OPENCL_C_VERSION, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DEVICE_OPENCL_C_VERSION, valueSize, value, NULL);
-            printf(" %d.%d OpenCL C version: %s\n", j+1, 3, value);
-            free(value);
-
-            // print parallel compute units
-            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_COMPUTE_UNITS,
-                    sizeof(maxComputeUnits), &maxComputeUnits, NULL);
-            printf(" %d.%d Parallel compute units: %d\n", j+1, 4, maxComputeUnits);
-
-            // print workgroup sizes
-            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_WORK_GROUP_SIZE,
-                    sizeof(maxWorkGroupSize), &maxWorkGroupSize, NULL);
-            printf(" %d.%d Max Work Group Size: %d\n", j+1, 5, maxWorkGroupSize);
-
-            // print workgroup sizes
-            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,
-                    sizeof(maxWorkItemDims), &maxWorkItemDims, NULL);
-            printf(" %d.%d Max Work Item Dimensions: %d\n", j+1, 6, maxWorkItemDims);
-
-            // image support?
-            clGetDeviceInfo(devices[j], CL_DEVICE_IMAGE_SUPPORT,
-                    sizeof(maxWorkItemDims), &maxWorkItemDims, NULL);
-            printf(" %d.%d Image Support?: %s\n", j+1, 7, maxWorkItemDims ? "Yes" : "No");
-
-//            clGetDeviceInfo(devices[j], CL_DEVICE_PARTITION_PROPERTIES, sizeof(partition_properties), &partition_properties, NULL);
-//            printf(" %d.%d Partition Properties: %ld\n", j+1, 8, partition_properties[0]);
-        }
-
-        free(devices);
-    }
-
-    free(platforms);
-    printf("\n");
-
-    return true;
 }

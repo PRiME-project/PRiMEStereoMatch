@@ -7,6 +7,12 @@
  * copies and copies may only be made to the extent permitted
  * by a licensing agreement from ARM Limited.
  */
+ /*---------------------------------------------------------------------------
+   common.h - OpenCL Utility Function Header
+  ---------------------------------------------------------------------------
+   Co-Author: Charles Leech
+   Email: cl19g10 [at] ecs.soton.ac.uk
+  ---------------------------------------------------------------------------*/
 
 #ifndef COMMON_H
 #define COMMON_H
@@ -17,6 +23,8 @@
  * \file common.h
  * \brief Functions to simplify the use of OpenCL API.
  */
+//Added functions:
+int openCLdevicepoll(void);
 
 /**
  * \brief Convert OpenCL error numbers to their string form.
@@ -41,7 +49,6 @@ inline bool checkSuccess(cl_int errorNumber)
     }
     return true;
 }
-
 
 /**
  * \brief Print the profiling information associated with an OpenCL event.

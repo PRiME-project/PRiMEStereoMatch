@@ -21,6 +21,12 @@
      Issue tracker: http://code.opencv.org
      GitHub:        https://github.com/Itseez/opencv/
    ************************************************** */
+ /*---------------------------------------------------------------------------
+   StereoCalib.cpp - Stereo Camera Calibration Function Code
+  ---------------------------------------------------------------------------
+   Co-Author: Charles Leech
+   Email: cl19g10 [at] ecs.soton.ac.uk
+  ---------------------------------------------------------------------------*/
 
 #include "StereoCalib.h"
 

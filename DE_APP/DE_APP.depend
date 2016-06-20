@@ -1117,7 +1117,7 @@
 	"ComFunc.h"
 	"common.h"
 
-1465329816 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/ComFunc.h
+1465897228 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/ComFunc.h
 	<iostream>
 	<fstream>
 	<stdio.h>
@@ -1167,11 +1167,12 @@
 	<CL/cl.h>
 	<string>
 
-1465329967 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/main.cpp
+1465654969 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/main.cpp
 	"ComFunc.h"
+	"common.h"
 	"StereoMatch.h"
 
-1464800422 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/StereoMatch.h
+1465655056 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/StereoMatch.h
 	"ComFunc.h"
 	"StereoCalib.h"
 	"DispEst.h"
@@ -1187,7 +1188,7 @@
 	<iterator>
 	<ctype.h>
 
-1465141631 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/DispEst.h
+1465648454 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/DispEst.h
 	"ComFunc.h"
 	"CVC.h"
 	"CVC_cl.h"
@@ -1205,10 +1206,10 @@
 	"ComFunc.h"
 	"common.h"
 
-1465128422 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/CVF.h
+1465648598 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/CVF.h
 	"ComFunc.h"
 
-1465225588 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/CVF_cl.h
+1465896886 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/CVF_cl.h
 	"ComFunc.h"
 	"common.h"
 
@@ -1235,13 +1236,13 @@
 1465148342 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/CVC_cl.cpp
 	"CVC_cl.h"
 
-1459448829 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/CVF.cpp
+1465839176 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/CVF.cpp
 	"CVF.h"
 
-1465225580 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/CVF_cl.cpp
+1465897198 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/CVF_cl.cpp
 	"CVF_cl.h"
 
-1465322837 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/DispEst.cpp
+1465840516 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/DispEst.cpp
 	"DispEst.h"
 
 1464789584 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/DispSel.cpp
@@ -1256,7 +1257,7 @@
 1461696878 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/StereoCalib.cpp
 	"StereoCalib.h"
 
-1465151853 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/StereoMatch.cpp
+1465655056 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/StereoMatch.cpp
 	"StereoMatch.h"
 
 1464786448 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP_v2/common/common.cpp
@@ -1407,10 +1408,10 @@
 1464793339 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP_v2/src/DispEst.cpp
 	"DispEst.h"
 
-1465325911 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/common.h
+1465656316 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/common.h
 	"ComFunc.h"
 
-1465325069 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/common.cpp
+1465894898 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/src/common.cpp
 	"common.h"
 
 1359657603 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/XeonPhi/DE_APP/include/CL/cl_ext.h
@@ -1437,13 +1438,13 @@
 	<OpenCL/cl_gl.h>
 	<CL/cl_gl.h>
 
-1465330178 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/common.cpp
+1465894898 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/common.cpp
 	"common.h"
 
-1465325911 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/common.h
+1465656316 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/common.h
 	"ComFunc.h"
 
-1465462240 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/ComFunc.h
+1465995385 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/ComFunc.h
 	<iostream>
 	<fstream>
 	<stdio.h>
@@ -1476,37 +1477,51 @@
 	"ComFunc.h"
 	"common.h"
 
-1459448829 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/CVF.cpp
+1465839176 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/CVF.cpp
 	"CVF.h"
 
-1465128422 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/CVF.h
+1465648598 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/CVF.h
 	"ComFunc.h"
 
-1465225580 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/CVF_cl.cpp
+1465897198 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/CVF_cl.cpp
 	"CVF_cl.h"
 
-1465225588 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/CVF_cl.h
+1465896886 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/CVF_cl.h
 	"ComFunc.h"
 	"common.h"
 
-1464789584 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/DispSel.cpp
+1465840516 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/DispEst.cpp
+	"DispEst.h"
+
+1465648454 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/DispEst.h
+	"ComFunc.h"
+	"CVC.h"
+	"CVC_cl.h"
+	"CVF.h"
+	"CVF_cl.h"
 	"DispSel.h"
+	"DispSel_cl.h"
+	"PP.h"
+	"common.h"
 
 1464970346 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/DispSel.h
 	"ComFunc.h"
-
-1465148330 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/DispSel_cl.cpp
-	"DispSel_cl.h"
 
 1465147942 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/DispSel_cl.h
 	"ComFunc.h"
 	"common.h"
 
-1464789726 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/PP.cpp
-	"PP.h"
-
 1464111998 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/PP.h
 	"ComFunc.h"
+
+1464789584 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/DispSel.cpp
+	"DispSel.h"
+
+1465148330 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/DispSel_cl.cpp
+	"DispSel_cl.h"
+
+1464789726 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/PP.cpp
+	"PP.h"
 
 1461696878 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/StereoCalib.cpp
 	"StereoCalib.h"
@@ -1522,29 +1537,16 @@
 	<iterator>
 	<ctype.h>
 
-1465462887 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/StereoMatch.cpp
+1465655056 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/StereoMatch.cpp
 	"StereoMatch.h"
 
-1465462800 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/StereoMatch.h
+1465655056 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/StereoMatch.h
 	"ComFunc.h"
 	"StereoCalib.h"
 	"DispEst.h"
 
-1465141631 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/include/DispEst.h
+1465995385 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/main.cpp
 	"ComFunc.h"
-	"CVC.h"
-	"CVC_cl.h"
-	"CVF.h"
-	"CVF_cl.h"
-	"DispSel.h"
-	"DispSel_cl.h"
-	"PP.h"
 	"common.h"
-
-1465462650 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/main.cpp
-	"ComFunc.h"
 	"StereoMatch.h"
-
-1465330365 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/codeblocks/DE_APP/src/DispEst.cpp
-	"DispEst.h"
 

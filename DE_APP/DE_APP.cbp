@@ -22,7 +22,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="STEREO_GIF  IMAGE data/im2.png data/im6.png 8" />
+				<Option parameters="STEREO_GIF  IMAGE data/im2.png data/im6.png" />
 				<Compiler>
 					<Add option="-O3" />
 				</Compiler>

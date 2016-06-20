@@ -3,6 +3,8 @@
   ---------------------------------------------------------------------------
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
+   Copyright (c) 2016 Charlie Leech, University of Southampton.
+   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "StereoMatch.h"
 
@@ -359,7 +361,7 @@ int StereoMatch::Compute()
 	if(MatchingAlgorithm == STEREO_SGBM)
 	{
 		///OpenCV code
-		ssgbm->compute( lFrame, rFrame, imgDisparity16S );
+		ssgbm->compute(lFrame, rFrame, imgDisparity16S);
 		//-- Check its extreme values
 		minMaxLoc( imgDisparity16S, &minVal, &maxVal );
 		imgDisparity16S.convertTo(lDispMap, CV_8UC1, 255/(maxVal - minVal));
@@ -372,8 +374,8 @@ int StereoMatch::Compute()
 		SMDE->rImg = rFrame;
 		SMDE->threads = num_threads;
 
-		// ******** Cost Volume Construction Code ******** //
-		//printf("Cost Volume Construction Started..\n");
+		// ******** Disparity Estimation Code ******** //
+		//printf("Disparity Estimation Started..\n");
 
 		if(de_mode == OCV_DE || !gotOCLDev)
 		{
@@ -440,9 +442,9 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 {
 	if( argc < 3 ) {
         printf("\nPlease specify a Matching Algorithm and Media Type as a minimum requirement:\n" );
-        printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] VIDEO ( [RECALIBRATE?] [RECAPTURE] [NUM THREADS] )\n" );
+        printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] VIDEO ( [RECALIBRATE?] [RECAPTURE] )\n" );
         printf("Usage: \t or");
-        printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename ( [NUM THREADS] )\n" );
+        printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
 		exit(1);
 	}
 
@@ -537,5 +539,5 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 		num_threads = atoi(argv[argc-1]);
 		printf("Using %d threads for executing the Application\n", num_threads);
 	}
-	return 1;
+	return 0;
 }

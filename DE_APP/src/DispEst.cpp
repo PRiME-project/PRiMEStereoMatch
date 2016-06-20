@@ -3,6 +3,8 @@
   ---------------------------------------------------------------------------
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
+   Copyright (c) 2016 Charlie Leech, University of Southampton.
+   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "DispEst.h"
 
@@ -21,6 +23,13 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
         lcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
         rcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
     }
+
+    lImg_rgb = new Mat[3];
+    rImg_rgb = new Mat[3];
+    mean_lImg = new Mat[3];
+    mean_rImg = new Mat[3];
+    var_lImg = new Mat[6];
+    var_rImg = new Mat[6];
 
     lDisMap = Mat::zeros(hei, wid, CV_8UC1);
     rDisMap = Mat::zeros(hei, wid, CV_8UC1);
@@ -206,10 +215,13 @@ void DispEst::CostConst_GPU()
 //#############################################################################################################
 void DispEst::CostFilter()
 {
+	filter->preprocess(lImg, lImg_rgb, mean_lImg, var_lImg);
+	filter->preprocess(rImg, rImg_rgb, mean_rImg, var_rImg);
+
     for(int d = 0; d < maxDis; d++)
 	{
-        filter->filterCV(lImg, lcostVol[d]);
-        filter->filterCV(rImg, rcostVol[d]);
+        filter->filterCV(lImg_rgb, mean_lImg, var_lImg, lcostVol[d]);
+        filter->filterCV(rImg_rgb, mean_rImg, var_rImg, rcostVol[d]);
     }
 }
 
@@ -223,6 +235,9 @@ void DispEst::CostFilter_CPU()
     pthread_t FCV_threads[maxDis];
     filterCV_TD filterCV_TD_Array[maxDis];
 
+	filter->preprocess(lImg, lImg_rgb, mean_lImg, var_lImg);
+	filter->preprocess(rImg, rImg_rgb, mean_rImg, var_rImg);
+
     for(int level = 0; level <= maxDis/threads; level ++)
 	{
         //Handle remainder if threads is not power of 2.
@@ -231,7 +246,7 @@ void DispEst::CostFilter_CPU()
 	    for(int iter=0; iter < block_size; iter++)
 	    {
 	        int d = level*threads + iter;
-            filterCV_TD_Array[d] = {&lImg, &lcostVol[d]};
+            filterCV_TD_Array[d] = {lImg_rgb, mean_lImg, var_lImg, &lcostVol[d]};
             pthread_create(&FCV_threads[d], &attr, CVF::filterCV_thread, (void *)&filterCV_TD_Array[d]);
             //printf("Filtering Left CV @ Disparity %d\n", d);
 	    }
@@ -250,7 +265,7 @@ void DispEst::CostFilter_CPU()
 	    for(int iter=0; iter < block_size; iter++)
 	    {
 	        int d = level*threads + iter;
-            filterCV_TD_Array[d] = {&rImg, &rcostVol[d]};
+            filterCV_TD_Array[d] = {rImg_rgb, mean_rImg, var_rImg, &rcostVol[d]};
             pthread_create(&FCV_threads[d], &attr, CVF::filterCV_thread, (void *)&filterCV_TD_Array[d]);
             //printf("Filtering Right CV @ Disparity %d\n", d);
 	    }
@@ -266,8 +281,10 @@ void DispEst::CostFilter_CPU()
 void DispEst::CostFilter_GPU() //under construction
 {
     //printf("OpenCL Cost Filtering Underway...\n");
-    filter_cl->filterCV(&memoryObjects[CVC_LIMG], &memoryObjects[CV_LCV]);
-    filter_cl->filterCV(&memoryObjects[CVC_RIMG], &memoryObjects[CV_RCV]);
+    filter_cl->preprocess(&memoryObjects[CVC_LIMG]);
+    filter_cl->filterCV(&memoryObjects[CV_LCV]);
+    filter_cl->preprocess(&memoryObjects[CVC_RIMG]);
+    filter_cl->filterCV(&memoryObjects[CV_RCV]);
     //printf("Filtering Complete\n");
 }
 

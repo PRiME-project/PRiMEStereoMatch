@@ -3,6 +3,8 @@
   ---------------------------------------------------------------------------
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
+   Copyright (c) 2016 Charlie Leech, University of Southampton.
+   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 
@@ -20,12 +22,11 @@ public:
 	~CVF(void);
 
 	static void *filterCV_thread(void *thread_arg);
-
-	void filterCV(const Mat& Img, Mat& costVol);
+	int preprocess(const Mat& Img, Mat* Img_rgb, Mat* mean_Img, Mat* var_Img);
+	void filterCV(const Mat* Img_rgb, const Mat* mean_Img, const Mat* var_Img, Mat& costVol);
 };
 
 //CVF thread data struct
-struct filterCV_TD{Mat* guideImg; Mat* costVol;};
+struct filterCV_TD{Mat* Img_rgb; Mat* mean_Img; Mat* var_Img; Mat* costVol;};
 
-Mat GuidedFilter_cv(const Mat& I, const Mat& p);
-Mat GuidedFilter_cv_v2(const Mat& I, const Mat& p);
+Mat GuidedFilter_cv(const Mat* rgb, const Mat* mean_I, const Mat* var_I, const Mat& p);

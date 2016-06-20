@@ -3,8 +3,10 @@
               - Guided Image Filter
               - Box Filter
   ---------------------------------------------------------------------------
-   Editor: Charles Leech
+   Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
+   Copyright (c) 2016 Charlie Leech, University of Southampton.
+   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "CVF_cl.h"
 
@@ -34,6 +36,8 @@ CVF_cl::CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
 	kernel_add = clCreateKernel(program, "Add", &errorNumber);
 	kernel_add_const = clCreateKernel(program, "Add_Const", &errorNumber);
 	kernel_bf = clCreateKernel(program, "boxfilter", &errorNumber);
+	kernel_centf = clCreateKernel(program, "cent_filter", &errorNumber);
+	kernel_var = clCreateKernel(program, "var_math", &errorNumber);
     if (!checkSuccess(errorNumber))
     {
         cleanUpOpenCL(*context, *commandQueue, program, NULL, NULL, 0);
@@ -79,107 +83,32 @@ CVF_cl::CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
 	Ib = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
 	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
 
-	mean_Ir = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	mean_Ig = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	mean_Ib = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-
-	Irr = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	Irg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	Irb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	Igg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	Igb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	Ibb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-
-	mean_Irr = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	mean_Irg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	mean_Irb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	mean_Igg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	mean_Igb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	mean_Ibb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-
-	var_Irr = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	var_Irg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	var_Irb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	var_Igg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	var_Igb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	var_Ibb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-
-	inv_rr = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_rg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_rb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_gg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_gb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_bb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-
-	inv_ggbb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_gbrb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_rggb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_rrbb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_rbrg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_rrgg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-
-	inv_gbgb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_rgbb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_ggrb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_rbrb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_rrgb = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	inv_rgrg = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-
-	covDet = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+	Ixx = new cl_mem[6];
+	mean_I = new cl_mem[3]; //r, g, b
+	mean_Ixx = new cl_mem[6]; //rr, rg, rb, gg, gb, bb
+	var_I = new cl_mem[6]; //rr, rg, rb, gg, gb, bb
+	cov_Ip = new cl_mem[3];
+	a = new cl_mem[3];
+	for(int i = 0; i < 6; i++)
+	{
+		Ixx[i] = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
+		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+		mean_Ixx[i] = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
+		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+		var_I[i] = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
+		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+		if(i<3)
+		{
+			mean_I[i] = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D_C1F, NULL, &errorNumber);
+			createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+			cov_Ip[i] = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
+			createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+			a[i] = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
+			createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+		}
+	}
 
 	mean_cv = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-
-	b = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	mean_b = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-
-	a_r = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	a_g = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
-	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-	a_b = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
 	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
 
 	tmp_3DA_r = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
@@ -208,38 +137,19 @@ CVF_cl::~CVF_cl(void)
 	clReleaseMemObject(Ir);
 	clReleaseMemObject(Ig);
 	clReleaseMemObject(Ib);
-	clReleaseMemObject(mean_Ir);
-	clReleaseMemObject(mean_Ig);
-	clReleaseMemObject(mean_Ib);
-	clReleaseMemObject(Irr);
-	clReleaseMemObject(Irg);
-	clReleaseMemObject(Irb);
-	clReleaseMemObject(Igg);
-	clReleaseMemObject(Igb);
-	clReleaseMemObject(Ibb);
-	clReleaseMemObject(mean_Irr);
-	clReleaseMemObject(mean_Irg);
-	clReleaseMemObject(mean_Irb);
-	clReleaseMemObject(mean_Igg);
-	clReleaseMemObject(mean_Igb);
-	clReleaseMemObject(mean_Ibb);
-	clReleaseMemObject(var_Irr);
-	clReleaseMemObject(var_Irg);
-	clReleaseMemObject(var_Irb);
-	clReleaseMemObject(var_Igg);
-	clReleaseMemObject(var_Igb);
-	clReleaseMemObject(var_Ibb);
-	clReleaseMemObject(inv_rr);
-	clReleaseMemObject(inv_rg);
-	clReleaseMemObject(inv_rb);
-	clReleaseMemObject(inv_gg);
-	clReleaseMemObject(inv_gb);
-	clReleaseMemObject(inv_bb);
 
-	clReleaseMemObject(covDet);
+	for(int i = 0; i < 6; i++)
+	{
+		clReleaseMemObject(var_I[i]);
+		clReleaseMemObject(mean_Ixx[i]);
+		if(i<3)
+		{
+			clReleaseMemObject(mean_I[i]);
+			clReleaseMemObject(a[i]);
+			clReleaseMemObject(cov_Ip[i]);
+		}
+	}
 
-	clReleaseMemObject(b);
-	clReleaseMemObject(mean_b);
 	clReleaseMemObject(mean_cv);
 	clReleaseMemObject(tmp_3DA_r);
 	clReleaseMemObject(tmp_3DA_g);
@@ -249,19 +159,44 @@ CVF_cl::~CVF_cl(void)
 	clReleaseMemObject(tmp_3DB_b);
 }
 
+int CVF_cl::preprocess(cl_mem* cl_Img)
+{
+    split(cl_Img, &Ir, &Ig, &Ib);
 
-int CVF_cl::filterCV(cl_mem* cl_Img, cl_mem* cl_costVol)
+    //mean_I
+	boxfilter(&Ir, &mean_I[0], globalWorksize_bf_2D);
+	boxfilter(&Ig, &mean_I[1], globalWorksize_bf_2D);
+	boxfilter(&Ib, &mean_I[2], globalWorksize_bf_2D);
+
+	elementwiseMulSD(&Ir, &Ir, &Ixx[0], globalWorksize_2D);
+	elementwiseMulSD(&Ir, &Ig, &Ixx[1], globalWorksize_2D);
+	elementwiseMulSD(&Ir, &Ib, &Ixx[2], globalWorksize_2D);
+	elementwiseMulSD(&Ig, &Ig, &Ixx[3], globalWorksize_2D);
+	elementwiseMulSD(&Ig, &Ib, &Ixx[4], globalWorksize_2D);
+	elementwiseMulSD(&Ib, &Ib, &Ixx[5], globalWorksize_2D);
+
+	for(int i = 0; i < 6; i++)
+	{
+		boxfilter(&Ixx[i], &mean_Ixx[i], globalWorksize_bf_2D);
+	}
+
+	preproc_maths(mean_I, mean_Ixx, var_I, globalWorksize_2D);
+
+	return 0;
+}
+
+int CVF_cl::filterCV(cl_mem* cl_costVol)
 {
 //    float time_start = get_rt_cvf_cl();
 //    printf("0 Time from start = %.0f us\n", get_rt_cvf_cl() - time_start);
 
-    split(cl_Img, &Ir, &Ig, &Ib);
+    //split(cl_Img, &Ir, &Ig, &Ib);
 
 //	printf("1 Time from start = %.0f us\n", get_rt_cvf_cl() - time_start);
 
-	boxfilter(&Ir, &mean_Ir, globalWorksize_bf_2D);
-	boxfilter(&Ig, &mean_Ig, globalWorksize_bf_2D);
-	boxfilter(&Ib, &mean_Ib, globalWorksize_bf_2D);
+//	boxfilter(&Ir, &mean_Ir, globalWorksize_bf_2D);
+//	boxfilter(&Ig, &mean_Ig, globalWorksize_bf_2D);
+//	boxfilter(&Ib, &mean_Ib, globalWorksize_bf_2D);
 
 //	printf("2 Time from start = %.0f us\n", get_rt_cvf_cl() - time_start);
 
@@ -269,129 +204,49 @@ int CVF_cl::filterCV(cl_mem* cl_Img, cl_mem* cl_costVol)
 
 //    printf("3 Time from start = %.0f us\n", get_rt_cvf_cl() - time_start);
 
-	elementwiseMulDD(&Ir, cl_costVol, &tmp_3DA_r);
-	elementwiseMulDD(&Ig, cl_costVol, &tmp_3DA_g);
-	elementwiseMulDD(&Ib, cl_costVol, &tmp_3DA_b);
+	elementwiseMulDD(&Ir, cl_costVol, &tmp_3DA_r); //Icv_r
+	elementwiseMulDD(&Ig, cl_costVol, &tmp_3DA_g); //Icv_g
+	elementwiseMulDD(&Ib, cl_costVol, &tmp_3DA_b); //Icv_b
 
 //	printf("4 Time from start = %.0f us\n", get_rt_cvf_cl() - time_start);
 
-	boxfilter(&tmp_3DA_r, &tmp_3DB_r, globalWorksize_bf_3D);
-	boxfilter(&tmp_3DA_g, &tmp_3DB_g, globalWorksize_bf_3D);
-	boxfilter(&tmp_3DA_b, &tmp_3DB_b, globalWorksize_bf_3D);
+	boxfilter(&tmp_3DA_r, &tmp_3DB_r, globalWorksize_bf_3D); //mean_Icv_r
+	boxfilter(&tmp_3DA_g, &tmp_3DB_g, globalWorksize_bf_3D); //mean_Icv_g
+	boxfilter(&tmp_3DA_b, &tmp_3DB_b, globalWorksize_bf_3D); //mean_Icv_b
 
 //	printf("5 Time from start = %.0f us\n", get_rt_cvf_cl() - time_start);
 //	exit(1);
 
-	elementwiseMulDD(&mean_Ir, &mean_cv, &tmp_3DA_r);
-	elementwiseMulDD(&mean_Ig, &mean_cv, &tmp_3DA_g);
-	elementwiseMulDD(&mean_Ib, &mean_cv, &tmp_3DA_b);
+	elementwiseMulDD(&mean_I[0], &mean_cv, &tmp_3DA_r); //mean_Ir_cv
+	elementwiseMulDD(&mean_I[1], &mean_cv, &tmp_3DA_g); //mean_Ig_cv
+	elementwiseMulDD(&mean_I[2], &mean_cv, &tmp_3DA_b); //mean_Ib_cv
 
-	sub(&tmp_3DB_r, &tmp_3DA_r, &tmp_3DA_r, globalWorksize_3D);
-	sub(&tmp_3DB_g, &tmp_3DA_g, &tmp_3DA_g, globalWorksize_3D);
-	sub(&tmp_3DB_b, &tmp_3DA_b, &tmp_3DA_b, globalWorksize_3D);
+	sub(&tmp_3DB_r, &tmp_3DA_r, &cov_Ip[0], globalWorksize_3D); //cov_Icv_r = mean_Icv_r - mean_Ir_cv
+	sub(&tmp_3DB_g, &tmp_3DA_g, &cov_Ip[1], globalWorksize_3D); //cov_Icv_g = mean_Icv_g - mean_Ig_cv
+	sub(&tmp_3DB_b, &tmp_3DA_b, &cov_Ip[2], globalWorksize_3D); //cov_Icv_b = mean_Icv_b - mean_Ib_cv
 
     // variance of I in each local patch: the matrix Sigma in Eqn (14).
     // Note the variance in each local patch is a 3x3 symmetric matrix:
     //           rr, rg, rb
     //   Sigma = rg, gg, gb
     //           rb, gb, bb
-	elementwiseMulSD(&Ir, &Ir, &Irr, globalWorksize_2D);
-	elementwiseMulSD(&Ir, &Ig, &Irg, globalWorksize_2D);
-	elementwiseMulSD(&Ir, &Ib, &Irb, globalWorksize_2D);
-	elementwiseMulSD(&Ig, &Ig, &Igg, globalWorksize_2D);
-	elementwiseMulSD(&Ig, &Ib, &Igb, globalWorksize_2D);
-	elementwiseMulSD(&Ib, &Ib, &Ibb, globalWorksize_2D);
 
-	boxfilter(&Irr, &mean_Irr, globalWorksize_bf_2D);
-	boxfilter(&Irg, &mean_Irg, globalWorksize_bf_2D);
-	boxfilter(&Irb, &mean_Irb, globalWorksize_bf_2D);
-	boxfilter(&Igg, &mean_Igg, globalWorksize_bf_2D);
-	boxfilter(&Igb, &mean_Igb, globalWorksize_bf_2D);
-	boxfilter(&Ibb, &mean_Ibb, globalWorksize_bf_2D);
+	//Calculation of var_I moved to preprocess()
 
-	elementwiseMulSD(&mean_Ir, &mean_Ir, &var_Irr, globalWorksize_2D);
-	elementwiseMulSD(&mean_Ir, &mean_Ig, &var_Irg, globalWorksize_2D);
-	elementwiseMulSD(&mean_Ir, &mean_Ib, &var_Irb, globalWorksize_2D);
-	elementwiseMulSD(&mean_Ig, &mean_Ig, &var_Igg, globalWorksize_2D);
-	elementwiseMulSD(&mean_Ig, &mean_Ib, &var_Igb, globalWorksize_2D);
-	elementwiseMulSD(&mean_Ib, &mean_Ib, &var_Ibb, globalWorksize_2D);
+	central_filter(mean_I, &mean_cv, var_I, cov_Ip, a, globalWorksize_3D);
 
-	sub(&mean_Irr, &var_Irr, &var_Irr, globalWorksize_2D);
-	sub(&mean_Irg, &var_Irg, &var_Irg, globalWorksize_2D);
-	sub(&mean_Irb, &var_Irb, &var_Irb, globalWorksize_2D);
-	sub(&mean_Igg, &var_Igg, &var_Igg, globalWorksize_2D);
-	sub(&mean_Igb, &var_Igb, &var_Igb, globalWorksize_2D);
-	sub(&mean_Ibb, &var_Ibb, &var_Ibb, globalWorksize_2D);
-
-	add_constant(&var_Irr, EPS, &var_Irr);
-	add_constant(&var_Igg, EPS, &var_Igg);
-	add_constant(&var_Ibb, EPS, &var_Ibb);
-
-    // Inverse of Sigma + eps * I
-	elementwiseMulSD(&var_Igg, &var_Ibb, &inv_ggbb, globalWorksize_2D);	elementwiseMulSD(&var_Igb, &var_Igb, &inv_gbgb, globalWorksize_2D);
-	elementwiseMulSD(&var_Igb, &var_Irb, &inv_gbrb, globalWorksize_2D);	elementwiseMulSD(&var_Irg, &var_Ibb, &inv_rgbb, globalWorksize_2D);
-	elementwiseMulSD(&var_Irg, &var_Igb, &inv_rggb, globalWorksize_2D);	elementwiseMulSD(&var_Igg, &var_Irb, &inv_ggrb, globalWorksize_2D);
-	elementwiseMulSD(&var_Irr, &var_Ibb, &inv_rrbb, globalWorksize_2D);	elementwiseMulSD(&var_Irb, &var_Irb, &inv_rbrb, globalWorksize_2D);
-	elementwiseMulSD(&var_Irb, &var_Irg, &inv_rbrg, globalWorksize_2D);	elementwiseMulSD(&var_Irr, &var_Igb, &inv_rrgb, globalWorksize_2D);
-	elementwiseMulSD(&var_Irr, &var_Igg, &inv_rrgg, globalWorksize_2D);	elementwiseMulSD(&var_Irg, &var_Irg, &inv_rgrg, globalWorksize_2D);
-
-	sub(&inv_ggbb, &inv_gbgb, &inv_rr, globalWorksize_2D);
-	sub(&inv_gbrb, &inv_rgbb, &inv_rg, globalWorksize_2D);
-	sub(&inv_rggb, &inv_ggrb, &inv_rb, globalWorksize_2D);
-	sub(&inv_rrbb, &inv_rbrb, &inv_gg, globalWorksize_2D);
-	sub(&inv_rbrg, &inv_rrgb, &inv_gb, globalWorksize_2D);
-	sub(&inv_rrgg, &inv_rgrg, &inv_bb, globalWorksize_2D);
-
-	elementwiseMulSD(&var_Irr, &inv_rr, &var_Irr, globalWorksize_2D);
-	elementwiseMulSD(&var_Irg, &inv_rg, &var_Irg, globalWorksize_2D);
-	elementwiseMulSD(&var_Irb, &inv_rb, &var_Irb, globalWorksize_2D);
-	add(&var_Irr, &var_Irg, &var_Irr, globalWorksize_2D);
-	add(&var_Irb, &var_Irr, &covDet, globalWorksize_2D);
-
-	elementwiseDivSD(&inv_rr, &covDet, &inv_rr, globalWorksize_2D);
-	elementwiseDivSD(&inv_rg, &covDet, &inv_rg, globalWorksize_2D);
-	elementwiseDivSD(&inv_rb, &covDet, &inv_rb, globalWorksize_2D);
-	elementwiseDivSD(&inv_gg, &covDet, &inv_gg, globalWorksize_2D);
-	elementwiseDivSD(&inv_gb, &covDet, &inv_gb, globalWorksize_2D);
-	elementwiseDivSD(&inv_bb, &covDet, &inv_bb, globalWorksize_2D);
-
-	elementwiseMulDD(&inv_rr, &tmp_3DA_r, &tmp_3DB_r);
-	elementwiseMulDD(&inv_rg, &tmp_3DA_g, &tmp_3DB_g);
-	elementwiseMulDD(&inv_rb, &tmp_3DA_b, &tmp_3DB_b);
-	add(&tmp_3DB_r, &tmp_3DB_g, &tmp_3DB_r, globalWorksize_3D);
-	add(&tmp_3DB_r, &tmp_3DB_b, &a_r, globalWorksize_3D);
-
-	elementwiseMulDD(&inv_rg, &tmp_3DA_r, &tmp_3DB_r);
-	elementwiseMulDD(&inv_gg, &tmp_3DA_g, &tmp_3DB_g);
-	elementwiseMulDD(&inv_gb, &tmp_3DA_b, &tmp_3DB_b);
-	add(&tmp_3DB_r, &tmp_3DB_g, &tmp_3DB_r, globalWorksize_3D);
-	add(&tmp_3DB_r, &tmp_3DB_b, &a_g, globalWorksize_3D);
-
-	elementwiseMulDD(&inv_rb, &tmp_3DA_r, &tmp_3DB_r);
-	elementwiseMulDD(&inv_gb, &tmp_3DA_g, &tmp_3DB_g);
-	elementwiseMulDD(&inv_bb, &tmp_3DA_b, &tmp_3DB_b);
-	add(&tmp_3DB_r, &tmp_3DB_g, &tmp_3DB_r, globalWorksize_3D);
-	add(&tmp_3DB_r, &tmp_3DB_b, &a_b, globalWorksize_3D);
-
-	elementwiseMulDD(&mean_Ir, &a_r, &tmp_3DB_r);
-	elementwiseMulDD(&mean_Ig, &a_g, &tmp_3DB_g);
-	elementwiseMulDD(&mean_Ib, &a_b, &tmp_3DB_b);
-
-	sub(&mean_cv, &tmp_3DB_r, &mean_cv, globalWorksize_3D);
-	sub(&mean_cv, &tmp_3DB_g, &mean_cv, globalWorksize_3D);
-	sub(&mean_cv, &tmp_3DB_b, &b, globalWorksize_3D);
-
-	boxfilter(&a_r, &tmp_3DA_r, globalWorksize_bf_3D);
-	boxfilter(&a_g, &tmp_3DA_g, globalWorksize_bf_3D);
-	boxfilter(&a_b, &tmp_3DA_b, globalWorksize_bf_3D);
-	boxfilter(&b, &mean_b, globalWorksize_bf_3D);
+	boxfilter(&a[0], &tmp_3DA_r, globalWorksize_bf_3D);
+	boxfilter(&a[1], &tmp_3DA_g, globalWorksize_bf_3D);
+	boxfilter(&a[2], &tmp_3DA_b, globalWorksize_bf_3D);
+	//boxfilter(&b, &mean_b, globalWorksize_bf_3D);
+	boxfilter(&mean_cv, cl_costVol, globalWorksize_bf_3D);
 
 	elementwiseMulDD(&Ir, &tmp_3DA_r, &tmp_3DA_r);
 	elementwiseMulDD(&Ig, &tmp_3DA_g, &tmp_3DA_g);
 	elementwiseMulDD(&Ib, &tmp_3DA_b, &tmp_3DA_b);
 	add(&tmp_3DA_r, &tmp_3DA_g, &tmp_3DA_r, globalWorksize_3D);
 	add(&tmp_3DA_r, &tmp_3DA_b, &tmp_3DA_r, globalWorksize_3D);
-	add(&tmp_3DA_r, &mean_b, cl_costVol, globalWorksize_3D);
+	add(&tmp_3DA_r, cl_costVol, cl_costVol, globalWorksize_3D);
 
     return 0;
 }
@@ -750,6 +605,123 @@ int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_out, size_t *globalworksize)
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
+        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+int CVF_cl::central_filter(cl_mem *mean_I_in, cl_mem *mean_cv_io, cl_mem *var_I_in, cl_mem *cov_Ip_in,  cl_mem *a_out, size_t *globalworksize)
+{
+	float eps = EPS;
+	int arg_num = 0;
+    /* Setup the kernel arguments. */
+    bool setKernelArgumentsSuccess = true;
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &mean_I_in[0]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &mean_I_in[1]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &mean_I_in[2]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &var_I_in[0]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &var_I_in[1]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &var_I_in[2]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &var_I_in[3]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &var_I_in[4]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &var_I_in[5]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &cov_Ip_in[0]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &cov_Ip_in[1]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &cov_Ip_in[2]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_int), &width));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_int), &height));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_float), &eps));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &a_out[0]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &a_out[1]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), &a_out[2]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_centf, arg_num++, sizeof(cl_mem), mean_cv_io));
+    if (!setKernelArgumentsSuccess)
+    {
+		cleanUpOpenCL(*context, *commandQueue, program, kernel_centf, NULL, 0);
+        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+    }
+
+    if(OCL_STATS) printf("CVF_cl: Running central filter Kernels\n");
+	/* Enqueue the kernel */
+	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_centf, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
+	{
+		cleanUpOpenCL(*context, *commandQueue, program, kernel_centf, NULL, 0);
+		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		return 1;
+	}
+
+	/* Wait for completion */
+	if (!checkSuccess(clFinish(*commandQueue)))
+	{
+		cleanUpOpenCL(*context, *commandQueue, program, kernel_centf, NULL, 0);
+		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		return 1;
+	}
+
+	if(OCL_STATS) printProfilingInfo(event);
+    /* Release the event object. */
+    if (!checkSuccess(clReleaseEvent(event)))
+    {
+        cleanUpOpenCL(*context, *commandQueue, program, kernel_centf, NULL, 0);
+        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+int CVF_cl::preproc_maths(cl_mem *mean_I_in, cl_mem *mean_Ixx_in, cl_mem *var_I_out, size_t *globalworksize)
+{
+	int arg_num = 0;
+    /* Setup the kernel arguments. */
+    bool setKernelArgumentsSuccess = true;
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &mean_I_in[0]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &mean_I_in[1]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &mean_I_in[2]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &mean_Ixx_in[0]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &mean_Ixx_in[1]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &mean_Ixx_in[2]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &mean_Ixx_in[3]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &mean_Ixx_in[4]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &mean_Ixx_in[5]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_int), &width));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_int), &height));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &var_I_out[0]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &var_I_out[1]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &var_I_out[2]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &var_I_out[3]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &var_I_out[4]));
+    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_var, arg_num++, sizeof(cl_mem), &var_I_out[5]));
+    if (!setKernelArgumentsSuccess)
+    {
+		cleanUpOpenCL(*context, *commandQueue, program, kernel_var, NULL, 0);
+        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+    }
+
+    if(OCL_STATS) printf("CVF_cl: Running variance maths Kernels\n");
+	/* Enqueue the kernel */
+	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_var, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
+	{
+		cleanUpOpenCL(*context, *commandQueue, program, kernel_var, NULL, 0);
+		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		return 1;
+	}
+
+	/* Wait for completion */
+	if (!checkSuccess(clFinish(*commandQueue)))
+	{
+		cleanUpOpenCL(*context, *commandQueue, program, kernel_var, NULL, 0);
+		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		return 1;
+	}
+
+	if(OCL_STATS) printProfilingInfo(event);
+    /* Release the event object. */
+    if (!checkSuccess(clReleaseEvent(event)))
+    {
+        cleanUpOpenCL(*context, *commandQueue, program, kernel_var, NULL, 0);
         cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
         return 1;
     }

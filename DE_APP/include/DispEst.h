@@ -3,6 +3,8 @@
   ---------------------------------------------------------------------------
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
+   Copyright (c) 2016 Charlie Leech, University of Southampton.
+   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 #include "CVC.h"
@@ -33,6 +35,13 @@ public:
 	//CVC & CVF
     Mat* lcostVol;
     Mat* rcostVol;
+    //CVF
+    Mat* lImg_rgb;
+    Mat* rImg_rgb;
+    Mat* mean_lImg;
+    Mat* mean_rImg;
+    Mat* var_lImg;
+    Mat* var_rImg;
     //DispSel
     Mat lDisMap;
     Mat rDisMap;

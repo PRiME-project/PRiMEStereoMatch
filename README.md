@@ -39,7 +39,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 * Download project folder to your platform.
 * Enter the base directory using `cd DE_APP`.
 * Natively compile the project using `make -jN`. 
-	* Se N to the number of simultaneous threads supported on your compilation platform, e.g. 8.
+	* Set N to the number of simultaneous threads supported on your compilation platform, e.g. 8.
 
 ### Deployment
 * Run the application using `./bin/Release/DE_APP <program arguments>`

@@ -52,7 +52,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 		* IMAGE <left image filename> <right image filename>
 * When specifying the VIDEO media type, the following optional arguments can be included:
 	* RECALIBRATE - recalculate the intrinsic and extrinsic parameters of the stereo camera. Previously captured chessboard images must be supplied if the RECAPTURE flag is not also set.
-	* RECAPTURE - record chessboard image pairs in preparation for calibration. A chessboard image must be presented in front of the stereo camera and in full view of both cameras.
+	* RECAPTURE - record chessboard image pairs in preparation for calibration. A chessboard image must be presented in front of the stereo camera and in full view of both cameras. Press the R key to capture a frame. The last frame captured is shown beneath the video stream.
 * For example, to run with the guided image filter algorithm using a stereo camera, specify:
 	* `./bin/Release/DE_APP STEREO_GIF VIDEO`
 * To run with calibration and capture beforehand, specify:

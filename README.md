@@ -9,7 +9,7 @@
 A heterogeneous and fully parallel stereo matching algorithm for depth estimation. Stereo Matching is based on the disparity estimation algorithm, an algorithm designed to calculate 3D depth information about a scene from a pair of 2D images captured by a stereoscopic camera. The algorithm contains the following stages:
 
 * Cost Volume Construction - weighted absolute difference of colours and gradients function.
-* Cost Volume Filtering - ADaptive Support Weight (ADSW) Guided Image Filter (GIF) function.  
+* Cost Volume Filtering - Adaptive Support Weight (ADSW) Guided Image Filter (GIF) function.  
 * Disparity Selection - Winner-Takes-All (WTA) minimum cost selection.  
 * Post Processing - left-right occlusion check, invalid pixel replacement and weight-median filtering.  
 
@@ -39,7 +39,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 * Download project folder to your platform.
 * Enter the base directory using `cd DE_APP`.
 * Natively compile the project using `make -jN`. 
-	* Se N to the number of simultaneous threads supported on your compilation platform, e.g. 8.
+	* Set N to the number of simultaneous threads supported on your compilation platform, e.g. 8.
 
 ### Deployment
 * Run the application using `./bin/Release/DE_APP <program arguments>`
@@ -52,7 +52,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 		* IMAGE <left image filename> <right image filename>
 * When specifying the VIDEO media type, the following optional arguments can be included:
 	* RECALIBRATE - recalculate the intrinsic and extrinsic parameters of the stereo camera. Previously captured chessboard images must be supplied if the RECAPTURE flag is not also set.
-	* RECAPTURE - record chessboard image pairs in preparation for calibration. A chessboard image must be presented in front of the stereo camera and in full view of both cameras.
+	* RECAPTURE - record chessboard image pairs in preparation for calibration. A chessboard image must be presented in front of the stereo camera and in full view of both cameras. Press the R key to capture a frame. The last frame captured is shown beneath the video stream.
 * For example, to run with the guided image filter algorithm using a stereo camera, specify:
 	* `./bin/Release/DE_APP STEREO_GIF VIDEO`
 * To run with calibration and capture beforehand, specify:

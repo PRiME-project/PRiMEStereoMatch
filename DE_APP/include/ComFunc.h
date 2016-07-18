@@ -41,6 +41,10 @@
 #define OCV_DE 0
 #define OCL_DE 1
 
+#define GIF_R_WIN 9
+#define GIF_EPS_32F 0.0001f
+#define GIF_EPS_8UC 1
+
 #define MAX_CPU_THREADS 8
 #define MIN_CPU_THREADS 1
 
@@ -52,6 +56,9 @@
 using namespace cv;
 using namespace std;
 
-typedef unsigned char   uch;
-typedef unsigned short  ush;
-typedef unsigned long   ulg;
+#ifndef COMFUNC_H
+#define COMFUNC_H
+
+enum buff_id {CVC_LIMGR, CVC_LIMGG, CVC_LIMGB, CVC_RIMGR, CVC_RIMGG, CVC_RIMGB, CVC_LGRDX, CVC_RGRDX, CV_LCV, CV_RCV, DS_LDM, DS_RDM};
+
+#endif // COMFUNC_H

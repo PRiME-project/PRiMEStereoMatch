@@ -16,12 +16,39 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
     hei = lImg.rows;
     wid = lImg.cols;
 
+    //Global Image Type Checking
+	if(lImg.type() == rImg.type())
+	{
+		imgType = (lImg.type() & CV_MAT_DEPTH_MASK);
+		//printf("imgType = %d, CV_32F = %d, CV_8U = %d\n", imgType, CV_32F, CV_8U);
+	}
+	else
+	{
+		printf("DE: Error - Left & Right images are of different types.\n");
+		exit(1);
+	}
+	if(imgType != CV_32F && imgType != CV_8U)
+	{
+		printf("DE: Error - Unsupported Image type provided, supported types include:\n");
+		printf("DE:       - CV_32F:\n");
+		printf("DE:       - CV_8U:\n");
+		exit(1);
+	}
+
     lcostVol = new Mat[maxDis];
     rcostVol = new Mat[maxDis];
     for (int i = 0; i < maxDis; i++)
     {
-        lcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
-        rcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
+		if(imgType == CV_32F)
+		{
+			lcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
+			rcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
+		}
+		else if(imgType == CV_8U)
+		{
+			lcostVol[i] = Mat::zeros(hei, wid, CV_8UC1);
+			rcostVol[i] = Mat::zeros(hei, wid, CV_8UC1);
+		}
     }
 
     lImg_rgb = new Mat[3];
@@ -31,11 +58,10 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
     var_lImg = new Mat[6];
     var_rImg = new Mat[6];
 
-    lDisMap = Mat::zeros(hei, wid, CV_8UC1);
-    rDisMap = Mat::zeros(hei, wid, CV_8UC1);
-
-    lValid = Mat::zeros(hei, wid, CV_8UC1);
-    rValid = Mat::zeros(hei, wid, CV_8UC1);
+	lDisMap = Mat::zeros(hei, wid, CV_8UC1);
+	rDisMap = Mat::zeros(hei, wid, CV_8UC1);
+	lValid = Mat::zeros(hei, wid, CV_8UC1);
+	rValid = Mat::zeros(hei, wid, CV_8UC1);
 
 	printf("Setting up pthreads function constructors\n");
     constructor = new CVC();
@@ -50,7 +76,7 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 		context = 0;
 		commandQueue = 0;
 		device = 0;
-		numberOfMemoryObjects = 8;
+		numberOfMemoryObjects = 12;
 		for(int m = 0; m < (int)numberOfMemoryObjects; m++)
 			memoryObjects[m] = 0;
 
@@ -71,32 +97,49 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 		height = (cl_int)hei;
 		channels = (cl_int)lImg.channels();
 
-		//Buffers in accending size order
-		bufferSize_2D_C1C = width * height * sizeof(cl_char);
-		bufferSize_2D_C1F = width * height * sizeof(cl_float);
-		bufferSize_2D_C3F = width * height * sizeof(cl_float) * channels;
-		bufferSize_3D_C1F = width * height * maxDis * sizeof(cl_float);
+		//OpenCL Buffers that are type dependent (in accending size order)
+		if(imgType == CV_32F)
+		{
+			bufferSize_2D = width * height * sizeof(cl_float);
+			bufferSize_3D = width * height * maxDis * sizeof(cl_float);
+		}
+		else if(imgType == CV_8U)
+		{
+			bufferSize_2D = width * height * sizeof(cl_uchar);
+			bufferSize_3D = width * height * maxDis * sizeof(cl_uchar);
+		}
+		//OpenCL Buffers that are always required
+		bufferSize_2D_8UC1 = width * height * sizeof(cl_uchar);
 
 		/* Create buffers for the left and right images, gradient data, cost volume, and disparity maps. */
 		bool createMemoryObjectsSuccess = true;
-		memoryObjects[CVC_LIMG] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D_C3F, NULL, &errorNumber);
+		memoryObjects[CVC_LIMGR] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D, NULL, &errorNumber);
 		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-		memoryObjects[CVC_RIMG] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D_C3F, NULL, &errorNumber);
+		memoryObjects[CVC_LIMGG] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D, NULL, &errorNumber);
 		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-
-		memoryObjects[CVC_LGRDX] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D_C1F, NULL, &errorNumber);
-		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-		memoryObjects[CVC_RGRDX] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D_C1F, NULL, &errorNumber);
+		memoryObjects[CVC_LIMGB] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D, NULL, &errorNumber);
 		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
 
-		memoryObjects[CV_LCV] = clCreateBuffer(context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
+		memoryObjects[CVC_RIMGR] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D, NULL, &errorNumber);
 		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-		memoryObjects[CV_RCV] = clCreateBuffer(context, CL_MEM_READ_WRITE, bufferSize_3D_C1F, NULL, &errorNumber);
+		memoryObjects[CVC_RIMGG] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D, NULL, &errorNumber);
+		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+		memoryObjects[CVC_RIMGB] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D, NULL, &errorNumber);
 		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
 
-		memoryObjects[DS_LDM] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D_C1C, NULL, &errorNumber);
+		memoryObjects[CVC_LGRDX] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D, NULL, &errorNumber);
 		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-		memoryObjects[DS_RDM] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D_C1C, NULL, &errorNumber);
+		memoryObjects[CVC_RGRDX] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D, NULL, &errorNumber);
+		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+
+		memoryObjects[CV_LCV] = clCreateBuffer(context, CL_MEM_READ_WRITE, bufferSize_3D, NULL, &errorNumber);
+		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+		memoryObjects[CV_RCV] = clCreateBuffer(context, CL_MEM_READ_WRITE, bufferSize_3D, NULL, &errorNumber);
+		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+
+		memoryObjects[DS_LDM] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D_8UC1, NULL, &errorNumber);
+		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+		memoryObjects[DS_RDM] = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, bufferSize_2D_8UC1, NULL, &errorNumber);
 		createMemoryObjectsSuccess &= checkSuccess(errorNumber);
 		if (!createMemoryObjectsSuccess)
 		{
@@ -106,9 +149,9 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 
 		printf("Setting up OpenCL function constructors\n");
 		//OpenCL function constructors
-		constructor_cl  = new CVC_cl(&context, &commandQueue, device, lImg, maxDis);
-		filter_cl       = new CVF_cl(&context, &commandQueue, device, lImg, maxDis);
-		selector_cl = new DispSel_cl(&context, &commandQueue, device, lImg, maxDis);
+		constructor_cl  = new CVC_cl(&context, &commandQueue, device, &lImg, maxDis);
+		filter_cl       = new CVF_cl(&context, &commandQueue, device, &lImg, maxDis);
+		selector_cl = new DispSel_cl(&context, &commandQueue, device, &lImg, maxDis);
     }
 
 	printf("Construction Complete\n");
@@ -127,6 +170,9 @@ DispEst::~DispEst(void)
 		delete constructor_cl;
 		delete filter_cl;
 		delete selector_cl;
+
+		for(int m = 0; m < (int)numberOfMemoryObjects; m++)
+			clReleaseMemObject(memoryObjects[m]);
     }
 }
 
@@ -152,8 +198,8 @@ void DispEst::CostConst()
     // Build Cost Volume
     for( int d = 0; d < maxDis; d ++ )
     {
-        constructor->buildCV_left(lImg, rImg, d, lcostVol[d]);
-        constructor->buildCV_right(rImg, lImg, d, rcostVol[d]);
+        constructor->buildCV_left(lImg, rImg, lGrdX, rGrdX, d, lcostVol[d]);
+        constructor->buildCV_right(rImg, lImg, rGrdX, lGrdX, d, rcostVol[d]);
     }
 }
 
@@ -167,6 +213,9 @@ void DispEst::CostConst_CPU()
     pthread_t BCV_threads[maxDis];
     buildCV_TD buildCV_TD_Array[maxDis];
 
+	constructor->preprocess(lImg, lGrdX);
+	constructor->preprocess(rImg, rGrdX);
+
     for(int level = 0; level <= maxDis/threads; level ++)
 	{
 	    //Handle remainder if threads is not power of 2.
@@ -175,7 +224,7 @@ void DispEst::CostConst_CPU()
 	    for(int iter=0; iter < block_size; iter++)
 	    {
 	        int d = level*threads + iter;
-            buildCV_TD_Array[d] = {&lImg, &rImg, d, &lcostVol[d]};
+            buildCV_TD_Array[d] = {&lImg, &rImg, &lGrdX, &rGrdX, d, &lcostVol[d]};
             pthread_create(&BCV_threads[d], &attr, CVC::buildCV_left_thread, (void *)&buildCV_TD_Array[d]);
             //printf("Creating BCV L Thread %d\n",d);
 	    }
@@ -194,7 +243,7 @@ void DispEst::CostConst_CPU()
 	    for(int iter=0; iter < block_size; iter++)
 	    {
 	        int d = level*threads + iter;
-            buildCV_TD_Array[d] = {&rImg, &lImg, d, &rcostVol[d]};
+            buildCV_TD_Array[d] = {&rImg, &lImg, &rGrdX, &lGrdX, d, &rcostVol[d]};
             pthread_create(&BCV_threads[d], &attr, CVC::buildCV_right_thread, (void *)&buildCV_TD_Array[d]);
 	    }
         for(int iter=0; iter < block_size; iter++)
@@ -207,7 +256,7 @@ void DispEst::CostConst_CPU()
 
 void DispEst::CostConst_GPU()
 {
-    constructor_cl->buildCV(lImg, rImg, memoryObjects);
+	constructor_cl->buildCV(lImg, rImg, memoryObjects);
 }
 
 //#############################################################################################################
@@ -281,9 +330,9 @@ void DispEst::CostFilter_CPU()
 void DispEst::CostFilter_GPU() //under construction
 {
     //printf("OpenCL Cost Filtering Underway...\n");
-    filter_cl->preprocess(&memoryObjects[CVC_LIMG]);
+    filter_cl->preprocess(&memoryObjects[CVC_LIMGR], &memoryObjects[CVC_LIMGG], &memoryObjects[CVC_LIMGB]);
     filter_cl->filterCV(&memoryObjects[CV_LCV]);
-    filter_cl->preprocess(&memoryObjects[CVC_RIMG]);
+    filter_cl->preprocess(&memoryObjects[CVC_RIMGR], &memoryObjects[CVC_RIMGG], &memoryObjects[CVC_RIMGB]);
     filter_cl->filterCV(&memoryObjects[CV_RCV]);
     //printf("Filtering Complete\n");
 }
@@ -302,10 +351,17 @@ void DispEst::DispSelect_CPU()
 void DispEst::DispSelect_GPU()
 {
 	//printf("Left & Right Selection...\n");
-    selector_cl->CVSelect(memoryObjects, lDisMap, rDisMap);
+	selector_cl->CVSelect(memoryObjects, lDisMap, rDisMap);
 }
 
 void DispEst::PostProcess_CPU()
+{
+    //printf("Post Processing Underway...\n");
+    postProcessor->processDM(lImg, rImg, lDisMap, rDisMap, lValid, rValid, maxDis, threads);
+    //printf("Post Processing Complete\n");
+}
+
+void DispEst::PostProcess_GPU()
 {
     //printf("Post Processing Underway...\n");
     postProcessor->processDM(lImg, rImg, lDisMap, rDisMap, lValid, rValid, maxDis, threads);

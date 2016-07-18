@@ -31,7 +31,11 @@ public:
     int maxDis;
     int threads;
     bool useOCL;
+    int imgType;
 
+	//CVC
+    Mat lGrdX;
+    Mat rGrdX;
 	//CVC & CVF
     Mat* lcostVol;
     Mat* rcostVol;
@@ -63,14 +67,14 @@ public:
     cl_command_queue commandQueue;
     cl_device_id device;
     unsigned int numberOfMemoryObjects;
-    cl_mem memoryObjects[8]; //OpenCL Memory Buffers
+    cl_mem memoryObjects[12]; //OpenCL Memory Buffers
     cl_int errorNumber;
     cl_event event;
 
     cl_int width, height, channels;
-	size_t bufferSize_2D_C1C, bufferSize_2D_C1F, bufferSize_2D_C3F, bufferSize_3D_C1F;
-
-	enum buff_id {CVC_LIMG = 0, CVC_RIMG, CVC_LGRDX, CVC_RGRDX, CV_LCV, CV_RCV, DS_LDM, DS_RDM};
+	size_t bufferSize_2D_8UC1; //DispMap,
+	size_t bufferSize_2D; //Img, Gray, GrdX,
+	size_t bufferSize_3D; //costVol,
 
     DispEst(Mat l, Mat r, const int d, const int t, bool ocl);
     ~DispEst(void);
@@ -89,4 +93,5 @@ public:
     void DispSelect_GPU();
 
     void PostProcess_CPU();
+    void PostProcess_GPU();
 };

@@ -8,8 +8,6 @@
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 
-#define DOUBLE_MAX 1e5
-
 class DispSel
 {
 public:

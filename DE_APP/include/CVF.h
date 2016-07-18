@@ -8,9 +8,6 @@
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 
-#define R_WIN 9
-#define EPS 0.0001f
-
 //
 // GIF for Cost Computation
 //

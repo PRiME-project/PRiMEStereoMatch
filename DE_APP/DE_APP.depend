@@ -1550,3 +1550,115 @@
 	"common.h"
 	"StereoMatch.h"
 
+1467974864 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/main.cpp
+	"ComFunc.h"
+	"common.h"
+	"StereoMatch.h"
+
+1467643153 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/ComFunc.h
+	<iostream>
+	<fstream>
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+	<sstream>
+	<cstddef>
+	<string>
+	<time.h>
+	<unistd.h>
+	<math.h>
+	<ctime>
+	<chrono>
+	<pthread.h>
+	<OpenCL/opencl.h>
+	<CL/cl.h>
+	<CL/cl_ext.h>
+	<opencv2/opencv.hpp>
+
+1466419975 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/common.h
+	"ComFunc.h"
+
+1467641532 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/StereoMatch.h
+	"ComFunc.h"
+	"StereoCalib.h"
+	"DispEst.h"
+
+1466420061 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/StereoCalib.h
+	"ComFunc.h"
+	"opencv2/calib3d/calib3d.hpp"
+	"opencv2/imgcodecs.hpp"
+	"opencv2/highgui/highgui.hpp"
+	"opencv2/imgproc/imgproc.hpp"
+	<vector>
+	<algorithm>
+	<iterator>
+	<ctype.h>
+
+1467643682 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/DispEst.h
+	"ComFunc.h"
+	"CVC.h"
+	"CVC_cl.h"
+	"CVF.h"
+	"CVF_cl.h"
+	"DispSel.h"
+	"DispSel_cl.h"
+	"PP.h"
+	"common.h"
+
+1467716657 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/CVC.h
+	"ComFunc.h"
+
+1467649407 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/CVC_cl.h
+	"ComFunc.h"
+	"common.h"
+
+1467645396 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/CVF.h
+	"ComFunc.h"
+
+1467979259 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/CVF_cl.h
+	"ComFunc.h"
+	"common.h"
+
+1467648019 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/DispSel.h
+	"ComFunc.h"
+
+1467648275 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/DispSel_cl.h
+	"ComFunc.h"
+	"common.h"
+
+1466420021 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/include/PP.h
+	"ComFunc.h"
+
+1466419744 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/common.cpp
+	"common.h"
+
+1467716620 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/CVC.cpp
+	"CVC.h"
+
+1467978188 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/CVC_cl.cpp
+	"CVC_cl.h"
+
+1467717881 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/CVF.cpp
+	"CVF.h"
+
+1467979551 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/CVF_cl.cpp
+	"CVF_cl.h"
+
+1467968650 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/DispEst.cpp
+	"DispEst.h"
+
+1467712408 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/DispSel.cpp
+	"DispSel.h"
+
+1467978724 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/DispSel_cl.cpp
+	"DispSel_cl.h"
+
+1467718629 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/PP.cpp
+	"PP.h"
+
+1466420060 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/StereoCalib.cpp
+	"StereoCalib.h"
+
+1467979575 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/StereoMatch.cpp
+	"StereoMatch.h"
+

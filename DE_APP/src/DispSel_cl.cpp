@@ -9,46 +9,52 @@
 #include "DispSel_cl.h"
 
 DispSel_cl::DispSel_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id device,
-						Mat l, const int d) : lImg_ref(l), maxDis(d), context(context), commandQueue(commandQueue)
+						Mat* I, const int d) : maxDis(d), context(context), commandQueue(commandQueue)
 {
     //fprintf(stderr, "Winner-Takes-All Disparity Selection\n" );
 
     //OpenCL Setup
     program = 0;
+    imgType = I->type() & CV_MAT_DEPTH_MASK;
 
-    if (!createProgram(*context, device, "assets/dispsel_float.cl", &program))
-    //if (!createProgram(context, device, "assets/dispsel_double.cl", &program))
+    if (!createProgram(*context, device, "assets/dispsel.cl", &program))
     {
         cleanUpOpenCL(NULL, NULL, NULL, kernel, NULL, 0);
         cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << endl;
     }
 
-    kernel = clCreateKernel(program, "dispsel", &errorNumber);
+	if(imgType == CV_32F)
+	{
+		kernel_name = "dispsel_float";
+		//kernel_name = "dispsel_double";
+	}
+	else if(imgType == CV_8U)
+	{
+		kernel_name = "dispsel_uchar";
+	}
+    else{
+		printf("DS_cl: Error - Unrecognised data type in processing! (DS_cl)\n");
+		exit(1);
+    }
+	kernel = clCreateKernel(program, kernel_name, &errorNumber);
     if (!checkSuccess(errorNumber))
     {
         cleanUpOpenCL(NULL, NULL, NULL, kernel, NULL, 0);
         cerr << "Failed to create OpenCL kernel. " << __FILE__ << ":"<< __LINE__ << endl;
     }
 
-    width = (cl_int)lImg_ref.cols;
-    height = (cl_int)lImg_ref.rows;
+    width = (cl_int)I->cols;
+    height = (cl_int)I->rows;
 
-	//Buffers in accending size order
-	bufferSize_2D_C1C = width * height * sizeof(cl_char);
-	bufferSize_2D_C1F = width * height * sizeof(cl_float);
-	bufferSize_3D_C1F = width * height * maxDis * sizeof(cl_float);
+	//OpenCL Buffers in accending size order
+	bufferSize_2D_8UC1 = width * height * sizeof(cl_char);
 
     /* An event to associate with the Kernel. Allows us to retreive profiling information later. */
     event = 0;
 
-    /* [Kernel size] */
-    /*
-     * Each instance of the kernel operates on a single pixel portion of the image.
-     * Therefore, the global work size is the number of pixel.
-     */
+    //Kernel size
     globalWorksize[0] = (size_t)width;
     globalWorksize[1] = (size_t)height;
-    /* [Kernel size] */
 }
 DispSel_cl::~DispSel_cl(void)
 {
@@ -101,11 +107,11 @@ int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
         return 1;
     }
 
-	/* Map the input memory objects to host side pointers. */
+	/* Map the output memory objects to host side pointers. */
 	bool EnqueueMapBufferSuccess = true;
-	cl_char *clbuffer_lDispMap = (cl_char*)clEnqueueMapBuffer(*commandQueue, memoryObjects[DS_LDM], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D_C1C, 0, NULL, NULL, &errorNumber);
+	cl_char *clbuffer_lDispMap = (cl_char*)clEnqueueMapBuffer(*commandQueue, memoryObjects[DS_LDM], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D_8UC1, 0, NULL, NULL, &errorNumber);
 	EnqueueMapBufferSuccess &= checkSuccess(errorNumber);
-	cl_char *clbuffer_rDispMap = (cl_char*)clEnqueueMapBuffer(*commandQueue, memoryObjects[DS_RDM], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D_C1C, 0, NULL, NULL, &errorNumber);
+	cl_char *clbuffer_rDispMap = (cl_char*)clEnqueueMapBuffer(*commandQueue, memoryObjects[DS_RDM], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D_8UC1, 0, NULL, NULL, &errorNumber);
 	EnqueueMapBufferSuccess &= checkSuccess(errorNumber);
 	if (!EnqueueMapBufferSuccess)
 	{
@@ -113,7 +119,7 @@ int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
 	   cerr << "Mapping memory objects failed " << __FILE__ << ":"<< __LINE__ << endl;
 	}
 
-	memcpy(ldispMap.data, clbuffer_lDispMap, bufferSize_2D_C1C);
-	memcpy(rdispMap.data, clbuffer_rDispMap, bufferSize_2D_C1C);
+	memcpy(ldispMap.data, clbuffer_lDispMap, bufferSize_2D_8UC1);
+	memcpy(rdispMap.data, clbuffer_rDispMap, bufferSize_2D_8UC1);
     return 0;
 }

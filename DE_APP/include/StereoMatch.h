@@ -14,7 +14,8 @@ class StereoMatch
 {
 public:
 	//Variables
-	bool end_de, recaptureChessboards, recalibrate, video, gotOCLDev;
+	bool end_de, recaptureChessboards, recalibrate, video;
+	int gotOCLDev;
 	char cap_key;
 
 	int MatchingAlgorithm;
@@ -28,6 +29,7 @@ public:
 
 	//input values
     int maxDis;
+    int imgType;
 
     //stage & process time measurements
     float cvc_time, cvf_time, dispsel_time, pp_time;
@@ -52,11 +54,12 @@ public:
 	char right_img_filename[100];
 
 	//Function prototypes
-	int Compute(void);
-	StereoMatch(int argc, char *argv[], bool gotOpenCLDev);
-    ~StereoMatch(void);
 	int stereoCameraSetup(void);
 	int captureChessboards(void);
 	int setupOpenCVSGBM(int, int);
 	int inputArgParser(int argc, char *argv[]);
+	int imgTypeChange(int type);
+	int Compute(void);
+	StereoMatch(int argc, char *argv[], int gotOpenCLDev);
+    ~StereoMatch(void);
 };

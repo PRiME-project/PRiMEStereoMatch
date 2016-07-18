@@ -34,7 +34,7 @@ void *CVF::filterCV_thread(void *thread_arg)
     const Mat pImg = *t_data->costVol;
     Mat* costVol = t_data->costVol;
 
-    *costVol = GuidedFilter_cv(Img_rgb, mean_Img, var_Img, pImg); // ~7.5 sec
+    *costVol = GuidedFilter_cv(Img_rgb, mean_Img, var_Img, pImg);
 
     return (void*)0;
 }
@@ -42,7 +42,7 @@ void *CVF::filterCV_thread(void *thread_arg)
 //Image channel division, boxfiltering and variance calculation can all be computed once for all disparities
 int CVF::preprocess(const Mat& Img, Mat* Img_rgb, Mat* mean_Img, Mat* var_Img)
 {
-    Size r = Size(R_WIN,R_WIN);
+    Size r = Size(GIF_R_WIN,GIF_R_WIN);
 
     split( Img, Img_rgb );
 
@@ -73,18 +73,10 @@ void CVF::filterCV(const Mat* Img_rgb, const Mat* mean_Img, const Mat* var_Img, 
 
 Mat GuidedFilter_cv(const Mat* rgb, const Mat* mean_I, const Mat* var_I, const Mat& p)
 {
-    Size r = Size(R_WIN,R_WIN);
-    float eps = EPS;
-    //float time_start = get_rt_cvf();
+    Size r = Size(GIF_R_WIN,GIF_R_WIN);
 
-	// filter signal must be 1 channel
-	//CV_Assert( p.type() == CV_32FC1 );
-    //printf("1 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
-
-	int H = p.rows;
-    int W = p.cols;
-	//printf("2 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
-
+	int H = rgb[0].rows;
+    int W = rgb[0].cols;
     // color guidence
     // image must in RGB format
 
@@ -94,8 +86,6 @@ Mat GuidedFilter_cv(const Mat* rgb, const Mat* mean_I, const Mat* var_I, const M
 //    for( int c = 0; c < 3; c ++ ) {
 //        boxFilter( rgb[c], mean_I[c], -1, r );
 //    }
-    //printf("3 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
-
     Mat mean_p;
     boxFilter( p, mean_p, -1, r );
 
@@ -105,15 +95,12 @@ Mat GuidedFilter_cv(const Mat* rgb, const Mat* mean_I, const Mat* var_I, const M
         multiply( rgb[ c ], p, tmp );
         boxFilter( tmp, mean_Ip[c], -1, r );
     }
-    //printf("4 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
-
     /*% covariance of (I, p) in each local patch.*/
     Mat cov_Ip[ 3 ];
     for( int c = 0; c < 3; c ++ ) {
         multiply( mean_I[ c ], mean_p, tmp );
         cov_Ip[ c ] = mean_Ip[ c ] - tmp;
     }
-    //printf("5 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
 
     //  % variance of I in each local patch: the matrix Sigma in Eqn (14).
     //	% Note the variance in each local patch is a 3x3 symmetric matrix:
@@ -132,73 +119,123 @@ Mat GuidedFilter_cv(const Mat* rgb, const Mat* mean_I, const Mat* var_I, const M
 //        }
 //    }
 
-    //printf("6 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
-
     Mat a[ 3 ];
-    for( int c = 0; c < 3; c ++  ) {
-        a[ c ] = Mat::zeros( H, W, CV_32FC1 );
+    for( int c = 0; c < 3; c ++  )
+    {
+		if(rgb[0].type() == CV_32F)
+			a[ c ] = Mat::zeros( H, W, CV_32FC1 );
+		if(rgb[0].type() == CV_8U)
+			a[ c ] = Mat::zeros( H, W, CV_8UC1 );
     }
 
-    //printf("7 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
-
-    for( int y = 0; y < H; y ++ ) {
-        float* vData[ 6 ];
-        for( int v = 0; v < 6; v ++ ) {
-            vData[ v ] = ( float* ) var_I[ v ].ptr<float>( y );
-        }
-        float* cData[ 3 ];
-        for( int c = 0; c < 3; c ++ ) {
-            cData[ c ] = ( float * ) cov_Ip[ c ].ptr<float>( y );
-        }
-        float* aData[ 3 ];
-        for( int c = 0; c < 3; c++  ) {
-            aData[ c ] = ( float* ) a[ c ].ptr<float>( y );
-        }
-        for( int x = 0; x < W; x ++ )
-        {
-			float c0 = cData[ 0 ][ x ];
-			float c1 = cData[ 1 ][ x ];
-			float c2 = cData[ 2 ][ x ];
-			float a11 = vData[ 0 ][ x ] + eps;
-			float a12 = vData[ 1 ][ x ];
-			float a13 = vData[ 2 ][ x ];
-			float a21 = vData[ 1 ][ x ];
-			float a22 = vData[ 3 ][ x ] + eps;
-			float a23 = vData[ 4 ][ x ];
-			float a31 = vData[ 2 ][ x ];
-			float a32 = vData[ 4 ][ x ];
-			float a33 = vData[ 5 ][ x ] + eps;
-			float DET = a11 * ( a33 * a22 - a32 * a23 ) -
-				a21 * ( a33 * a12 - a32 * a13 ) +
-				a31 * ( a23 * a12 - a22 * a13 );
-			DET = 1 / DET;
-			aData[ 0 ][ x ] = DET * (
-				c0 * ( a33 * a22 - a32 * a23 ) +
-				c1 * ( a31 * a23 - a33 * a21 ) +
-				c2 * ( a32 * a21 - a31 * a22 )
-				);
-			aData[ 1 ][ x ] = DET * (
-				c0 * ( a32 * a13 - a33 * a12 ) +
-				c1 * ( a33 * a11 - a31 * a13 ) +
-				c2 * ( a31 * a12 - a32 * a11 )
-				);
-			aData[ 2 ][ x ] = DET * (
-				c0 * ( a23 * a12 - a22 * a13 ) +
-				c1 * ( a21 * a13 - a23 * a11 ) +
-				c2 * ( a22 * a11 - a21 * a12 )
-				);
-        }
+	if(rgb[0].type() == CV_8U)
+	{
+		for( int y = 0; y < H; y ++ ) {
+			uchar* vData[ 6 ];
+			for( int v = 0; v < 6; v ++ ) {
+				vData[ v ] = (uchar*) var_I[ v ].ptr<uchar>( y );
+			}
+			uchar* cData[ 3 ];
+			for( int c = 0; c < 3; c ++ ) {
+				cData[ c ] = (uchar*) cov_Ip[ c ].ptr<uchar>( y );
+			}
+			uchar* aData[ 3 ];
+			for( int c = 0; c < 3; c++  ) {
+				aData[ c ] = (uchar*) a[ c ].ptr<uchar>( y );
+			}
+			for( int x = 0; x < W; x ++ )
+			{
+				uchar c0 = cData[ 0 ][ x ];
+				uchar c1 = cData[ 1 ][ x ];
+				uchar c2 = cData[ 2 ][ x ];
+				uchar a11 = vData[ 0 ][ x ] + GIF_EPS_8UC;
+				uchar a12 = vData[ 1 ][ x ];
+				uchar a13 = vData[ 2 ][ x ];
+				uchar a21 = vData[ 1 ][ x ];
+				uchar a22 = vData[ 3 ][ x ] + GIF_EPS_8UC;
+				uchar a23 = vData[ 4 ][ x ];
+				uchar a31 = vData[ 2 ][ x ];
+				uchar a32 = vData[ 4 ][ x ];
+				uchar a33 = vData[ 5 ][ x ] + GIF_EPS_8UC;
+				uchar DET = a11 * ( a33 * a22 - a32 * a23 ) -
+					a21 * ( a33 * a12 - a32 * a13 ) +
+					a31 * ( a23 * a12 - a22 * a13 );
+				DET = DET ? 1 / DET : UCHAR_MAX;
+				aData[ 0 ][ x ] = DET * (
+					c0 * ( a33 * a22 - a32 * a23 ) +
+					c1 * ( a31 * a23 - a33 * a21 ) +
+					c2 * ( a32 * a21 - a31 * a22 )
+					);
+				aData[ 1 ][ x ] = DET * (
+					c0 * ( a32 * a13 - a33 * a12 ) +
+					c1 * ( a33 * a11 - a31 * a13 ) +
+					c2 * ( a31 * a12 - a32 * a11 )
+					);
+				aData[ 2 ][ x ] = DET * (
+					c0 * ( a23 * a12 - a22 * a13 ) +
+					c1 * ( a21 * a13 - a23 * a11 ) +
+					c2 * ( a22 * a11 - a21 * a12 )
+					);
+			}
+		}
     }
-
-    //printf("8 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
+	else if(rgb[0].type() == CV_32F)
+	{
+		for( int y = 0; y < H; y ++ ) {
+			float* vData[ 6 ];
+			for( int v = 0; v < 6; v ++ ) {
+				vData[ v ] = ( float* ) var_I[ v ].ptr<float>( y );
+			}
+			float* cData[ 3 ];
+			for( int c = 0; c < 3; c ++ ) {
+				cData[ c ] = ( float * ) cov_Ip[ c ].ptr<float>( y );
+			}
+			float* aData[ 3 ];
+			for( int c = 0; c < 3; c++  ) {
+				aData[ c ] = ( float* ) a[ c ].ptr<float>( y );
+			}
+			for( int x = 0; x < W; x ++ )
+			{
+				float c0 = cData[ 0 ][ x ];
+				float c1 = cData[ 1 ][ x ];
+				float c2 = cData[ 2 ][ x ];
+				float a11 = vData[ 0 ][ x ] + GIF_EPS_32F;
+				float a12 = vData[ 1 ][ x ];
+				float a13 = vData[ 2 ][ x ];
+				float a21 = vData[ 1 ][ x ];
+				float a22 = vData[ 3 ][ x ] + GIF_EPS_32F;
+				float a23 = vData[ 4 ][ x ];
+				float a31 = vData[ 2 ][ x ];
+				float a32 = vData[ 4 ][ x ];
+				float a33 = vData[ 5 ][ x ] + GIF_EPS_32F;
+				float DET = a11 * ( a33 * a22 - a32 * a23 ) -
+					a21 * ( a33 * a12 - a32 * a13 ) +
+					a31 * ( a23 * a12 - a22 * a13 );
+				DET = 1 / DET;
+				aData[ 0 ][ x ] = DET * (
+					c0 * ( a33 * a22 - a32 * a23 ) +
+					c1 * ( a31 * a23 - a33 * a21 ) +
+					c2 * ( a32 * a21 - a31 * a22 )
+					);
+				aData[ 1 ][ x ] = DET * (
+					c0 * ( a32 * a13 - a33 * a12 ) +
+					c1 * ( a33 * a11 - a31 * a13 ) +
+					c2 * ( a31 * a12 - a32 * a11 )
+					);
+				aData[ 2 ][ x ] = DET * (
+					c0 * ( a23 * a12 - a22 * a13 ) +
+					c1 * ( a21 * a13 - a23 * a11 ) +
+					c2 * ( a22 * a11 - a21 * a12 )
+					);
+			}
+		}
+	}
 
     //Mat b = mean_p.clone();
     for( int c = 0; c < 3; c ++ ) {
         multiply( a[ c ], mean_I[ c ], tmp );
         mean_p -= tmp;
     }
-
-    //printf("9 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
 
     Mat q;
     boxFilter( mean_p, q, -1, r );
@@ -207,8 +244,6 @@ Mat GuidedFilter_cv(const Mat* rgb, const Mat* mean_I, const Mat* var_I, const M
         multiply( tmp, rgb[ c ], tmp );
         q += tmp;
     }
-    //printf("10 Time from start = %.0f ms\n", get_rt_cvf() - time_start);
-    //exit(1);
 
     return q;
 }

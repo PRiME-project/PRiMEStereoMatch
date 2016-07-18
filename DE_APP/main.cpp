@@ -11,7 +11,6 @@
 #include "StereoMatch.h"
 
 //Functions in main
-int getmicinfo(void);
 void *getDepthMap(void*);
 void HCI(void);
 
@@ -19,6 +18,7 @@ void HCI(void);
 StereoMatch *sm;
 bool end_de = false;
 int nOpenCLDev = 0;
+int imgType = CV_32F;
 
 int main(int argc, char** argv)
 {
@@ -63,6 +63,8 @@ void *getDepthMap(void *arg)
 {
 	while(!end_de)
 	{
+		if(imgType != sm->imgType)
+			sm->imgTypeChange(imgType);
 		sm->Compute();
 		//printf("MAIN: DE Computed...\n");
 		//printf("MAIN: Press h for help text.\n\n");
@@ -87,11 +89,12 @@ void HCI(void)
                 printf("| Control Options:                                                  |\n");
                 printf("|   1-8: Change thread/core number.                                 |\n");
                 printf("|   m: Switch computation mode OpenCL <-> pthreads.                 |\n");
-                printf("|   f: Toggle Cost Volume Filtering (ON/OFF).                       |\n");
+                printf("|   t: Switch data type float 32 bit <-> unsigned char 8bit.        |\n");
                 printf("|-------------------------------------------------------------------|\n");
-                printf("| Current Options:\n");
+                printf("| Current Options:                                                  |\n");
                 printf("|   Matching Algorithm: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
                 printf("|   Computation mode: %s\n", sm->de_mode ? "OpenCL" : "pthreads");
+                printf("|   Type mode: %s\n", sm->imgType ? "CV_32F" : "CV_8U");
                 printf("|-------------------------------------------------------------------|\n");
                 break;
             }
@@ -108,6 +111,24 @@ void HCI(void)
 				}
 				else{
 					printf("| m: Mode can only be changed when using the STEREO_GIF Matching Algoritm.\n");
+				}
+				break;
+            }
+            case 't':
+            {
+				if(sm->MatchingAlgorithm == STEREO_GIF)
+				{
+					if(imgType == CV_32F){
+						imgType = CV_8U;
+						printf("| p: STEREO_GIF Algorithm Image Type = %s |\n", "CV_8U");
+					}
+					else {
+						imgType = CV_32F;
+						printf("| p: STEREO_GIF algorithm image type = %s |\n", "CV_32F");
+					}
+				}
+				else{
+					printf("| p: Must be using the STEREO_GIF algorithm to change image type.\n");
 				}
 				break;
             }

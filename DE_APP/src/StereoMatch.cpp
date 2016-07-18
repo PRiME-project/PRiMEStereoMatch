@@ -8,31 +8,28 @@
   ---------------------------------------------------------------------------*/
 #include "StereoMatch.h"
 
-StereoMatch::StereoMatch(int argc, char *argv[], bool gotOpenCLDev)
+//#############################################################################################################
+//# SM Preprocessing that we don't want to repeat
+//#############################################################################################################
+StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 {
+    printf("Preprocessing for Stereo Matching.\n");
 	//#############################################################################################################
     //# Setup - check input arguments
     //#############################################################################################################
     printf("Disparity Estimation for Depth Analysis in Stereo Vision Applications.\n");
 	end_de = false;
 	maxDis = 64;
+	imgType = CV_32F;
 	de_mode = OCV_DE;
 	num_threads = MAX_CPU_THREADS;
 	gotOCLDev = gotOpenCLDev;
 
 	inputArgParser(argc, argv);
 
-	//#############################################################################################################
-	//# Preprocessing that we don't want to repeat
-    //#############################################################################################################
-    printf("Preprocessing for Stereo Matching.\n");
-
 	if(video)
-	{
 		stereoCameraSetup();
-	}
-	else
-	{
+	else{
 		//#############################################################################################################
 		//# Image Loading
 		//#############################################################################################################
@@ -79,7 +76,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], bool gotOpenCLDev)
     //#############################################################################################################
 	if(MatchingAlgorithm == STEREO_SGBM)
 	{
-		setupOpenCVSGBM(lFrame.channels(), maxDis*2);
+		setupOpenCVSGBM(lFrame.channels(), maxDis);
 		imgDisparity16S = Mat( lFrame.rows, lFrame.cols, CV_16S );
 	}
 	//#############################################################################################################
@@ -87,13 +84,15 @@ StereoMatch::StereoMatch(int argc, char *argv[], bool gotOpenCLDev)
     //#############################################################################################################
 	else if(MatchingAlgorithm == STEREO_GIF)
 	{
-		// Frame Preprocessing
-		cvtColor( lFrame, lFrame, CV_BGR2RGB );
-		cvtColor( rFrame, rFrame, CV_BGR2RGB );
+		if(imgType == CV_32F)
+		{
+			// Frame Preprocessing
+			cvtColor( lFrame, lFrame, CV_BGR2RGB );
+			cvtColor( rFrame, rFrame, CV_BGR2RGB );
 
-		lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
-		rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
-
+			lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
+			rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
+		}
 		SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
 	}
 	//#############################################################################################################
@@ -110,8 +109,165 @@ StereoMatch::~StereoMatch(void)
 	printf("SM: Shutting down StereoMatch Application\n");
 	if(MatchingAlgorithm == STEREO_SGBM) delete ssgbm;
 	if(MatchingAlgorithm == STEREO_GIF) delete SMDE;
-	cap.release();
+	if(video) cap.release();
 	printf("SM: Application Shut down\n");
+}
+
+float get_rt(){
+	struct timespec realtime;
+	clock_gettime(CLOCK_MONOTONIC,&realtime);
+	return (float)(realtime.tv_sec*1000000+realtime.tv_nsec/1000);
+}
+
+int StereoMatch::imgTypeChange(int type)
+{
+	imgType = type;
+	delete SMDE;
+
+	if(type == CV_32F)
+	{
+		lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
+		rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
+	}
+	else if(type == CV_8U)
+	{
+		lFrame.convertTo( lFrame, CV_8U, 255);
+		rFrame.convertTo( rFrame, CV_8U, 255);
+	}
+
+	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
+	return 0;
+}
+
+//#############################################################################################################
+//# Complete GIF stereo matching process
+//#############################################################################################################
+int StereoMatch::Compute()
+{
+	printf("Computing Depth Map\n");
+	de_time = get_rt();
+	//#############################################################################################################
+	//# Frame Capture and Preprocessing
+	//#############################################################################################################
+	if(video)
+	{
+		cap >> vFrame; //capture a frame from the camera
+		if(!vFrame.data)
+		{
+			printf("Could not load video frame\n");
+			return -1;
+		}
+
+		lFrame = vFrame(Rect(0,0, vFrame.cols/2,vFrame.rows)); //split the frame into left
+		rFrame = vFrame(Rect(vFrame.cols/2, 0, vFrame.cols/2, vFrame.rows)); //and right images
+
+		if(!lFrame.data || !rFrame.data)
+		{
+			printf("No data in left or right frames\n");
+			return -1;
+		}
+
+		//Applies a generic geometrical transformation to an image.
+		//http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html#remap
+		remap(lFrame, lFrame_rec, mapl[0], mapl[1], INTER_LINEAR);
+		remap(rFrame, rFrame_rec, mapr[0], mapr[1], INTER_LINEAR);
+
+		lFrame = lFrame_rec(cropBox);
+		rFrame = rFrame_rec(cropBox);
+
+		lFrame.copyTo(leftInputImg);
+		rFrame.copyTo(rightInputImg);
+
+		if(MatchingAlgorithm == STEREO_GIF && imgType == CV_32F)
+		{
+			cvtColor( lFrame, lFrame, CV_BGR2RGB );
+			cvtColor( rFrame, rFrame, CV_BGR2RGB );
+
+			lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
+			rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
+		}
+	}
+
+	//#############################################################################################################
+	//# Start of Disparity Map Creation
+	//#############################################################################################################
+	if(MatchingAlgorithm == STEREO_SGBM)
+	{
+		//OpenCV code
+		ssgbm->compute(lFrame, rFrame, imgDisparity16S); //Compute the disparity map
+		minMaxLoc( imgDisparity16S, &minVal, &maxVal ); //Check its extreme values
+		imgDisparity16S.convertTo(lDispMap, CV_8UC1, 255/(maxVal - minVal));
+		applyColorMap( lDispMap, lDispMap, COLORMAP_JET);
+		lDispMap.copyTo(leftDispMap); //Load the disparity map to the display
+	}
+	else if(MatchingAlgorithm == STEREO_GIF)
+	{
+		SMDE->lImg = lFrame;
+		SMDE->rImg = rFrame;
+		SMDE->threads = num_threads;
+
+		// ******** Disparity Estimation Code ******** //
+		//printf("Disparity Estimation Started..\n");
+
+		if(de_mode == OCV_DE || !gotOCLDev)
+		{
+			cvc_time = get_rt();
+			SMDE->CostConst_CPU();
+			cvc_time = get_rt() - cvc_time;
+
+			cvf_time = get_rt();
+			SMDE->CostFilter_CPU();
+			cvf_time = get_rt()- cvf_time;
+
+			dispsel_time = get_rt();
+			SMDE->DispSelect_CPU();
+			dispsel_time = get_rt() - dispsel_time;
+
+			pp_time = get_rt();
+			SMDE->PostProcess_CPU();
+			pp_time = get_rt() - pp_time;
+		}
+		else
+		{
+			cvc_time = get_rt();
+			SMDE->CostConst_GPU();
+			cvc_time = get_rt() - cvc_time;
+
+			cvf_time = get_rt();
+			SMDE->CostFilter_GPU();
+			cvf_time = get_rt()- cvf_time;
+
+			dispsel_time = get_rt();
+			SMDE->DispSelect_GPU();
+			dispsel_time = get_rt() - dispsel_time;
+
+			pp_time = get_rt();
+			SMDE->PostProcess_GPU();
+			pp_time = get_rt() - pp_time;
+		}
+
+//		imwrite("lDispMap-pp.png", SMDE->lDisMap*4);
+//		imwrite("rDispMap-pp.png", SMDE->rDisMap*4);
+
+		// ******** Show Disparity Map  ******** //
+		applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET); // *4 for conversion from disparty range (0-64) to RGB char range (0-255)
+		lDispMap.copyTo(leftDispMap); //copy to leftDispMap display rectangle
+
+		applyColorMap( SMDE->rDisMap*4, rDispMap, COLORMAP_JET);
+		rDispMap.copyTo(rightDispMap); //copy to rightDispMap display rectangle
+		// ******** Show Disparity Map  ******** //
+
+		printf("CVC Time: %.2f ms\n",cvc_time/1000);
+		printf("CVF Time: %.2f ms\n",cvf_time/1000);
+		printf("DispSel Time: %.2f ms\n",dispsel_time/1000);
+		printf("PP Time: %.2f ms\n",pp_time/1000);
+
+	}
+	printf("DE Time: %.2f ms\n\n",(get_rt() - de_time)/1000);
+	//Perform these steps for all algorithms:
+	imshow("InputOutput", display_container);
+
+	return de_time;
 }
 
 //#############################################################################################################
@@ -277,167 +433,6 @@ int StereoMatch::captureChessboards(void)
 	return 0;
 }
 
-//#############################################################################################################
-//# Setup for OpenCV implementation of Stereo matching using Semi-Global Block Matching (SGBM)
-//#############################################################################################################
-int StereoMatch::setupOpenCVSGBM(int channels, int ndisparities)
-{
-	int mindisparity = 0;
-	int SADWindowSize = 9;
-
-	// Call the constructor for StereoSGBM
-	ssgbm = StereoSGBM::create(mindisparity, ndisparities, SADWindowSize);
-
-    ssgbm->setP1(8*channels*SADWindowSize*SADWindowSize);
-    ssgbm->setP2(32*channels*SADWindowSize*SADWindowSize);
-    ssgbm->setDisp12MaxDiff(1);
-    ssgbm->setPreFilterCap(63);
-	ssgbm->setUniquenessRatio(10);
-    ssgbm->setSpeckleWindowSize(100);
-    ssgbm->setSpeckleRange(32);
-	ssgbm->setMode(StereoSGBM::MODE_HH); // enum{ MODE_SGBM = 0, MODE_HH = 1, MODE_SGBM_3WAY = 2 }
-
-    return 0;
-}
-
-float get_rt(){
-	struct timespec realtime;
-	clock_gettime(CLOCK_MONOTONIC,&realtime);
-	return (float)(realtime.tv_sec*1000000+realtime.tv_nsec/1000);
-}
-
-//#############################################################################################################
-//# Complete GIF stereo matching process
-//#############################################################################################################
-int StereoMatch::Compute()
-{
-	printf("Computing Depth Map\n");
-	de_time = get_rt();
-	//#############################################################################################################
-	//# Frame Capture and Preprocessing
-	//#############################################################################################################
-	if(video)
-	{
-		cap >> vFrame; //capture a frame from the camera
-		if(!vFrame.data)
-		{
-			printf("Could not load video frame\n");
-			return -1;
-		}
-
-		lFrame = vFrame(Rect(0,0, vFrame.cols/2,vFrame.rows)); //split the frame into left
-		rFrame = vFrame(Rect(vFrame.cols/2, 0, vFrame.cols/2, vFrame.rows)); //and right images
-
-		if(!lFrame.data || !rFrame.data)
-		{
-			printf("No data in left or right frames\n");
-			return -1;
-		}
-
-		///Applies a generic geometrical transformation to an image.
-		///http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html#remap
-		remap(lFrame, lFrame_rec, mapl[0], mapl[1], INTER_LINEAR);
-		remap(rFrame, rFrame_rec, mapr[0], mapr[1], INTER_LINEAR);
-
-		lFrame = lFrame_rec(cropBox);
-		rFrame = rFrame_rec(cropBox);
-
-		lFrame.copyTo(leftInputImg);
-		rFrame.copyTo(rightInputImg);
-
-		if(MatchingAlgorithm == STEREO_GIF)
-		{
-			cvtColor( lFrame, lFrame, CV_BGR2RGB );
-			cvtColor( rFrame, rFrame, CV_BGR2RGB );
-
-			lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
-			rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
-		}
-	}
-
-	//#############################################################################################################
-	//# Start of Disparity Map Creation
-	//#############################################################################################################
-	if(MatchingAlgorithm == STEREO_SGBM)
-	{
-		///OpenCV code
-		ssgbm->compute(lFrame, rFrame, imgDisparity16S);
-		//-- Check its extreme values
-		minMaxLoc( imgDisparity16S, &minVal, &maxVal );
-		imgDisparity16S.convertTo(lDispMap, CV_8UC1, 255/(maxVal - minVal));
-		applyColorMap( lDispMap, lDispMap, COLORMAP_JET);
-		lDispMap.copyTo(leftDispMap);
-	}
-	else if(MatchingAlgorithm == STEREO_GIF)
-	{
-		SMDE->lImg = lFrame;
-		SMDE->rImg = rFrame;
-		SMDE->threads = num_threads;
-
-		// ******** Disparity Estimation Code ******** //
-		//printf("Disparity Estimation Started..\n");
-
-		if(de_mode == OCV_DE || !gotOCLDev)
-		{
-			cvc_time = get_rt();
-			SMDE->CostConst_CPU();
-			cvc_time = get_rt() - cvc_time;
-
-			cvf_time = get_rt();
-			SMDE->CostFilter_CPU();
-			cvf_time = get_rt()- cvf_time;
-
-			dispsel_time = get_rt();
-			SMDE->DispSelect_CPU();
-			dispsel_time = get_rt() - dispsel_time;
-
-			pp_time = get_rt();
-			SMDE->PostProcess_CPU();
-			pp_time = get_rt() - pp_time;
-		}
-		else
-		{
-			cvc_time = get_rt();
-			SMDE->CostConst_GPU();
-			cvc_time = get_rt() - cvc_time;
-
-			cvf_time = get_rt();
-			SMDE->CostFilter_GPU();
-			cvf_time = get_rt()- cvf_time;
-
-			dispsel_time = get_rt();
-			SMDE->DispSelect_GPU();
-			dispsel_time = get_rt() - dispsel_time;
-
-			pp_time = get_rt();
-			//SMDE->PostProcess_CPU();
-			pp_time = get_rt() - pp_time;
-		}
-
-//		imwrite("lDispMap-pp.png", SMDE->lDisMap*4);
-//		imwrite("rDispMap-pp.png", SMDE->rDisMap*4);
-
-		// ******** Show Disparity Map  ******** //
-		applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET);
-		lDispMap.copyTo(leftDispMap); //copy to leftDispMap display rectangle
-
-		applyColorMap( SMDE->rDisMap*4, rDispMap, COLORMAP_JET);
-		rDispMap.copyTo(rightDispMap); //copy to rightDispMap display rectangle
-		// ******** Show Disparity Map  ******** //
-
-		printf("CVC Time: %.2f ms\n",cvc_time/1000);
-		printf("CVF Time: %.2f ms\n",cvf_time/1000);
-		printf("DispSel Time: %.2f ms\n",dispsel_time/1000);
-		printf("PP Time: %.2f ms\n",pp_time/1000);
-		printf("DE Time: %.2f ms\n\n",(get_rt() - de_time)/1000);
-
-	}
-	//Perform these steps for all algorithms:
-	imshow("InputOutput", display_container);
-
-	return de_time;
-}
-
 int StereoMatch::inputArgParser(int argc, char *argv[])
 {
 	if( argc < 3 ) {
@@ -464,13 +459,14 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 	if(!strcmp(argv[2],"VIDEO")){
 		printf("Media Type: \t\t Video Processing from Stereo Camera.\n");
 		video = true;
-
+		recalibrate = false;
 		if(argc > 3){
 			if(!strcmp(argv[3],"RECALIBRATE")) {
 				printf("Recalibrating...\n");
 				recalibrate = true;
 			}
 		}
+		recaptureChessboards = false;
 		if(argc > 4){
 			if(!strcmp(argv[4],"RECAPTURE")) {
 				printf("Recapturing...\n");
@@ -540,4 +536,27 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 		printf("Using %d threads for executing the Application\n", num_threads);
 	}
 	return 0;
+}
+
+//#############################################################################################################
+//# Setup for OpenCV implementation of Stereo matching using Semi-Global Block Matching (SGBM)
+//#############################################################################################################
+int StereoMatch::setupOpenCVSGBM(int channels, int ndisparities)
+{
+	int mindisparity = 0;
+	int SADWindowSize = 9;
+
+	// Call the constructor for StereoSGBM
+	ssgbm = StereoSGBM::create(mindisparity, ndisparities, SADWindowSize);
+
+    ssgbm->setP1(8*channels*SADWindowSize*SADWindowSize);
+    ssgbm->setP2(32*channels*SADWindowSize*SADWindowSize);
+    ssgbm->setDisp12MaxDiff(1);
+    ssgbm->setPreFilterCap(63);
+	ssgbm->setUniquenessRatio(10);
+    ssgbm->setSpeckleWindowSize(100);
+    ssgbm->setSpeckleRange(32);
+	ssgbm->setMode(StereoSGBM::MODE_HH); // enum{ MODE_SGBM = 0, MODE_HH = 1, MODE_SGBM_3WAY = 2 }
+
+    return 0;
 }

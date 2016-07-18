@@ -146,7 +146,7 @@ void wgtMedian(const Mat& lImg, const Mat& rImg, Mat& lDis, Mat& rDis, Mat& lVal
     int wid = lImg.cols;
     int wndR = MED_SZ / 2;
 
-    double* disHist = new double[maxDis];
+    float* disHist = new float[maxDis];
 
     // filter left
     for( int y = 0; y < hei; y ++  ) {
@@ -156,8 +156,8 @@ void wgtMedian(const Mat& lImg, const Mat& rImg, Mat& lDis, Mat& rDis, Mat& lVal
         for( int x = 0; x < wid; x ++ ) {
             if( lValidData[x] == 0 ) {
                 // just filter invalid pixels
-                memset( disHist, 0, sizeof( double ) * maxDis );
-                double sumWgt = 0.0f;
+                memset( disHist, 0, sizeof( float ) * maxDis );
+                float sumWgt = 0.0f;
                 // set disparity histogram by bilateral weight
                 for( int wy = - wndR; wy <= wndR; wy ++ ) {
                     int qy = ( y + wy + hei ) % hei;
@@ -167,18 +167,18 @@ void wgtMedian(const Mat& lImg, const Mat& rImg, Mat& lDis, Mat& rDis, Mat& lVal
                         int qx = ( x + wx + wid ) % wid;
                         int qDep = qDisData[ qx ];
                         if( qDep != 0 ) {
-                            double disWgt = wx * wx + wy * wy;
-                            double clrWgt =
+                            float disWgt = wx * wx + wy * wy;
+                            float clrWgt =
 								( pL[ 3 * x ] - qL[ 3 * qx ] ) * ( pL[ 3 * x ] - qL[ 3 * qx ] ) +
                                 ( pL[ 3 * x + 1 ] - qL[ 3 * qx + 1 ] ) * ( pL[ 3 * x + 1 ] - qL[ 3 * qx + 1 ] ) +
                                 ( pL[ 3 * x + 2 ] - qL[ 3 * qx + 2 ] ) * ( pL[ 3 * x + 2 ] - qL[ 3 * qx + 2 ] );
-                            double biWgt = exp( - disWgt / ( SIG_DIS * SIG_DIS ) - clrWgt / ( SIG_CLR * SIG_CLR ) );
+                            float biWgt = exp( - disWgt / ( SIG_DIS * SIG_DIS ) - clrWgt / ( SIG_CLR * SIG_CLR ) );
                             disHist[ qDep ] += biWgt;
                             sumWgt += biWgt;
                         }
                     }
                 }
-                double halfWgt = sumWgt / 2.0f;
+                float halfWgt = sumWgt / 2.0f;
                 sumWgt = 0.0f;
                 int filterDep = 0;
                 for( int d = 0; d < maxDis; d ++ ) {
@@ -202,8 +202,8 @@ void wgtMedian(const Mat& lImg, const Mat& rImg, Mat& lDis, Mat& rDis, Mat& lVal
         for( int x = 0; x < wid; x ++ ) {
             if( rValidData[x] == 0 ) {
                 // just filter invalid pixels
-                memset( disHist, 0, sizeof( double ) * maxDis );
-                double sumWgt = 0.0f;
+                memset( disHist, 0, sizeof( float ) * maxDis );
+                float sumWgt = 0.0f;
                 // set disparity histogram by bilateral weight
                 for( int wy = - wndR; wy <= wndR; wy ++ ) {
                     int qy = ( y + wy + hei ) % hei;
@@ -213,20 +213,20 @@ void wgtMedian(const Mat& lImg, const Mat& rImg, Mat& lDis, Mat& rDis, Mat& lVal
                         int qx = ( x + wx + wid ) % wid;
                         int qDep = qDisData[ qx ];
                         if( qDep != 0 ) {
-                            double disWgt = wx * wx + wy * wy;
+                            float disWgt = wx * wx + wy * wy;
                             disWgt = sqrt( disWgt );
-                            double clrWgt =
+                            float clrWgt =
                                 ( pR[ 3 * x ] - qR[ 3 * qx ] ) * ( pR[ 3 * x ] - qR[ 3 * qx ] ) +
                                 ( pR[ 3 * x + 1 ] - qR[ 3 * qx + 1 ] ) * ( pR[ 3 * x + 1 ] - qR[ 3 * qx + 1 ] ) +
                                 ( pR[ 3 * x + 2 ] - qR[ 3 * qx + 2 ] ) * ( pR[ 3 * x + 2 ] - qR[ 3 * qx + 2 ] );
                             clrWgt = sqrt( clrWgt );
-                            double biWgt = exp( - disWgt / ( SIG_DIS * SIG_DIS ) - clrWgt / ( SIG_CLR * SIG_CLR ) );
+                            float biWgt = exp( - disWgt / ( SIG_DIS * SIG_DIS ) - clrWgt / ( SIG_CLR * SIG_CLR ) );
                             disHist[ qDep ] += biWgt;
                             sumWgt += biWgt;
                         }
                     }
                 }
-                double halfWgt = sumWgt / 2.0f;
+                float halfWgt = sumWgt / 2.0f;
                 sumWgt = 0.0f;
                 int filterDep = 0;
                 for( int d = 0; d < maxDis; d ++ ) {
@@ -262,50 +262,102 @@ void *wgtMed_row(void *thread_arg)
     int hei  = Img->rows;
     int wid = Img->cols;
 
-    double* disHist = new double[maxDis];
+    float* disHist = new float[maxDis];
 	uchar* DisData = (uchar*) Dis->ptr<uchar>(y);
-	float* p = (float*) Img->ptr<float>(y);
-
-	for( int x = 0; x < wid; x ++ ) {
-		if( pValid[x] == 0 ) {
-			// just filter invalid pixels
-			memset( disHist, 0, sizeof( double ) * maxDis );
-			double sumWgt = 0.0f;
-			// set disparity histogram by bilateral weight
-			for( int wy = - wndR; wy <= wndR; wy++ ) {
-				int qy = ( y + wy + hei ) % hei;
-				float* q = ( float* ) Img->ptr<float>( qy );
-				uchar* qDisData = ( uchar* ) Dis->ptr<uchar>( qy );
-				for( int wx = - wndR; wx <= wndR; wx ++ ) {
-					int qx = ( x + wx + wid ) % wid;
-					// invalid pixel also used
-					int qDep = qDisData[ qx ];
-					if( qDep != 0 ) {
-						double disWgt = wx * wx + wy * wy;
-						double clrWgt =
-							( p[ 3 * x ] - q[ 3 * qx ] ) * ( p[ 3 * x ] - q[ 3 * qx ] ) +
-							( p[ 3 * x + 1 ] - q[ 3 * qx + 1 ] ) * ( p[ 3 * x + 1 ] - q[ 3 * qx + 1 ] ) +
-							( p[ 3 * x + 2 ] - q[ 3 * qx + 2 ] ) * ( p[ 3 * x + 2 ] - q[ 3 * qx + 2 ] );
-						double biWgt = exp( - disWgt / ( SIG_DIS * SIG_DIS ) - clrWgt / ( SIG_CLR * SIG_CLR ) );
-						disHist[ qDep ] += biWgt;
-						sumWgt += biWgt;
+	//32 bit float data
+	if(Img->type() == CV_32FC3)
+	{
+		float* p = (float*) Img->ptr<float>(y);
+		for( int x = 0; x < wid; x ++ ) {
+			if( pValid[x] == 0 ) {
+				// just filter invalid pixels
+				memset( disHist, 0, sizeof( float ) * maxDis );
+				float sumWgt = 0.0f;
+				// set disparity histogram by bilateral weight
+				for( int wy = - wndR; wy <= wndR; wy++ ) {
+					int qy = ( y + wy + hei ) % hei;
+					float* q = ( float* ) Img->ptr<float>( qy );
+					uchar* qDisData = ( uchar* ) Dis->ptr<uchar>( qy );
+					for( int wx = - wndR; wx <= wndR; wx ++ ) {
+						int qx = ( x + wx + wid ) % wid;
+						// invalid pixel also used
+						int qDep = qDisData[ qx ];
+						if( qDep != 0 ) {
+							float disWgt = wx * wx + wy * wy;
+							float clrWgt =
+								( p[ 3 * x ] - q[ 3 * qx ] ) * ( p[ 3 * x ] - q[ 3 * qx ] ) +
+								( p[ 3 * x + 1 ] - q[ 3 * qx + 1 ] ) * ( p[ 3 * x + 1 ] - q[ 3 * qx + 1 ] ) +
+								( p[ 3 * x + 2 ] - q[ 3 * qx + 2 ] ) * ( p[ 3 * x + 2 ] - q[ 3 * qx + 2 ] );
+							float biWgt = exp( - disWgt / ( SIG_DIS * SIG_DIS ) - clrWgt / ( SIG_CLR * SIG_CLR ) );
+							disHist[ qDep ] += biWgt;
+							sumWgt += biWgt;
+						}
 					}
 				}
-			}
-			double halfWgt = sumWgt / 2.0f;
-			sumWgt = 0.0f;
-			int filterDep = 0;
-			for( int d = 0; d < maxDis; d ++ ) {
-				sumWgt += disHist[ d ];
-				if( sumWgt >= halfWgt ) {
-					filterDep = d;
-					break;
+				float halfWgt = sumWgt / 2.0f;
+				sumWgt = 0.0f;
+				int filterDep = 0;
+				for( int d = 0; d < maxDis; d ++ ) {
+					sumWgt += disHist[ d ];
+					if( sumWgt >= halfWgt ) {
+						filterDep = d;
+						break;
+					}
 				}
+				// set new disparity
+				DisData[ x ] = filterDep;
 			}
-			// set new disparity
-			DisData[ x ] = filterDep;
+		}
+    }
+    //8 bit unsigned char data
+    else if(Img->type() == CV_8UC3)
+    {
+		uchar* p = (uchar*) Img->ptr<uchar>(y);
+		for( int x = 0; x < wid; x ++ ) {
+			if( pValid[x] == 0 ) {
+				// just filter invalid pixels
+				memset( disHist, 0, sizeof( float ) * maxDis );
+				float sumWgt = 0.0f;
+				// set disparity histogram by bilateral weight
+				for( int wy = - wndR; wy <= wndR; wy++ ) {
+					int qy = ( y + wy + hei ) % hei;
+					uchar* q = ( uchar* ) Img->ptr<uchar>( qy );
+					uchar* qDisData = ( uchar* ) Dis->ptr<uchar>( qy );
+					for( int wx = - wndR; wx <= wndR; wx ++ ) {
+						int qx = ( x + wx + wid ) % wid;
+						// invalid pixel also used
+						int qDep = qDisData[ qx ];
+						if( qDep != 0 ) {
+							float disWgt = wx * wx + wy * wy;
+							float clrWgt =
+								( p[ 3 * x ] - q[ 3 * qx ] ) * ( p[ 3 * x ] - q[ 3 * qx ] ) +
+								( p[ 3 * x + 1 ] - q[ 3 * qx + 1 ] ) * ( p[ 3 * x + 1 ] - q[ 3 * qx + 1 ] ) +
+								( p[ 3 * x + 2 ] - q[ 3 * qx + 2 ] ) * ( p[ 3 * x + 2 ] - q[ 3 * qx + 2 ] );
+							float biWgt = exp( - disWgt / ( SIG_DIS * SIG_DIS ) - clrWgt / ( SIG_CLR * SIG_CLR ) );
+							disHist[ qDep ] += biWgt;
+							sumWgt += biWgt;
+						}
+					}
+				}
+				float halfWgt = sumWgt / 2.0f;
+				sumWgt = 0.0f;
+				int filterDep = 0;
+				for( int d = 0; d < maxDis; d ++ ) {
+					sumWgt += disHist[ d ];
+					if( sumWgt >= halfWgt ) {
+						filterDep = d;
+						break;
+					}
+				}
+				// set new disparity
+				DisData[ x ] = filterDep;
+			}
 		}
 	}
+    else{
+		printf("PP: Error - Unrecognised data type in processing! (wgtMed_row)\n");
+		exit(1);
+    }
 	return (void*)0;
 }
 
@@ -345,38 +397,6 @@ void wgtMedian_thread(const Mat& Img, Mat& Dis, Mat& Valid, const int maxDis, co
 	return;
 }
 
-void saveChk(Mat& lValid, Mat& rValid)
-{
-	int hei = lValid.rows;
-	int wid = lValid.cols;
-
-	Mat lChk = Mat::zeros( hei, wid, CV_8UC1 );
-	Mat rChk = Mat::zeros( hei, wid, CV_8UC1 );
-	for( int y = 0; y < hei; y ++ ) {
-		uchar* lChkData = ( uchar* )( lChk.ptr<uchar>( y ) );
-		uchar* rChkData = ( uchar* )( rChk.ptr<uchar>( y ) );
-		uchar* lValidData = ( uchar* ) lValid.ptr<uchar>( y );
-		uchar* rValidData = ( uchar* ) rValid.ptr<uchar>( y );
-		for( int x = 0; x < wid; x ++ ) {
-			if( lValidData[x] ) {
-				lChkData[ x ] = 0;
-			} else{
-				lChkData[ x ] = 255;
-			}
-
-			if( rValidData[x] ) {
-				rChkData[ x ] = 0;
-			} else{
-				rChkData[ x ] = 255;
-			}
-		}
-	}
-	imwrite( "l_chk.png", lChk );
-	imwrite( "r_chk.png", rChk );
-
-	return;
-}
-
 void PP::processDM(const Mat& lImg, const Mat& rImg, Mat& lDisMap, Mat& rDisMap,
 					Mat& lValid, Mat& rValid, const int maxDis, int threads)
 {
@@ -392,8 +412,5 @@ void PP::processDM(const Mat& lImg, const Mat& rImg, Mat& lDisMap, Mat& rDisMap,
 	wgtMedian_thread(lImg, lDisMap, lValid, maxDis, threads);
 	wgtMedian_thread(rImg, rDisMap, rValid, maxDis, threads);
 	//fprintf(stderr, "Weighted-Median Filter Done\n");
-
-	//lrCheck(lDisMap, rDisMap, lValid, rValid);
-	//saveChk(lValid, rValid);
 	return;
 }

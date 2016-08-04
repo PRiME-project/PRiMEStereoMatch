@@ -1,64 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Release" />
-	<File name="src/CVF_cl.cpp" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="10435" topLine="255" />
-		</Cursor>
-	</File>
-	<File name="include/StereoMatch.h" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="820" topLine="18" />
-		</Cursor>
-	</File>
-	<File name="include/CVC.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="698" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include/ComFunc.h" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="950" topLine="18" />
-		</Cursor>
-	</File>
-	<File name="src/DispSel_cl.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="5214" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include/DispSel.h" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="450" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include/CVF_cl.h" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="493" topLine="21" />
-		</Cursor>
-	</File>
-	<File name="src/CVC_cl.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="768" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="main.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="664" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include/DispEst.h" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="825" topLine="0" />
-		</Cursor>
-	</File>
 	<File name="src/StereoCalib.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="1086" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include/DispSel_cl.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="968" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="include/CVF.h" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -66,24 +11,24 @@
 			<Cursor1 position="39" topLine="0" />
 		</Cursor>
 	</File>
+	<File name="include/DispSel.h" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="450" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="main.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1613" topLine="57" />
+		</Cursor>
+	</File>
+	<File name="include/StereoMatch.h" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="820" topLine="18" />
+		</Cursor>
+	</File>
 	<File name="include/common.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="456" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include/StereoCalib.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1079" topLine="3" />
-		</Cursor>
-	</File>
-	<File name="src/DispEst.cpp" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="13386" topLine="323" />
-		</Cursor>
-	</File>
-	<File name="src/StereoMatch.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="8428" topLine="162" />
 		</Cursor>
 	</File>
 	<File name="include/CVC_cl.h" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -91,19 +36,14 @@
 			<Cursor1 position="827" topLine="0" />
 		</Cursor>
 	</File>
+	<File name="src/common.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="365" topLine="0" />
+		</Cursor>
+	</File>
 	<File name="src/CVC.cpp" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="4986" topLine="144" />
-		</Cursor>
-	</File>
-	<File name="src/CVF.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="6977" topLine="203" />
-		</Cursor>
-	</File>
-	<File name="src/PP.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="11247" topLine="310" />
+			<Cursor1 position="5655" topLine="78" />
 		</Cursor>
 	</File>
 	<File name="src/DispSel.cpp" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -111,14 +51,74 @@
 			<Cursor1 position="3885" topLine="3" />
 		</Cursor>
 	</File>
-	<File name="src/common.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/DispEst.cpp" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="365" topLine="0" />
+			<Cursor1 position="1256" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="include/PP.h" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="340" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/CVF_cl.cpp" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="5293" topLine="126" />
+		</Cursor>
+	</File>
+	<File name="src/CVC_cl.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="768" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/PP.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="11247" topLine="310" />
+		</Cursor>
+	</File>
+	<File name="include/StereoCalib.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1079" topLine="3" />
+		</Cursor>
+	</File>
+	<File name="src/CVF.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6977" topLine="203" />
+		</Cursor>
+	</File>
+	<File name="include/ComFunc.h" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="950" topLine="18" />
+		</Cursor>
+	</File>
+	<File name="include/CVF_cl.h" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="493" topLine="21" />
+		</Cursor>
+	</File>
+	<File name="include/CVC.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="698" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include/DispSel_cl.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="968" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include/DispEst.h" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="825" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/StereoMatch.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1381" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/DispSel_cl.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="5214" topLine="0" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

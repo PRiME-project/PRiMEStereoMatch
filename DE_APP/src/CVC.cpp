@@ -124,19 +124,17 @@ void CVC::buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const
 			float* lGData = ( float* ) lGrdX.ptr<float>( y );
 			float* rGData = ( float* ) rGrdX.ptr<float>( y );
 			float* cost   = ( float* ) costVol.ptr<float>( y );
-			for( int x = 0; x < wid; x ++ ) {
-				if( x - d >= 0 ) {
-					float* lC = lData + 3 * x;
-					float* rC = rData + 3 * ( x - d );
-					float* lG = lGData + x;
-					float* rG = rGData + x - d;
-					cost[x] = myCostGrd( lC, rC, lG, rG );
-				} else {
-					float* lC = lData + 3 * x;
-					float* lG = lGData + x;
-					cost[x] = myCostGrd( lC, lG );
-				}
-
+			for( int x = d; x < wid; x ++ ) {
+				float* lC = lData + 3 * x;
+				float* rC = rData + 3 * ( x - d );
+				float* lG = lGData + x;
+				float* rG = rGData + x - d;
+				cost[x] = myCostGrd( lC, rC, lG, rG );
+			}
+			for( int x = 0; x < d; x ++ ) {
+				float* lC = lData + 3 * x;
+				float* lG = lGData + x;
+				cost[x] = myCostGrd( lC, lG );
 			}
 		}
     }
@@ -150,19 +148,17 @@ void CVC::buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const
 			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
 			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
 			uchar* cost   = ( uchar* ) costVol.ptr<uchar>( y );
-			for( int x = 0; x < wid; x ++ ) {
-				if( x - d >= 0 ) {
-					uchar* lC = lData + 3 * x;
-					uchar* rC = rData + 3 * ( x - d );
-					uchar* lG = lGData + x;
-					uchar* rG = rGData + x - d;
-					cost[x] = myCostGrd( lC, rC, lG, rG );
-				} else {
-					uchar* lC = lData + 3 * x;
-					uchar* lG = lGData + x;
-					cost[x] = myCostGrd( lC, lG );
-				}
-
+			for( int x = d; x < wid; x ++ ) {
+				uchar* lC = lData + 3 * x;
+				uchar* rC = rData + 3 * ( x - d );
+				uchar* lG = lGData + x;
+				uchar* rG = rGData + x - d;
+				cost[x] = myCostGrd( lC, rC, lG, rG );
+			}
+			for( int x = 0; x < d; x ++ ) {
+				uchar* lC = lData + 3 * x;
+				uchar* lG = lGData + x;
+				cost[x] = myCostGrd( lC, lG );
 			}
 		}
     }
@@ -186,19 +182,17 @@ void CVC::buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, cons
 			float* lGData = ( float* ) lGrdX.ptr<float>( y );
 			float* rGData = ( float* ) rGrdX.ptr<float>( y );
 			float* cost   = ( float* ) costVol.ptr<float>( y );
-			for( int x = 0; x < wid; x ++ ) {
-				if( x + d < wid ) {
-					float* lC = lData + 3 * x;
-					float* rC = rData + 3 * ( x + d );
-					float* lG = lGData + x;
-					float* rG = rGData + x + d;
-					cost[x] = myCostGrd( lC, rC, lG, rG );
-				} else {
-					float* lC = lData + 3 * x;
-					float* lG = lGData + x;
-					cost[x] = myCostGrd( lC, lG );
-				}
-
+			for( int x = 0; x < wid - d; x ++ ) {
+				float* lC = lData + 3 * x;
+				float* rC = rData + 3 * ( x + d );
+				float* lG = lGData + x;
+				float* rG = rGData + x + d;
+				cost[x] = myCostGrd( lC, rC, lG, rG );
+			}
+			for( int x = wid - d; x < wid; x ++ ) {
+				float* lC = lData + 3 * x;
+				float* lG = lGData + x;
+				cost[x] = myCostGrd( lC, lG );
 			}
 		}
     }
@@ -211,19 +205,17 @@ void CVC::buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, cons
 			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
 			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
 			uchar* cost   = ( uchar* ) costVol.ptr<uchar>( y );
-			for( int x = 0; x < wid; x ++ ) {
-				if( x + d < wid ) {
-					uchar* lC = lData + 3 * x;
-					uchar* rC = rData + 3 * ( x + d );
-					uchar* lG = lGData + x;
-					uchar* rG = rGData + x + d;
-					cost[x] = myCostGrd( lC, rC, lG, rG );
-				} else {
-					uchar* lC = lData + 3 * x;
-					uchar* lG = lGData + x;
-					cost[x] = myCostGrd( lC, lG );
-				}
-
+			for( int x = 0; x < wid - d; x ++ ) {
+				uchar* lC = lData + 3 * x;
+				uchar* rC = rData + 3 * ( x + d );
+				uchar* lG = lGData + x;
+				uchar* rG = rGData + x + d;
+				cost[x] = myCostGrd( lC, rC, lG, rG );
+			}
+			for( int x = wid - d; x < wid; x ++ ) {
+				uchar* lC = lData + 3 * x;
+				uchar* lG = lGData + x;
+				cost[x] = myCostGrd( lC, lG );
 			}
 		}
     }
@@ -256,19 +248,17 @@ void *CVC::buildCV_left_thread(void *thread_arg)
 			float* lGData = ( float* ) lGrdX.ptr<float>( y );
 			float* rGData = ( float* ) rGrdX.ptr<float>( y );
 			float* cost   = ( float* ) costVol->ptr<float>( y );
-			for( int x = 0; x < wid; x ++ ) {
-				if( x - d >= 0 ) {
-					float* lC = lData + 3 * x;
-					float* rC = rData + 3 * ( x - d );
-					float* lG = lGData + x;
-					float* rG = rGData + x - d;
-					cost[x] = myCostGrd( lC, rC, lG, rG );
-				} else {
-					float* lC = lData + 3 * x;
-					float* lG = lGData + x;
-					cost[x] = myCostGrd( lC, lG );
-				}
-
+			for( int x = d; x < wid; x ++ ) {
+				float* lC = lData + 3 * x;
+				float* rC = rData + 3 * ( x - d );
+				float* lG = lGData + x;
+				float* rG = rGData + x - d;
+				cost[x] = myCostGrd( lC, rC, lG, rG );
+			}
+			for( int x = 0; x < d; x ++ ) {
+				float* lC = lData + 3 * x;
+				float* lG = lGData + x;
+				cost[x] = myCostGrd( lC, lG );
 			}
 		}
     }
@@ -281,19 +271,17 @@ void *CVC::buildCV_left_thread(void *thread_arg)
 			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
 			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
 			uchar* cost   = ( uchar* ) costVol->ptr<uchar>( y );
-			for( int x = 0; x < wid; x ++ ) {
-				if( x - d >= 0 ) {
-					uchar* lC = lData + 3 * x;
-					uchar* rC = rData + 3 * ( x - d );
-					uchar* lG = lGData + x;
-					uchar* rG = rGData + x - d;
-					cost[x] = myCostGrd( lC, rC, lG, rG );
-				} else {
-					uchar* lC = lData + 3 * x;
-					uchar* lG = lGData + x;
-					cost[x] = myCostGrd( lC, lG );
-				}
-
+			for( int x = d; x < wid; x ++ ) {
+				uchar* lC = lData + 3 * x;
+				uchar* rC = rData + 3 * ( x - d );
+				uchar* lG = lGData + x;
+				uchar* rG = rGData + x - d;
+				cost[x] = myCostGrd( lC, rC, lG, rG );
+			}
+			for( int x = 0; x < d; x ++ ) {
+				uchar* lC = lData + 3 * x;
+				uchar* lG = lGData + x;
+				cost[x] = myCostGrd( lC, lG );
 			}
 		}
     }
@@ -327,19 +315,17 @@ void *CVC::buildCV_right_thread(void *thread_arg)
 			float* lGData = ( float* ) lGrdX.ptr<float>( y );
 			float* rGData = ( float* ) rGrdX.ptr<float>( y );
 			float* cost   = ( float* ) costVol->ptr<float>( y );
-			for( int x = 0; x < wid; x ++ ) {
-				if( x + d < wid ) {
-					float* lC = lData + 3 * x;
-					float* rC = rData + 3 * ( x + d );
-					float* lG = lGData + x;
-					float* rG = rGData + x + d;
-					cost[x] = myCostGrd( lC, rC, lG, rG );
-				} else {
-					float* lC = lData + 3 * x;
-					float* lG = lGData + x;
-					cost[x] = myCostGrd( lC, lG );
-				}
-
+			for( int x = 0; x < wid - d; x ++ ) {
+				float* lC = lData + 3 * x;
+				float* rC = rData + 3 * ( x + d );
+				float* lG = lGData + x;
+				float* rG = rGData + x + d;
+				cost[x] = myCostGrd( lC, rC, lG, rG );
+			}
+			for( int x = wid - d; x < wid; x ++ ) {
+				float* lC = lData + 3 * x;
+				float* lG = lGData + x;
+				cost[x] = myCostGrd( lC, lG );
 			}
 		}
     }

@@ -246,8 +246,8 @@ int StereoMatch::Compute()
 			pp_time = get_rt() - pp_time;
 		}
 
-//		imwrite("lDispMap-pp.png", SMDE->lDisMap*4);
-//		imwrite("rDispMap-pp.png", SMDE->rDisMap*4);
+		imwrite("lDispMap-pp.png", SMDE->lDisMap*4);
+		imwrite("rDispMap-pp.png", SMDE->rDisMap*4);
 
 		// ******** Show Disparity Map  ******** //
 		applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET); // *4 for conversion from disparty range (0-64) to RGB char range (0-255)
@@ -321,11 +321,11 @@ int StereoMatch::stereoCameraSetup(void)
 		{
 			//Capture a series of calibration images from the camera.
 			printf("Capturing chessboard images for calibration.\n");
-			printf("A chessboard image with 7x7 inner corners should be placed in the view of the camera.\n");
+			printf("A chessboard image with 9x6 inner corners should be placed in the view of the camera.\n");
 			captureChessboards();
 		}
 		printf("Running Calibration.\n");
-		calibrateCamera(7, 7, camProps, "data/stereo_calib.xml");
+		calibrateCamera(9, 6, camProps, "data/stereo_calib.xml");
 		printf("Calibration Complete.\n");
 	}
 	else
@@ -382,8 +382,12 @@ int StereoMatch::stereoCameraSetup(void)
 	remap(lFrame, lFrame_rec, mapl[0], mapl[1], INTER_LINEAR);
 	remap(rFrame, rFrame_rec, mapr[0], mapr[1], INTER_LINEAR);
 
-	cropBox = Rect(MAX(camProps.roi[0].x, camProps.roi[1].x), MAX(camProps.roi[0].y, camProps.roi[1].y),
-	MIN(camProps.roi[0].width, camProps.roi[1].width), MIN(camProps.roi[0].height, camProps.roi[1].height));
+	//Use create ROI which is valid in both left and right ROIs
+	int tl_x = MAX(camProps.roi[0].x, camProps.roi[1].x);
+	int tl_y = MAX(camProps.roi[0].y, camProps.roi[1].y);
+	int br_x = MIN(camProps.roi[0].width + camProps.roi[0].x, camProps.roi[1].width + camProps.roi[1].x);
+	int br_y = MIN(camProps.roi[0].height + camProps.roi[0].y, camProps.roi[1].height + camProps.roi[1].y);
+	cropBox = Rect(Point(tl_x, tl_y), Point(br_x, br_y));
 
 	lFrame = lFrame_rec(cropBox);
 	rFrame = rFrame_rec(cropBox);
@@ -498,7 +502,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 
 			}
 			char *img_ext = &argv[3][strlen(argv[3])-4];
-			if(!strcmp(img_ext, ".png") || !strcmp(img_ext, ".jpg"))
+			if(!strcmp(img_ext, ".png") || !strcmp(img_ext, ".jpg") || !strcmp(img_ext, ".ppm"))
 			{
 				strcpy(left_img_filename, argv[3]);
 				printf("Left Image : %s\n", left_img_filename);
@@ -511,7 +515,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 			}
 
 			img_ext = &argv[4][strlen(argv[4])-4];
-			if(!strcmp(img_ext, ".png") || !strcmp(img_ext, ".jpg"))
+			if(!strcmp(img_ext, ".png") || !strcmp(img_ext, ".jpg") || !strcmp(img_ext, ".ppm"))
 			{
 				strcpy(right_img_filename, argv[4]);
 				printf("Right Image : %s\n", right_img_filename);

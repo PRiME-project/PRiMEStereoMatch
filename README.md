@@ -71,7 +71,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* Numbers 1 - 8: change the number of threads created by the process
 	* m: switch the computational mode between OpenCl and pthreads
 	* t: switch the data type use for processing between 32-bit and 8-bit
-* Control options are only available for the STEREO_GIF mathcing algorithm.
+* Control options are only available for the STEREO_GIF matching algorithm.
 
 ## Additional Resources
 * [Configuring OpenCL on the ODROID-XU3](http://granolamatt.com/working/2015/02/configure-opencl-on-odroid-xu3/)

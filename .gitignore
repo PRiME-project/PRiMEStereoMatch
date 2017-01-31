@@ -1,0 +1,5 @@
+bin/
+obj/
+middlebury-images/
+leftDisparityMap.png
+rightDisparityMap.png

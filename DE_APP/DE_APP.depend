@@ -596,20 +596,37 @@
 1461053773 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/ODROID/DE_RTM/src/SysM.cpp
 	"SysM.h"
 
-1450450936 /usr/local/include/opencv2/opencv.hpp
+1485438676 /usr/local/include/opencv2/opencv.hpp
+	"opencv2/opencv_modules.hpp"
 	"opencv2/core.hpp"
-	"opencv2/imgproc.hpp"
-	"opencv2/photo.hpp"
-	"opencv2/video.hpp"
-	"opencv2/features2d.hpp"
-	"opencv2/objdetect.hpp"
 	"opencv2/calib3d.hpp"
-	"opencv2/imgcodecs.hpp"
-	"opencv2/videoio.hpp"
+	"opencv2/features2d.hpp"
+	"opencv2/flann.hpp"
 	"opencv2/highgui.hpp"
+	"opencv2/imgcodecs.hpp"
+	"opencv2/imgproc.hpp"
 	"opencv2/ml.hpp"
+	"opencv2/objdetect.hpp"
+	"opencv2/photo.hpp"
+	"opencv2/shape.hpp"
+	"opencv2/stitching.hpp"
+	"opencv2/superres.hpp"
+	"opencv2/video.hpp"
+	"opencv2/videoio.hpp"
+	"opencv2/videostab.hpp"
+	"opencv2/viz.hpp"
+	"opencv2/cudaarithm.hpp"
+	"opencv2/cudabgsegm.hpp"
+	"opencv2/cudacodec.hpp"
+	"opencv2/cudafeatures2d.hpp"
+	"opencv2/cudafilters.hpp"
+	"opencv2/cudaimgproc.hpp"
+	"opencv2/cudaobjdetect.hpp"
+	"opencv2/cudaoptflow.hpp"
+	"opencv2/cudastereo.hpp"
+	"opencv2/cudawarping.hpp"
 
-1450450936 /usr/local/include/opencv2/core.hpp
+1485438676 /usr/local/include/opencv2/core.hpp
 	"opencv2/core/cvdef.h"
 	"opencv2/core/version.hpp"
 	"opencv2/core/base.hpp"
@@ -625,8 +642,9 @@
 	"opencv2/core/cvstd.inl.hpp"
 	"opencv2/core/utility.hpp"
 	"opencv2/core/optim.hpp"
+	"opencv2/core/ovx.hpp"
 
-1450450936 /usr/local/include/opencv2/core/cvdef.h
+1485438676 /usr/local/include/opencv2/core/cvdef.h
 	<limits.h>
 	"opencv2/core/hal/interface.h"
 	<emmintrin.h>
@@ -639,7 +657,7 @@
 	<immintrin.h>
 	<immintrin.h>
 	<Intrin.h>
-	"arm_neon.h"
+	<arm_neon.h>
 	<arm_neon.h>
 	<intrin.h>
 
@@ -665,16 +683,17 @@
 	"tegra_round.hpp"
 	<algorithm>
 
-1450450936 /usr/local/include/opencv2/core/version.hpp
+1485438676 /usr/local/include/opencv2/core/version.hpp
 
-1450450936 /usr/local/include/opencv2/core/base.hpp
+1485438676 /usr/local/include/opencv2/core/base.hpp
+	"opencv2/opencv_modules.hpp"
 	<climits>
 	<algorithm>
 	"opencv2/core/cvdef.h"
 	"opencv2/core/cvstd.hpp"
 	"opencv2/core/neon_utils.hpp"
 
-1450450936 /usr/local/include/opencv2/core/cvstd.hpp
+1485438676 /usr/local/include/opencv2/core/cvstd.hpp
 	"opencv2/core/cvdef.h"
 	<cstddef>
 	<cstring>
@@ -686,7 +705,7 @@
 	<cmath>
 	"opencv2/core/ptr.inl.hpp"
 
-1450450936 /usr/local/include/opencv2/core/ptr.inl.hpp
+1485438676 /usr/local/include/opencv2/core/ptr.inl.hpp
 	<algorithm>
 
 1433352094 /usr/local/include/opencv2/hal.hpp
@@ -694,57 +713,58 @@
 
 1433352094 /usr/local/include/opencv2/core/sse_utils.hpp
 
-1450450936 /usr/local/include/opencv2/core/traits.hpp
+1485438676 /usr/local/include/opencv2/core/traits.hpp
 	"opencv2/core/cvdef.h"
 
-1450450936 /usr/local/include/opencv2/core/matx.hpp
+1485438676 /usr/local/include/opencv2/core/matx.hpp
 	"opencv2/core/cvdef.h"
 	"opencv2/core/base.hpp"
 	"opencv2/core/traits.hpp"
 	"opencv2/core/saturate.hpp"
 
-1450450936 /usr/local/include/opencv2/core/types.hpp
+1485438676 /usr/local/include/opencv2/core/types.hpp
 	<climits>
 	<cfloat>
 	<vector>
+	<limits>
 	"opencv2/core/cvdef.h"
 	"opencv2/core/cvstd.hpp"
 	"opencv2/core/matx.hpp"
 
-1450450936 /usr/local/include/opencv2/core/mat.hpp
+1485438676 /usr/local/include/opencv2/core/mat.hpp
 	"opencv2/core/matx.hpp"
 	"opencv2/core/types.hpp"
 	"opencv2/core/bufferpool.hpp"
 	"opencv2/core/mat.inl.hpp"
 
-1450450936 /usr/local/include/opencv2/core/bufferpool.hpp
+1485438676 /usr/local/include/opencv2/core/bufferpool.hpp
 
-1450450936 /usr/local/include/opencv2/core/mat.inl.hpp
+1485438676 /usr/local/include/opencv2/core/mat.inl.hpp
 
-1450450936 /usr/local/include/opencv2/core/persistence.hpp
+1485438676 /usr/local/include/opencv2/core/persistence.hpp
 	"opencv2/core/types.hpp"
 	"opencv2/core/mat.hpp"
 	"opencv2/opencv.hpp"
 	<time.h>
 
-1450450936 /usr/local/include/opencv2/core/operations.hpp
+1485438676 /usr/local/include/opencv2/core/operations.hpp
 	<cstdio>
 
-1450450936 /usr/local/include/opencv2/core/cvstd.inl.hpp
+1485438676 /usr/local/include/opencv2/core/cvstd.inl.hpp
 	<complex>
 	<ostream>
 
-1450450936 /usr/local/include/opencv2/core/utility.hpp
+1485438676 /usr/local/include/opencv2/core/utility.hpp
 	"opencv2/core.hpp"
 	"opencv2/core/core_c.h"
 
-1450450936 /usr/local/include/opencv2/core/core_c.h
+1485438676 /usr/local/include/opencv2/core/core_c.h
 	"opencv2/core/types_c.h"
 	"cxcore.h"
 	"cxcore.h"
 	"opencv2/core/utility.hpp"
 
-1450450936 /usr/local/include/opencv2/core/types_c.h
+1485438676 /usr/local/include/opencv2/core/types_c.h
 	<ipl.h>
 	<ipl/ipl.h>
 	"opencv2/core/cvdef.h"
@@ -754,13 +774,13 @@
 	<float.h>
 	"opencv2/core.hpp"
 
-1450450936 /usr/local/include/opencv/cxcore.h
+1485438676 /usr/local/include/opencv/cxcore.h
 	"opencv2/core/core_c.h"
 
-1450450936 /usr/local/include/opencv2/core/optim.hpp
+1485438676 /usr/local/include/opencv2/core/optim.hpp
 	"opencv2/core.hpp"
 
-1450450936 /usr/local/include/opencv2/imgproc.hpp
+1485438676 /usr/local/include/opencv2/imgproc.hpp
 	"opencv2/core.hpp"
 	<opencv2/core.hpp>
 	<opencv2/imgproc.hpp>
@@ -778,112 +798,111 @@
 	"opencv2/highgui.hpp"
 	"opencv2/imgproc/imgproc_c.h"
 
-1450450936 /usr/local/include/opencv2/imgcodecs.hpp
+1485438676 /usr/local/include/opencv2/imgcodecs.hpp
 	"opencv2/core.hpp"
 	<opencv2/opencv.hpp>
 
-1450450936 /usr/local/include/opencv2/highgui.hpp
+1485438676 /usr/local/include/opencv2/highgui.hpp
 	"opencv2/core.hpp"
 	"opencv2/imgcodecs.hpp"
 	"opencv2/videoio.hpp"
 	"opencv2/highgui/highgui_c.h"
 
-1450450936 /usr/local/include/opencv2/videoio.hpp
+1485438676 /usr/local/include/opencv2/videoio.hpp
 	"opencv2/core.hpp"
-	"opencv2/opencv.hpp"
 
-1450450936 /usr/local/include/opencv2/highgui/highgui_c.h
+1485438676 /usr/local/include/opencv2/highgui/highgui_c.h
 	"opencv2/core/core_c.h"
 	"opencv2/imgproc/imgproc_c.h"
 	"opencv2/imgcodecs/imgcodecs_c.h"
 	"opencv2/videoio/videoio_c.h"
 
-1450450936 /usr/local/include/opencv2/imgproc/imgproc_c.h
+1485438676 /usr/local/include/opencv2/imgproc/imgproc_c.h
 	"opencv2/imgproc/types_c.h"
 
-1450450936 /usr/local/include/opencv2/imgproc/types_c.h
+1485438676 /usr/local/include/opencv2/imgproc/types_c.h
 	"opencv2/core/core_c.h"
 
-1450450936 /usr/local/include/opencv2/imgcodecs/imgcodecs_c.h
+1485438676 /usr/local/include/opencv2/imgcodecs/imgcodecs_c.h
 	"opencv2/core/core_c.h"
 
-1450450936 /usr/local/include/opencv2/videoio/videoio_c.h
+1485438676 /usr/local/include/opencv2/videoio/videoio_c.h
 	"opencv2/core/core_c.h"
 
-1450450936 /usr/local/include/opencv2/photo.hpp
+1485438676 /usr/local/include/opencv2/photo.hpp
 	"opencv2/core.hpp"
 	"opencv2/imgproc.hpp"
 	"opencv2/photo/photo_c.h"
 
-1450450936 /usr/local/include/opencv2/photo/photo_c.h
+1485438676 /usr/local/include/opencv2/photo/photo_c.h
 	"opencv2/core/core_c.h"
 
-1450450936 /usr/local/include/opencv2/video.hpp
+1485438676 /usr/local/include/opencv2/video.hpp
 	"opencv2/video/tracking.hpp"
 	"opencv2/video/background_segm.hpp"
 	"opencv2/video/tracking_c.h"
 
-1450450936 /usr/local/include/opencv2/video/tracking.hpp
+1485438676 /usr/local/include/opencv2/video/tracking.hpp
 	"opencv2/core.hpp"
 	"opencv2/imgproc.hpp"
 
-1450450936 /usr/local/include/opencv2/video/background_segm.hpp
+1485438676 /usr/local/include/opencv2/video/background_segm.hpp
 	"opencv2/core.hpp"
 
-1450450936 /usr/local/include/opencv2/video/tracking_c.h
+1485438676 /usr/local/include/opencv2/video/tracking_c.h
 	"opencv2/imgproc/types_c.h"
 
-1450450936 /usr/local/include/opencv2/features2d.hpp
+1485438676 /usr/local/include/opencv2/features2d.hpp
 	"opencv2/core.hpp"
 	"opencv2/flann/miniflann.hpp"
 
-1450450936 /usr/local/include/opencv2/flann/miniflann.hpp
+1485438676 /usr/local/include/opencv2/flann/miniflann.hpp
 	"opencv2/core.hpp"
 	"opencv2/flann/defines.h"
 
-1450450936 /usr/local/include/opencv2/flann/defines.h
+1485438676 /usr/local/include/opencv2/flann/defines.h
 	"config.h"
 
-1450450936 /usr/local/include/opencv2/flann/config.h
+1485438676 /usr/local/include/opencv2/flann/config.h
 
-1450450936 /usr/local/include/opencv2/objdetect.hpp
+1485438676 /usr/local/include/opencv2/objdetect.hpp
 	"opencv2/core.hpp"
 	"opencv2/objdetect/detection_based_tracker.hpp"
 	"opencv2/objdetect/objdetect_c.h"
 
-1450450936 /usr/local/include/opencv2/objdetect/detection_based_tracker.hpp
+1485438676 /usr/local/include/opencv2/objdetect/detection_based_tracker.hpp
 	<vector>
 
-1450450936 /usr/local/include/opencv2/objdetect/objdetect_c.h
+1485438676 /usr/local/include/opencv2/objdetect/objdetect_c.h
 	"opencv2/core/core_c.h"
 	<deque>
 	<vector>
 
-1450450936 /usr/local/include/opencv2/calib3d.hpp
+1485438676 /usr/local/include/opencv2/calib3d.hpp
 	"opencv2/core.hpp"
 	"opencv2/features2d.hpp"
 	"opencv2/core/affine.hpp"
 	"opencv2/calib3d/calib3d_c.h"
 
-1450450936 /usr/local/include/opencv2/core/affine.hpp
+1485438676 /usr/local/include/opencv2/core/affine.hpp
 	<opencv2/core.hpp>
 
-1450450936 /usr/local/include/opencv2/calib3d/calib3d_c.h
+1485438676 /usr/local/include/opencv2/calib3d/calib3d_c.h
 	"opencv2/core/core_c.h"
 
-1450450936 /usr/local/include/opencv2/ml.hpp
+1485438676 /usr/local/include/opencv2/ml.hpp
 	"opencv2/core.hpp"
 	<float.h>
 	<map>
 	<iostream>
 
-1450450936 /usr/local/include/opencv2/calib3d/calib3d.hpp
+1485438676 /usr/local/include/opencv2/calib3d/calib3d.hpp
 	"opencv2/calib3d.hpp"
 
-1450450936 /usr/local/include/opencv2/highgui/highgui.hpp
+1485438676 /usr/local/include/opencv2/highgui/highgui.hpp
 	"opencv2/highgui.hpp"
 
-1450450936 /usr/local/include/opencv2/imgproc/imgproc.hpp
+1485438676 /usr/local/include/opencv2/imgproc/imgproc.hpp
 	"opencv2/imgproc.hpp"
 
 1461274965 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/ODROID/DE_RTM/src/StereoMatch.cpp
@@ -1093,20 +1112,21 @@
 	<fstream>
 	<iostream>
 
-1450450936 /usr/local/include/opencv2/core/hal/interface.h
+1485438676 /usr/local/include/opencv2/core/hal/interface.h
 	<cstddef>
 	<stddef.h>
+	<stdbool.h>
 	<cstdint>
 	<stdint.h>
 
-1450450936 /usr/local/include/opencv2/core/neon_utils.hpp
+1485438676 /usr/local/include/opencv2/core/neon_utils.hpp
 	"opencv2/core/cvdef.h"
 
-1450450936 /usr/local/include/opencv2/core/saturate.hpp
+1485438676 /usr/local/include/opencv2/core/saturate.hpp
 	"opencv2/core/cvdef.h"
 	"opencv2/core/fast_math.hpp"
 
-1450450936 /usr/local/include/opencv2/core/fast_math.hpp
+1485438676 /usr/local/include/opencv2/core/fast_math.hpp
 	"opencv2/core/cvdef.h"
 	<fastmath.h>
 	<cmath>
@@ -1660,5 +1680,546 @@
 	"StereoCalib.h"
 
 1469804793 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiME-Theme-2/StereoVision/Ubuntu-PC/DE_APP/src/StereoMatch.cpp
+	"StereoMatch.h"
+
+1469802691 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/main.cpp
+	"ComFunc.h"
+	"common.h"
+	"StereoMatch.h"
+
+1467643153 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/ComFunc.h
+	<iostream>
+	<fstream>
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+	<sstream>
+	<cstddef>
+	<string>
+	<time.h>
+	<unistd.h>
+	<math.h>
+	<ctime>
+	<chrono>
+	<pthread.h>
+	<OpenCL/opencl.h>
+	<CL/cl.h>
+	<CL/cl_ext.h>
+	<opencv2/opencv.hpp>
+
+1485438797 /usr/local/include/opencv2/opencv_modules.hpp
+
+1485438676 /usr/local/include/opencv2/core/ovx.hpp
+	"cvdef.h"
+
+1485438676 /usr/local/include/opencv2/flann.hpp
+	"opencv2/core.hpp"
+	"opencv2/flann/miniflann.hpp"
+	"opencv2/flann/flann_base.hpp"
+
+1485438676 /usr/local/include/opencv2/flann/flann_base.hpp
+	<vector>
+	<cassert>
+	<cstdio>
+	"general.h"
+	"matrix.h"
+	"params.h"
+	"saving.h"
+	"all_indices.h"
+
+1485438676 /usr/local/include/opencv2/flann/general.h
+	"opencv2/core.hpp"
+
+1485438676 /usr/local/include/opencv2/flann/matrix.h
+	<stdio.h>
+	"general.h"
+
+1485438676 /usr/local/include/opencv2/flann/params.h
+	"any.h"
+	"general.h"
+	<iostream>
+	<map>
+
+1485438676 /usr/local/include/opencv2/flann/any.h
+	"defines.h"
+	<stdexcept>
+	<ostream>
+	<typeinfo>
+
+1485438676 /usr/local/include/opencv2/flann/saving.h
+	<cstring>
+	<vector>
+	"general.h"
+	"nn_index.h"
+
+1485438676 /usr/local/include/opencv2/flann/nn_index.h
+	"general.h"
+	"matrix.h"
+	"result_set.h"
+	"params.h"
+
+1485438676 /usr/local/include/opencv2/flann/result_set.h
+	<algorithm>
+	<cstring>
+	<iostream>
+	<limits>
+	<set>
+	<vector>
+
+1485438676 /usr/local/include/opencv2/flann/all_indices.h
+	"general.h"
+	"nn_index.h"
+	"kdtree_index.h"
+	"kdtree_single_index.h"
+	"kmeans_index.h"
+	"composite_index.h"
+	"linear_index.h"
+	"hierarchical_clustering_index.h"
+	"lsh_index.h"
+	"autotuned_index.h"
+
+1485438676 /usr/local/include/opencv2/flann/kdtree_index.h
+	<algorithm>
+	<map>
+	<cassert>
+	<cstring>
+	"general.h"
+	"nn_index.h"
+	"dynamic_bitset.h"
+	"matrix.h"
+	"result_set.h"
+	"heap.h"
+	"allocator.h"
+	"random.h"
+	"saving.h"
+
+1485438676 /usr/local/include/opencv2/flann/dynamic_bitset.h
+	<boost/dynamic_bitset.hpp>
+	<limits.h>
+	"dist.h"
+
+1485438676 /usr/local/include/opencv2/flann/dist.h
+	<cmath>
+	<cstdlib>
+	<string.h>
+	<stdint.h>
+	"defines.h"
+	<Intrin.h>
+	"arm_neon.h"
+
+1485438676 /usr/local/include/opencv2/flann/heap.h
+	<algorithm>
+	<vector>
+
+1485438676 /usr/local/include/opencv2/flann/allocator.h
+	<stdlib.h>
+	<stdio.h>
+
+1485438676 /usr/local/include/opencv2/flann/random.h
+	<algorithm>
+	<cstdlib>
+	<vector>
+	"general.h"
+
+1485438676 /usr/local/include/opencv2/flann/kdtree_single_index.h
+	<algorithm>
+	<map>
+	<cassert>
+	<cstring>
+	"general.h"
+	"nn_index.h"
+	"matrix.h"
+	"result_set.h"
+	"heap.h"
+	"allocator.h"
+	"random.h"
+	"saving.h"
+
+1485438676 /usr/local/include/opencv2/flann/kmeans_index.h
+	<algorithm>
+	<map>
+	<cassert>
+	<limits>
+	<cmath>
+	"general.h"
+	"nn_index.h"
+	"dist.h"
+	"matrix.h"
+	"result_set.h"
+	"heap.h"
+	"allocator.h"
+	"random.h"
+	"saving.h"
+	"logger.h"
+
+1485438676 /usr/local/include/opencv2/flann/logger.h
+	<stdio.h>
+	<stdarg.h>
+	"defines.h"
+
+1485438676 /usr/local/include/opencv2/flann/composite_index.h
+	"general.h"
+	"nn_index.h"
+	"kdtree_index.h"
+	"kmeans_index.h"
+
+1485438676 /usr/local/include/opencv2/flann/linear_index.h
+	"general.h"
+	"nn_index.h"
+
+1485438676 /usr/local/include/opencv2/flann/hierarchical_clustering_index.h
+	<algorithm>
+	<map>
+	<cassert>
+	<limits>
+	<cmath>
+	"general.h"
+	"nn_index.h"
+	"dist.h"
+	"matrix.h"
+	"result_set.h"
+	"heap.h"
+	"allocator.h"
+	"random.h"
+	"saving.h"
+
+1485438676 /usr/local/include/opencv2/flann/lsh_index.h
+	<algorithm>
+	<cassert>
+	<cstring>
+	<map>
+	<vector>
+	"general.h"
+	"nn_index.h"
+	"matrix.h"
+	"result_set.h"
+	"heap.h"
+	"lsh_table.h"
+	"allocator.h"
+	"random.h"
+	"saving.h"
+
+1485438676 /usr/local/include/opencv2/flann/lsh_table.h
+	<algorithm>
+	<iostream>
+	<iomanip>
+	<limits.h>
+	<unordered_map>
+	<map>
+	<math.h>
+	<stddef.h>
+	"dynamic_bitset.h"
+	"matrix.h"
+
+1485438676 /usr/local/include/opencv2/flann/autotuned_index.h
+	"general.h"
+	"nn_index.h"
+	"ground_truth.h"
+	"index_testing.h"
+	"sampling.h"
+	"kdtree_index.h"
+	"kdtree_single_index.h"
+	"kmeans_index.h"
+	"composite_index.h"
+	"linear_index.h"
+	"logger.h"
+
+1485438676 /usr/local/include/opencv2/flann/ground_truth.h
+	"dist.h"
+	"matrix.h"
+
+1485438676 /usr/local/include/opencv2/flann/index_testing.h
+	<cstring>
+	<cassert>
+	<cmath>
+	"matrix.h"
+	"nn_index.h"
+	"result_set.h"
+	"logger.h"
+	"timer.h"
+
+1485438676 /usr/local/include/opencv2/flann/timer.h
+	<time.h>
+	"opencv2/core.hpp"
+	"opencv2/core/utility.hpp"
+
+1485438676 /usr/local/include/opencv2/flann/sampling.h
+	"matrix.h"
+	"random.h"
+
+1485438676 /usr/local/include/opencv2/shape.hpp
+	"opencv2/shape/emdL1.hpp"
+	"opencv2/shape/shape_transformer.hpp"
+	"opencv2/shape/hist_cost.hpp"
+	"opencv2/shape/shape_distance.hpp"
+
+1485438676 /usr/local/include/opencv2/shape/emdL1.hpp
+	"opencv2/core.hpp"
+
+1485438676 /usr/local/include/opencv2/shape/shape_transformer.hpp
+	<vector>
+	"opencv2/core.hpp"
+	"opencv2/imgproc.hpp"
+
+1485438676 /usr/local/include/opencv2/shape/hist_cost.hpp
+	"opencv2/imgproc.hpp"
+
+1485438676 /usr/local/include/opencv2/shape/shape_distance.hpp
+	"opencv2/core.hpp"
+	"opencv2/shape/hist_cost.hpp"
+	"opencv2/shape/shape_transformer.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching.hpp
+	"opencv2/core.hpp"
+	"opencv2/features2d.hpp"
+	"opencv2/stitching/warpers.hpp"
+	"opencv2/stitching/detail/matchers.hpp"
+	"opencv2/stitching/detail/motion_estimators.hpp"
+	"opencv2/stitching/detail/exposure_compensate.hpp"
+	"opencv2/stitching/detail/seam_finders.hpp"
+	"opencv2/stitching/detail/blenders.hpp"
+	"opencv2/stitching/detail/camera.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching/warpers.hpp
+	"opencv2/stitching/detail/warpers.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching/detail/warpers.hpp
+	"opencv2/core.hpp"
+	"opencv2/core/cuda.hpp"
+	"opencv2/imgproc.hpp"
+	"opencv2/opencv_modules.hpp"
+	"warpers_inl.hpp"
+
+1485438676 /usr/local/include/opencv2/core/cuda.hpp
+	"opencv2/core.hpp"
+	"opencv2/core/cuda_types.hpp"
+	"opencv2/core/cuda.inl.hpp"
+
+1485438676 /usr/local/include/opencv2/core/cuda_types.hpp
+
+1485438676 /usr/local/include/opencv2/core/cuda.inl.hpp
+	"opencv2/core/cuda.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching/detail/warpers_inl.hpp
+	"opencv2/core.hpp"
+	"warpers.hpp"
+	<limits>
+
+1485438676 /usr/local/include/opencv2/stitching/detail/matchers.hpp
+	"opencv2/core.hpp"
+	"opencv2/features2d.hpp"
+	"opencv2/opencv_modules.hpp"
+	"opencv2/xfeatures2d/cuda.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching/detail/motion_estimators.hpp
+	"opencv2/core.hpp"
+	"matchers.hpp"
+	"util.hpp"
+	"camera.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching/detail/util.hpp
+	<list>
+	"opencv2/core.hpp"
+	"util_inl.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching/detail/util_inl.hpp
+	<queue>
+	"opencv2/core.hpp"
+	"util.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching/detail/camera.hpp
+	"opencv2/core.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching/detail/exposure_compensate.hpp
+	"opencv2/core.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching/detail/seam_finders.hpp
+	<set>
+	"opencv2/core.hpp"
+	"opencv2/opencv_modules.hpp"
+
+1485438676 /usr/local/include/opencv2/stitching/detail/blenders.hpp
+	"opencv2/core.hpp"
+
+1485438676 /usr/local/include/opencv2/superres.hpp
+	"opencv2/core.hpp"
+	"opencv2/superres/optical_flow.hpp"
+
+1485438676 /usr/local/include/opencv2/superres/optical_flow.hpp
+	"opencv2/core.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab.hpp
+	"opencv2/videostab/stabilizer.hpp"
+	"opencv2/videostab/ring_buffer.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/stabilizer.hpp
+	<vector>
+	<ctime>
+	"opencv2/core.hpp"
+	"opencv2/imgproc.hpp"
+	"opencv2/videostab/global_motion.hpp"
+	"opencv2/videostab/motion_stabilizing.hpp"
+	"opencv2/videostab/frame_source.hpp"
+	"opencv2/videostab/log.hpp"
+	"opencv2/videostab/inpainting.hpp"
+	"opencv2/videostab/deblurring.hpp"
+	"opencv2/videostab/wobble_suppression.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/global_motion.hpp
+	<vector>
+	<fstream>
+	"opencv2/core.hpp"
+	"opencv2/features2d.hpp"
+	"opencv2/opencv_modules.hpp"
+	"opencv2/videostab/optical_flow.hpp"
+	"opencv2/videostab/motion_core.hpp"
+	"opencv2/videostab/outlier_rejection.hpp"
+	"opencv2/cudaimgproc.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/optical_flow.hpp
+	"opencv2/core.hpp"
+	"opencv2/opencv_modules.hpp"
+	"opencv2/cudaoptflow.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/motion_core.hpp
+	<cmath>
+	"opencv2/core.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/outlier_rejection.hpp
+	<vector>
+	"opencv2/core.hpp"
+	"opencv2/videostab/motion_core.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/motion_stabilizing.hpp
+	<vector>
+	<utility>
+	"opencv2/core.hpp"
+	"opencv2/videostab/global_motion.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/frame_source.hpp
+	<vector>
+	"opencv2/core.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/log.hpp
+	"opencv2/core.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/inpainting.hpp
+	<vector>
+	"opencv2/core.hpp"
+	"opencv2/videostab/optical_flow.hpp"
+	"opencv2/videostab/fast_marching.hpp"
+	"opencv2/videostab/global_motion.hpp"
+	"opencv2/photo.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/fast_marching.hpp
+	<cmath>
+	<queue>
+	<algorithm>
+	"opencv2/core.hpp"
+	"fast_marching_inl.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/fast_marching_inl.hpp
+	"opencv2/videostab/fast_marching.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/deblurring.hpp
+	<vector>
+	"opencv2/core.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/wobble_suppression.hpp
+	<vector>
+	"opencv2/core.hpp"
+	"opencv2/core/cuda.hpp"
+	"opencv2/videostab/global_motion.hpp"
+	"opencv2/videostab/log.hpp"
+
+1485438676 /usr/local/include/opencv2/videostab/ring_buffer.hpp
+	<vector>
+	"opencv2/imgproc.hpp"
+
+1466419975 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/common.h
+	"ComFunc.h"
+
+1467641532 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/StereoMatch.h
+	"ComFunc.h"
+	"StereoCalib.h"
+	"DispEst.h"
+
+1466420061 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/StereoCalib.h
+	"ComFunc.h"
+	"opencv2/calib3d/calib3d.hpp"
+	"opencv2/imgcodecs.hpp"
+	"opencv2/highgui/highgui.hpp"
+	"opencv2/imgproc/imgproc.hpp"
+	<vector>
+	<algorithm>
+	<iterator>
+	<ctype.h>
+
+1467643682 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/DispEst.h
+	"ComFunc.h"
+	"CVC.h"
+	"CVC_cl.h"
+	"CVF.h"
+	"CVF_cl.h"
+	"DispSel.h"
+	"DispSel_cl.h"
+	"PP.h"
+	"common.h"
+
+1467716657 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/CVC.h
+	"ComFunc.h"
+
+1467649407 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/CVC_cl.h
+	"ComFunc.h"
+	"common.h"
+
+1467645396 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/CVF.h
+	"ComFunc.h"
+
+1467979259 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/CVF_cl.h
+	"ComFunc.h"
+	"common.h"
+
+1467648019 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/DispSel.h
+	"ComFunc.h"
+
+1467648275 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/DispSel_cl.h
+	"ComFunc.h"
+	"common.h"
+
+1466420021 /home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/include/PP.h
+	"ComFunc.h"
+
+1466419744 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/common.cpp
+	"common.h"
+
+1469003131 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/CVC.cpp
+	"CVC.h"
+
+1467978188 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/CVC_cl.cpp
+	"CVC_cl.h"
+
+1467717881 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/CVF.cpp
+	"CVF.h"
+
+1467979551 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/CVF_cl.cpp
+	"CVF_cl.h"
+
+1467968650 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/DispEst.cpp
+	"DispEst.h"
+
+1467712408 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/DispSel.cpp
+	"DispSel.h"
+
+1467978724 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/DispSel_cl.cpp
+	"DispSel_cl.h"
+
+1467718629 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/PP.cpp
+	"PP.h"
+
+1466420060 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/StereoCalib.cpp
+	"StereoCalib.h"
+
+1469804793 source:/home/cl19g10/Dropbox (PRiME Soton)/Charlie/Git/PRiME/PRiMEStereoMatch/DE_APP/src/StereoMatch.cpp
 	"StereoMatch.h"
 

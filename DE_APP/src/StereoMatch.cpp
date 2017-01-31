@@ -246,9 +246,6 @@ int StereoMatch::Compute()
 			pp_time = get_rt() - pp_time;
 		}
 
-		imwrite("lDispMap-pp.png", SMDE->lDisMap*4);
-		imwrite("rDispMap-pp.png", SMDE->rDisMap*4);
-
 		// ******** Show Disparity Map  ******** //
 		applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET); // *4 for conversion from disparty range (0-64) to RGB char range (0-255)
 		lDispMap.copyTo(leftDispMap); //copy to leftDispMap display rectangle
@@ -261,6 +258,9 @@ int StereoMatch::Compute()
 		printf("CVF Time: %.2f ms\n",cvf_time/1000);
 		printf("DispSel Time: %.2f ms\n",dispsel_time/1000);
 		printf("PP Time: %.2f ms\n",pp_time/1000);
+
+		imwrite("leftDisparityMap.png", leftDispMap);
+		imwrite("rightDisparityMap.png", rightDispMap);
 
 	}
 	printf("DE Time: %.2f ms\n\n",(get_rt() - de_time)/1000);

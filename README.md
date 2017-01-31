@@ -90,7 +90,7 @@ folders:
 	src				- Project source files (c/cpp)
 	
 files:
-	cbp2make.linux-x86_64 	- codeblocks to makefile synthesis tool (for x86_64 PC)
+	cbp2make.linux-x86_64 	- codeblocks project to makefile tool (for x86_64 PC - see [link](https://sourceforge.net/projects/cbp2make/) for sourceforge project)
 	cbp2make_usage.txt		- cbp2make tool manual
 	DE_APP.cbp				- Code::Blocks project file
 	DE_APP.depend			- Code::Blocks settings file

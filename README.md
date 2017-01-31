@@ -64,6 +64,15 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 * This process only needs to be repeated if the relative orientations of the left and right cameras are changed or a different resolution is specified.
 * Once the intrinsic and extrinsic parameters have been calucalted and saved to .yml files, the application can be re-run with the same camera without needing to recalibrate as teh parameters will be loaded from these files. The files can be found in the data directory.
 
+### Interactivity
+
+* Press h to display a help menu on the command line. This shows input and control options for the program which change the way the algorithm behaves for the next frame.
+* Control Options:
+	* Numbers 1 - 8: change the number of threads created by the process
+	* m: switch the computational mode between OpenCl and pthreads
+	* t: switch the data type use for processing between 32-bit and 8-bit
+* Control options are only available for the STEREO_GIF matching algorithm.
+
 ## Additional Resources
 * [Configuring OpenCL on the ODROID-XU3](http://granolamatt.com/working/2015/02/configure-opencl-on-odroid-xu3/)
 
@@ -81,7 +90,7 @@ folders:
 	src				- Project source files (c/cpp)
 	
 files:
-	cbp2make.linux-x86_64 	- codeblocks to makefile synthesis tool (for x86_64 PC)
+	cbp2make.linux-x86_64 	- codeblocks project to makefile tool (for x86_64 PC - see (https://sourceforge.net/projects/cbp2make/) for sourceforge project)
 	cbp2make_usage.txt		- cbp2make tool manual
 	DE_APP.cbp				- Code::Blocks project file
 	DE_APP.depend			- Code::Blocks settings file

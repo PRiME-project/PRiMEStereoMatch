@@ -325,7 +325,7 @@ int StereoMatch::stereoCameraSetup(void)
 			captureChessboards();
 		}
 		printf("Running Calibration.\n");
-		calibrateCamera(9, 6, camProps, "data/stereo_calib.xml");
+		calibrateCamera(9, 6, camProps, FILE_CALIB_XML);
 		printf("Calibration Complete.\n");
 	}
 	else
@@ -333,8 +333,8 @@ int StereoMatch::stereoCameraSetup(void)
 		//#############################################################################################################
 		//# Camera Setup - load existing intrinsic & extrinsic parameters
 		//#############################################################################################################
-		string intrinsic_filename = "data/intrinsics.yml";
-		string extrinsic_filename = "data/extrinsics.yml";
+		string intrinsic_filename = FILE_INTRINSICS;
+		string extrinsic_filename = FILE_EXTRINSICS;
 
 		// Read in intrinsic parameters
 		printf("Loading intrinsic parameters.\n");
@@ -421,11 +421,11 @@ int StereoMatch::captureChessboards(void)
 
         if(cap_key == 'r')
         {
-			sprintf(imageLoc, "data/chessboard%dL.png", img_num);
+			sprintf(imageLoc, FILE_TEMPLATE_LEFT, img_num);
 			imwrite(imageLoc, lFrame);
 			lFrame.copyTo(leftDispMap);
 
-			sprintf(imageLoc, "data/chessboard%dR.png", img_num++);
+			sprintf(imageLoc, FILE_TEMPLATE_RIGHT, img_num++);
 			imwrite(imageLoc, rFrame);
 			rFrame.copyTo(rightDispMap);
         }
@@ -441,9 +441,9 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 {
 	if( argc < 3 ) {
         printf("\nPlease specify a Matching Algorithm and Media Type as a minimum requirement:\n" );
-        printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] VIDEO ( [RECALIBRATE?] [RECAPTURE] )\n" );
+        printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] VIDEO ( [RECALIBRATE?] [RECAPTURE] )\n" );
         printf("Usage: \t or");
-        printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
+        printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
 		exit(1);
 	}
 
@@ -457,7 +457,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 	}
 	else{
 		printf("Invalid matching algorithm chosen:\n");
-		printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] [MEDIA TYPE]\n" );
+		printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] [MEDIA TYPE]\n" );
 		exit(1);
 	}
 	if(!strcmp(argv[2],"VIDEO")){
@@ -484,7 +484,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 		if( argc < 4 )
 		{
 			printf("Please specify the image filenames to use, e.g. left_img.png right_img.png\n");
-			printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
+			printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
 			exit(1);
 		}
 		else
@@ -509,8 +509,8 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 			}
 			else
 			{
-				printf("Left Image: Incompatible image filename extension specified. \nPlease use either .png or .jpg images\n");
-				printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
+				printf("Left Image: Incompatible image filename extension specified. \nPlease use either .png, .ppm .jpg images\n");
+				printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
 				exit(1);
 			}
 
@@ -523,7 +523,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 			else
 			{
 				printf("Right Image: Incompatible image filename extension specified. \nPlease use either .png or jpg images\n");
-				printf("Usage: ./<prog_name> [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
+				printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
 				exit(1);
 			}
 			video = false;
@@ -531,7 +531,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 	}
 	else{
 		printf("Invalid media type chosen:\n");
-		printf("Usage: ./<prog_name> [Matching Algorithm] [MEDIA TYPE = VIDEO|IMAGE [image_filenames]] ([RECALIBRATE?] [RECAPTURE])\n" );
+		printf("Usage: ./DE_APP [Matching Algorithm] [MEDIA TYPE = VIDEO|IMAGE [image_filenames]] ([RECALIBRATE?] [RECAPTURE])\n" );
 		exit(1);
 	}
 	if(atoi(argv[argc-1]) > 0)

@@ -9,6 +9,8 @@
 #include "ComFunc.h"
 #include "common.h"
 
+#define FILE_CVC_PROG BASE_DIR "assets/cvc.cl"
+
 //
 // TAD + GRD for Cost Computation
 //

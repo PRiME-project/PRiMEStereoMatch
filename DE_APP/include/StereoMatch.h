@@ -10,7 +10,6 @@
 #include "StereoCalib.h"
 #include "DispEst.h"
 
-#define BASE_DIR "../"
 #define FILE_INTRINSICS 	BASE_DIR "data/intrinsics.yml"
 #define FILE_EXTRINSICS 	BASE_DIR "data/extrinsics.yml"
 

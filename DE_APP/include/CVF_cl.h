@@ -9,6 +9,7 @@
 #include "ComFunc.h"
 #include "common.h"
 
+#define FILE_CVF_PROG BASE_DIR "assets/cvf.cl"
 #define R_WIN 9
 
 //

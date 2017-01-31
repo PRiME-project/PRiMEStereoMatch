@@ -19,7 +19,7 @@ CVC_cl::CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
     kernel = 0;
     imgType = I->type() & CV_MAT_DEPTH_MASK;
 
-    if (!createProgram(*context, device, "assets/cvc.cl", &program))
+    if (!createProgram(*context, device, FILE_CVC_PROG, &program))
     {
         cleanUpOpenCL(NULL, NULL, program, NULL, NULL, 0);
         cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << endl;

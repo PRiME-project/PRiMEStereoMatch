@@ -17,7 +17,7 @@ DispSel_cl::DispSel_cl(cl_context* context, cl_command_queue* commandQueue, cl_d
     program = 0;
     imgType = I->type() & CV_MAT_DEPTH_MASK;
 
-    if (!createProgram(*context, device, "assets/dispsel.cl", &program))
+    if (!createProgram(*context, device, FILE_DS_PROG, &program))
     {
         cleanUpOpenCL(NULL, NULL, NULL, kernel, NULL, 0);
         cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << endl;

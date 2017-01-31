@@ -9,6 +9,8 @@
 #include "ComFunc.h"
 #include "common.h"
 
+#define FILE_DS_PROG BASE_DIR "assets/dispsel.cl"
+
 class DispSel_cl
 {
 public:

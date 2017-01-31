@@ -23,7 +23,7 @@ CVF_cl::CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
     program = 0;
     imgType = I->type() & CV_MAT_DEPTH_MASK;
 
-    if (!createProgram(*context, device, "assets/cvf.cl", &program))
+    if (!createProgram(*context, device, FILE_CVF_PROG, &program))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_split, NULL, 0);
         cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << endl;

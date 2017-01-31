@@ -6,7 +6,7 @@ cmake_minimum_required (VERSION 3.5.1)
 project (DE_APP)
 
 include_directories(include)
-file(GLOB SOURCES "src/*.cpp" "main.cpp")
+file(GLOB SOURCES "src/*.cpp")
 
 add_executable(DE_APP ${SOURCES})
 set_property(TARGET DE_APP PROPERTY CXX_STANDARD 11)

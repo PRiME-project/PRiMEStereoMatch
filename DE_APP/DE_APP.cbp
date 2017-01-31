@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="STEREO_GIF IMAGE data/im2.png data/im6.png" />
+				<Option parameters="STEREO_GIF IMAGE data/art1.png data/art5.png" />
 				<Compiler>
 					<Add option="-Wall" />
 					<Add option="-g" />
@@ -22,7 +22,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="STEREO_GIF IMAGE data/venus2.ppm data/venus6.ppm" />
+				<Option parameters="STEREO_GIF IMAGE data/teddy2.png data/teddy6.png" />
 				<Compiler>
 					<Add option="-O3" />
 				</Compiler>
@@ -36,7 +36,6 @@
 		</Compiler>
 		<Linker>
 			<Add option="-lpthread -lrt -lOpenCL" />
-			<Add option="-lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_video -lopencv_objdetect -lopencv_calib3d" />
 			<Add option="`pkg-config --libs opencv`" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
@@ -52,7 +51,6 @@
 		<Unit filename="include/StereoCalib.h" />
 		<Unit filename="include/StereoMatch.h" />
 		<Unit filename="include/common.h" />
-		<Unit filename="main.cpp" />
 		<Unit filename="src/CVC.cpp" />
 		<Unit filename="src/CVC_cl.cpp" />
 		<Unit filename="src/CVF.cpp" />
@@ -64,6 +62,7 @@
 		<Unit filename="src/StereoCalib.cpp" />
 		<Unit filename="src/StereoMatch.cpp" />
 		<Unit filename="src/common.cpp" />
+		<Unit filename="src/main.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

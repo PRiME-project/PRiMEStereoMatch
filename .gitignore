@@ -1,6 +1,6 @@
 assets_old/
 bin/
-build/*
+build/
 obj/
 middlebury-images/
 leftDisparityMap.png

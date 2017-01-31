@@ -36,11 +36,11 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* OpenCL Library (lOpenCL) for execution on the GPU
 
 ### Compilation 
-* Download project folder to your platform.
+* Clone repo to the platform: `git clone https://github.com/PRiME-project/PRiMEStereoMatch.git`
 * Enter the base directory: `cd DE_APP`.
-* Create a build folder: `mkdir build`
+* Create and enter build directory: `mkdir build && cd build`
 * Invoke cmake to build the makefile: `cmake ..` (Two dots are required in order to reference the base dir)
-* Compile the project: `make -jN`. 
+* Compile the project with the generated makefile: `make -jN`. 
 	* Set N to the number of simultaneous threads supported on your compilation platform, e.g. 8.
 
 ### Deployment

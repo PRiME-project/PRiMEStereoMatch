@@ -29,20 +29,22 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 
 ### Prerequisites
 * Hardware:
-	* Development Platform - optionally but ideally including OpenCL compatible devices
-* Software:
+	* Development Platform - including OpenCL compatible devices
+* Software Libraries:
 	* OpenCV 2.4 or later - [Installation in Linux instructions](http://docs.opencv.org/2.4/doc/tutorials/introduction/linux_install/linux_install.html)
-	* pthread and realtime libraries (lpthread, lrt)
-	* [optional] OpenCL Library (-lOpenCL)
+	* pthread library (lpthread) for non-OpenCL execution on the CPU
+	* OpenCL Library (-lOpenCL) for execution on the GPU
 
 ### Compilation 
 * Download project folder to your platform.
-* Enter the base directory using `cd DE_APP`.
-* Natively compile the project using `make -jN`. 
+* Enter the base directory: `cd DE_APP`.
+* Create a build folder: `mkdir build`
+* Invoke cmake to build the makefile: `cmake ..` (Two dots are required in order to reference the base dir)
+* Compile the project: `make -jN`. 
 	* Set N to the number of simultaneous threads supported on your compilation platform, e.g. 8.
 
 ### Deployment
-* Run the application using `./bin/Release/DE_APP <program arguments>`
+* Run the application fromt eh build dir: `./DE_APP <program arguments>`
 * The following program arguments must be specified:
 	* Matching Algorithm type: 
 		* STEREO_GIF - Guided Image Filter
@@ -50,9 +52,10 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* Media type:
 		* VIDEO
 		* IMAGE <left image filename> <right image filename>
-* When specifying the VIDEO media type, the following optional arguments can be included:
+* [optional] When specifying the VIDEO media type, the following arguments can be included:
 	* RECALIBRATE - recalculate the intrinsic and extrinsic parameters of the stereo camera. Previously captured chessboard images must be supplied if the RECAPTURE flag is not also set.
 	* RECAPTURE - record chessboard image pairs in preparation for calibration. A chessboard image must be presented in front of the stereo camera and in full view of both cameras. Press the R key to capture a frame. The last frame captured is shown beneath the video stream.
+	
 * For example, to run with the guided image filter algorithm using a stereo camera, specify:
 	* `./bin/Release/DE_APP STEREO_GIF VIDEO`
 * To run with calibration and capture beforehand, specify:

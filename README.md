@@ -33,7 +33,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 * Software Libraries:
 	* OpenCV 2.4 or later - [Installation in Linux instructions](http://docs.opencv.org/2.4/doc/tutorials/introduction/linux_install/linux_install.html)
 	* pthread library (lpthread) for non-OpenCL execution on the CPU
-	* OpenCL Library (-lOpenCL) for execution on the GPU
+	* OpenCL Library (lOpenCL) for execution on the GPU
 
 ### Compilation 
 * Download project folder to your platform.

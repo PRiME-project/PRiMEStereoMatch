@@ -1,7 +1,7 @@
-assets_old/
-bin/
-build/
-obj/
-middlebury-images/
-leftDisparityMap.png
-rightDisparityMap.png
+DE_APP/assets_old/
+DE_APP/bin/
+DE_APP/build/
+DE_APP/obj/
+DE_APP/middlebury-images/
+DE_APP/leftDisparityMap.png
+DE_APP/rightDisparityMap.png

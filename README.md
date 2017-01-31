@@ -37,7 +37,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 
 ### Compilation 
 * Clone repo to the platform: `git clone https://github.com/PRiME-project/PRiMEStereoMatch.git`
-* Enter the base directory: `cd DE_APP`.
+* Enter the base directory: `cd PRiMEStereoMatch/DE_APP`.
 * Create and enter build directory: `mkdir build && cd build`
 * Invoke cmake to build the makefile: `cmake ..` (Two dots are required in order to reference the base dir)
 * Compile the project with the generated makefile: `make -jN`. 

@@ -57,11 +57,11 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* RECAPTURE - record chessboard image pairs in preparation for calibration. A chessboard image must be presented in front of the stereo camera and in full view of both cameras. Press the R key to capture a frame. The last frame captured is shown beneath the video stream.
 	
 * For example, to run with the guided image filter algorithm using a stereo camera, specify:
-	* `./bin/Release/DE_APP STEREO_GIF VIDEO`
+	* `./DE_APP STEREO_GIF VIDEO`
 * To run with calibration and capture beforehand, specify:
-	* `./bin/Release/DE_APP STEREO_GIF VIDEO RECALIBRATE RECAPTURE`
+	* `./DE_APP STEREO_GIF VIDEO RECALIBRATE RECAPTURE`
 * Image disparity estimation is achieved using for example:
-	* `./bin/Release/DE_APP STEREO_GIF IMAGE left_img.png right_img.png`
+	* `./DE_APP STEREO_GIF IMAGE left_img.png right_img.png`
 
 * The first time the application is deployed using a stereo camera, the RECALIBRATE and RECAPTURE flags must be set in order to capture chessboard image to calculate the intrinsic and extrinsic parameters.
 * This process only needs to be repeated if the relative orientations of the left and right cameras are changed or a different resolution is specified.

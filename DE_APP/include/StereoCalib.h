@@ -39,6 +39,14 @@
 #include <iterator>
 #include <ctype.h>
 
+// Recalibrate
+#define FILE_INTRINSICS 	BASE_DIR "data/intrinsics.yml"
+#define FILE_EXTRINSICS 	BASE_DIR "data/extrinsics.yml"
+#define FILE_CALIB_XML  	BASE_DIR "data/stereo_calib.xml"
+// Recapture
+#define FILE_TEMPLATE_LEFT	BASE_DIR "data/chessboard%dL.png"
+#define FILE_TEMPLATE_RIGHT	BASE_DIR "data/chessboard%dR.png"
+
 struct StereoCameraProperties{
     Mat cameraMatrix[2];
     Mat distCoeffs[2];

@@ -73,7 +73,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
     {
         for( k = 0; k < 2; k++ )
         {
-            const string& filename = "data/" + imagelist[i*2+k];
+            const string& filename = (string)BASE_DIR + "data/" + imagelist[i*2+k];
             Mat img = imread(filename, 0);
             if(img.empty())
                 break;
@@ -202,7 +202,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
     cout << "average reprojection err = " <<  err/npoints << endl;
 
     // save intrinsic parameters
-    FileStorage fs("data/intrinsics.yml", FileStorage::WRITE);
+    FileStorage fs(FILE_INTRINSICS, FileStorage::WRITE);
     if( fs.isOpened() )
     {
         fs << "M1" << cameraMatrix[0] << "D1" << distCoeffs[0] <<
@@ -225,7 +225,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
                   imageSize, R, T, R1, R2, P1, P2, Q,
                   CALIB_ZERO_DISPARITY, 1, imageSize, &validRoi[0], &validRoi[1]);
 
-    fs.open("data/extrinsics.yml", FileStorage::WRITE);
+    fs.open(FILE_EXTRINSICS, FileStorage::WRITE);
     if( fs.isOpened() )
     {
         fs << "R" << R << "T" << T << "R1" << R1 << "R2" << R2 << "P1" << P1 << "P2" << P2 << "Q" << Q;

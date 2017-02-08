@@ -66,7 +66,6 @@ void *getDepthMap(void *arg)
 		if(imgType != sm->imgType)
 			sm->imgTypeChange(imgType);
 		sm->Compute();
-		end_de = true;
 		//printf("MAIN: DE Computed...\n");
 		//printf("MAIN: Press h for help text.\n\n");
 	}

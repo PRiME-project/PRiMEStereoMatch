@@ -22,7 +22,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="STEREO_GIF IMAGE data/teddy2.png data/teddy6.png" />
+				<Option parameters="STEREO_GIF VIDEO RECALIBRATE RECAPTURE" />
 				<Compiler>
 					<Add option="-O3" />
 				</Compiler>

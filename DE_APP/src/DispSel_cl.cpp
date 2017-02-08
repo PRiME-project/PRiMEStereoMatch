@@ -25,12 +25,12 @@ DispSel_cl::DispSel_cl(cl_context* context, cl_command_queue* commandQueue, cl_d
 
 	if(imgType == CV_32F)
 	{
-		kernel_name = "dispsel_float";
-		//kernel_name = "dispsel_double";
+		strcpy(kernel_name, "dispsel_float");
+		//strcpy(kernel_name, "dispsel_double");
 	}
 	else if(imgType == CV_8U)
 	{
-		kernel_name = "dispsel_uchar";
+		strcpy(kernel_name, "dispsel_uchar");
 	}
     else{
 		printf("DS_cl: Error - Unrecognised data type in processing! (DS_cl)\n");

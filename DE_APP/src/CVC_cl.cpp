@@ -31,8 +31,8 @@ CVC_cl::CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
 
 	if(imgType == CV_32F)
 	{
-		kernel_name = "cvc_float_nv";
-		//kernel_name = "cvc_float_v4";
+		strcpy(kernel_name, "cvc_float_nv");
+		//strcpy(kernel_name, "cvc_float_v4");
 
 		bufferSize_2D = width * height * sizeof(cl_float);
 		bufferSize_3D = width * height * maxDis * sizeof(cl_float);
@@ -47,9 +47,9 @@ CVC_cl::CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
 	}
 	else if(imgType == CV_8U)
 	{
-		kernel_name = "cvc_uchar_vx";
-		//kernel_name = "cvc_uchar_v16";
-		//kernel_name = "cvc_uchar_nv";
+		strcpy(kernel_name, "cvc_uchar_vx");
+		//strcpy(kernel_name, "cvc_uchar_v16");
+		//strcpy(kernel_name, "cvc_uchar_nv");
 
 		bufferSize_2D = width * height * sizeof(cl_uchar);
 		bufferSize_3D = width * height * maxDis * sizeof(cl_uchar);

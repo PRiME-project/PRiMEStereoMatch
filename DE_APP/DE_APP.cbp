@@ -7,22 +7,24 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="bin/Debug/DE_APP" prefix_auto="1" extension_auto="1" />
+				<Option output="build/DE_APP" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="build" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="STEREO_GIF IMAGE data/art1.png data/art5.png" />
+				<Option parameters="STEREO_GIF IMAGE ../data/art1.png ../data/art5.png" />
 				<Compiler>
 					<Add option="-Wall" />
 					<Add option="-g" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="bin/Release/DE_APP" prefix_auto="1" extension_auto="1" />
+				<Option output="build/DE_APP" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="build" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="STEREO_GIF VIDEO RECALIBRATE RECAPTURE" />
+				<Option parameters="STEREO_SGBM VIDEO RECALIBRATE RECAPTURE" />
 				<Compiler>
 					<Add option="-O3" />
 				</Compiler>

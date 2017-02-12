@@ -27,8 +27,17 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 
 	inputArgParser(argc, argv);
 
-	if(video)
-		stereoCameraSetup();
+	if(video){
+		cap = VideoCapture(0);
+		if (cap.isOpened()){
+			printf("Opened the VideoCapture device.\n");
+			stereoCameraSetup();
+		}
+		else{
+			printf("Could not open the VideoCapture device.\n");
+			exit(1);
+		}
+	}
 	else{
 		//#############################################################################################################
 		//# Image Loading
@@ -69,7 +78,6 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 	rFrame.copyTo(rightInputImg);
 
 	imshow("InputOutput", display_container);
-
 
 	//#############################################################################################################
     //# SGBM Mode Setup
@@ -144,7 +152,7 @@ int StereoMatch::imgTypeChange(int type)
 //#############################################################################################################
 int StereoMatch::Compute()
 {
-	printf("Computing Depth Map\n");
+	//printf("Computing Depth Map\n");
 	de_time = get_rt();
 	//#############################################################################################################
 	//# Frame Capture and Preprocessing
@@ -263,7 +271,7 @@ int StereoMatch::Compute()
 		imwrite("rightDisparityMap.png", rightDispMap);
 
 	}
-	printf("DE Time: %.2f ms\n\n",(get_rt() - de_time)/1000);
+	printf("DE Time: %.2f ms\n",(get_rt() - de_time)/1000);
 	//Perform these steps for all algorithms:
 	imshow("InputOutput", display_container);
 
@@ -275,12 +283,6 @@ int StereoMatch::Compute()
 //#############################################################################################################
 int StereoMatch::stereoCameraSetup(void)
 {
-	cap = VideoCapture(0);
-	if (!cap.isOpened())
-	{
-		printf("Cannot open the VideoCapture object\n");
-		exit(1);
-	}
 	cap.set(CAP_PROP_FRAME_HEIGHT, 480); //480, 720, 1080, 1242
 	cap.set(CAP_PROP_FRAME_WIDTH, 1280); //1280, 2560, 3840, 4416
 	cout << "CAP_PROP_FRAME_HEIGHT: " << cap.get(CAP_PROP_FRAME_HEIGHT) << endl;
@@ -548,7 +550,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 int StereoMatch::setupOpenCVSGBM(int channels, int ndisparities)
 {
 	int mindisparity = 0;
-	int SADWindowSize = 9;
+	int SADWindowSize = 5;
 
 	// Call the constructor for StereoSGBM
 	ssgbm = StereoSGBM::create(mindisparity, ndisparities, SADWindowSize);
@@ -560,7 +562,7 @@ int StereoMatch::setupOpenCVSGBM(int channels, int ndisparities)
 	ssgbm->setUniquenessRatio(10);
     ssgbm->setSpeckleWindowSize(100);
     ssgbm->setSpeckleRange(32);
-	ssgbm->setMode(StereoSGBM::MODE_HH); // enum{ MODE_SGBM = 0, MODE_HH = 1, MODE_SGBM_3WAY = 2 }
-
+	//ssgbm->setMode(StereoSGBM::MODE_HH); // enum{ MODE_SGBM = 0, MODE_HH = 1, MODE_SGBM_3WAY = 2 }
+	ssgbm->setMode(StereoSGBM::MODE_HH);
     return 0;
 }

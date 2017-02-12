@@ -21,7 +21,7 @@ public:
     cl_context* context;
 	cl_command_queue* commandQueue;
     cl_program program;
-    char *kernel_name;
+    char kernel_name[128];
     cl_kernel kernel;
     cl_int errorNumber;
     cl_event event;

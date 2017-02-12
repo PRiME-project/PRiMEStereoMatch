@@ -19,6 +19,7 @@ StereoMatch *sm;
 bool end_de = false;
 int nOpenCLDev = 0;
 int imgType = CV_32F;
+int sgbm_mode = StereoSGBM::MODE_HH;
 
 int main(int argc, char** argv)
 {
@@ -103,14 +104,22 @@ void HCI(void)
 				if(sm->MatchingAlgorithm == STEREO_GIF){
 					if(nOpenCLDev){
 						sm->de_mode = sm->de_mode ? OCV_DE : OCL_DE;
+						printf("| m: STEREO_GIF Matching Algoritm:\n");
 						printf("| m: Mode changed to %s |\n", sm->de_mode ? "OpenCL on the GPU" : "C++ & pthreads on the CPU");
 					}
 					else{
 						printf("| m: Platform must contain an OpenCL compatible device to use OpenCL Mode.\n");
 					}
 				}
-				else{
-					printf("| m: Mode can only be changed when using the STEREO_GIF Matching Algoritm.\n");
+				else if(sm->MatchingAlgorithm == STEREO_SGBM){
+					sgbm_mode = (sgbm_mode == StereoSGBM::MODE_HH ? StereoSGBM::MODE_SGBM :
+								sgbm_mode == StereoSGBM::MODE_SGBM ? StereoSGBM::MODE_SGBM_3WAY :
+								StereoSGBM::MODE_HH);
+					sm->ssgbm->setMode(sgbm_mode);
+					printf("| m: STEREO_GIF Matching Algoritm:\n");
+					printf("| m: Mode changed to %s |\n", sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
+															sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" :
+															"MODE_SGBM_3WAY");
 				}
 				break;
             }

@@ -18,7 +18,6 @@ void HCI(void);
 StereoMatch *sm;
 bool end_de = false;
 int nOpenCLDev = 0;
-int imgType = CV_32F;
 int sgbm_mode = StereoSGBM::MODE_HH;
 
 int main(int argc, char** argv)
@@ -64,8 +63,6 @@ void *getDepthMap(void *arg)
 {
 	while(!end_de)
 	{
-		if(imgType != sm->imgType)
-			sm->imgTypeChange(imgType);
 		sm->Compute();
 		//printf("MAIN: DE Computed...\n");
 		//printf("MAIN: Press h for help text.\n\n");
@@ -89,15 +86,26 @@ void HCI(void)
                 printf("|-------------------------------------------------------------------|\n");
                 printf("| Control Options:                                                  |\n");
                 printf("|   1-8: Change thread/core number.                                 |\n");
-                printf("|   m: Switch computation mode OpenCL <-> pthreads.                 |\n");
+                printf("|   a: Switch matching algorithm: STEREO_GIF, STEREO_SGBM           |\n");
+                printf("|   m: Switch computation mode:                                     |\n");
+                printf("|   m:    STEREO_GIF:  OpenCL <-> pthreads.                         |\n");
+                printf("|   m:    STEREO_SGBM: MODE_SGBM, MODE_HH, MODE_SGBM_3WAY           |\n");
                 printf("|   t: Switch data type float 32 bit <-> unsigned char 8bit.        |\n");
                 printf("|-------------------------------------------------------------------|\n");
                 printf("| Current Options:                                                  |\n");
                 printf("|   Matching Algorithm: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
-                printf("|   Computation mode: %s\n", sm->de_mode ? "OpenCL" : "pthreads");
+                printf("|   Computation mode: %s\n", sm->MatchingAlgorithm ? (sm->de_mode ? "OpenCL" : "pthreads") : (
+														sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
+														sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" : "MODE_SGBM_3WAY" ));
                 printf("|   Type mode: %s\n", sm->imgType ? "CV_32F" : "CV_8U");
                 printf("|-------------------------------------------------------------------|\n");
                 break;
+            }
+            case 'a':
+            {
+				sm->MatchingAlgorithm = sm->MatchingAlgorithm ? STEREO_SGBM : STEREO_GIF;
+				printf("| a: Matching Algorithm Changed to: %s |\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
+				break;
             }
             case 'm':
             {
@@ -127,12 +135,12 @@ void HCI(void)
             {
 				if(sm->MatchingAlgorithm == STEREO_GIF)
 				{
-					if(imgType == CV_32F){
-						imgType = CV_8U;
+					if(sm->imgType == CV_32F){
+						sm->imgType = CV_8U;
 						printf("| p: STEREO_GIF Algorithm Image Type = %s |\n", "CV_8U");
 					}
 					else {
-						imgType = CV_32F;
+						sm->imgType = CV_32F;
 						printf("| p: STEREO_GIF algorithm image type = %s |\n", "CV_32F");
 					}
 				}

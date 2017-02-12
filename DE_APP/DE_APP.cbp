@@ -12,7 +12,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="STEREO_GIF IMAGE ../data/art1.png ../data/art5.png" />
+				<Option parameters="VIDEO RECALIBRATE RECAPTURE" />
 				<Compiler>
 					<Add option="-Wall" />
 					<Add option="-g" />
@@ -24,7 +24,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="STEREO_SGBM VIDEO RECALIBRATE RECAPTURE" />
+				<Option parameters="IMAGE ../data/art1.png ../data/art5.png" />
 				<Compiler>
 					<Add option="-O3" />
 				</Compiler>

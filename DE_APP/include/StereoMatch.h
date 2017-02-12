@@ -18,7 +18,6 @@ public:
 	int gotOCLDev;
 	char cap_key;
 
-	int MatchingAlgorithm;
 	Ptr<StereoSGBM> ssgbm;
 	StereoCameraProperties camProps;
 
@@ -26,10 +25,12 @@ public:
 	Mat leftInputImg, rightInputImg;
 	Mat leftDispMap, rightDispMap;
     Mat lDispMap, rDispMap;
+    Mat blankDispMap;
 
 	//input values
     int maxDis;
     int imgType;
+	int MatchingAlgorithm;
 
     //stage & process time measurements
     float cvc_time, cvf_time, dispsel_time, pp_time;
@@ -58,7 +59,7 @@ public:
 	int captureChessboards(void);
 	int setupOpenCVSGBM(int, int);
 	int inputArgParser(int argc, char *argv[]);
-	int imgTypeChange(int type);
+	int updateFrameType(void);
 	int Compute(void);
 	StereoMatch(int argc, char *argv[], int gotOpenCLDev);
     ~StereoMatch(void);

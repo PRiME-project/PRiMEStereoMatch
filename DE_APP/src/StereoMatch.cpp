@@ -24,6 +24,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 	de_mode = OCV_DE;
 	num_threads = MAX_CPU_THREADS;
 	gotOCLDev = gotOpenCLDev;
+	MatchingAlgorithm = STEREO_SGBM;
 
 	inputArgParser(argc, argv);
 
@@ -82,27 +83,23 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 	//#############################################################################################################
     //# SGBM Mode Setup
     //#############################################################################################################
-	if(MatchingAlgorithm == STEREO_SGBM)
-	{
-		setupOpenCVSGBM(lFrame.channels(), maxDis);
-		imgDisparity16S = Mat( lFrame.rows, lFrame.cols, CV_16S );
-	}
+	setupOpenCVSGBM(lFrame.channels(), maxDis);
+	imgDisparity16S = Mat(lFrame.rows, lFrame.cols, CV_16S);
+	blankDispMap = Mat(rFrame.rows, rFrame.cols, CV_8UC3);
+
 	//#############################################################################################################
     //# GIF Mode Setup
     //#############################################################################################################
-	else if(MatchingAlgorithm == STEREO_GIF)
-	{
-		if(imgType == CV_32F)
-		{
-			// Frame Preprocessing
-			cvtColor( lFrame, lFrame, CV_BGR2RGB );
-			cvtColor( rFrame, rFrame, CV_BGR2RGB );
+	if(imgType == CV_32F){
+		// Frame Preprocessing
+		cvtColor( lFrame, lFrame, CV_BGR2RGB );
+		cvtColor( rFrame, rFrame, CV_BGR2RGB );
 
-			lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
-			rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
-		}
-		SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
+		lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
+		rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
 	}
+	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
+
 	//#############################################################################################################
 	//# End of Preprocessing (that we don't want to repeat)
     //#############################################################################################################
@@ -115,8 +112,8 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 StereoMatch::~StereoMatch(void)
 {
 	printf("SM: Shutting down StereoMatch Application\n");
-	if(MatchingAlgorithm == STEREO_SGBM) delete ssgbm;
-	if(MatchingAlgorithm == STEREO_GIF) delete SMDE;
+	delete ssgbm;
+	delete SMDE;
 	if(video) cap.release();
 	printf("SM: Application Shut down\n");
 }
@@ -127,22 +124,31 @@ float get_rt(){
 	return (float)(realtime.tv_sec*1000000+realtime.tv_nsec/1000);
 }
 
-int StereoMatch::imgTypeChange(int type)
+int StereoMatch::updateFrameType(void)
 {
-	imgType = type;
+	int prev_type = lFrame.type() & CV_MAT_DEPTH_MASK;
+	// frames need converting every time for video
+	// or when the STEREO_GIF imgType changes
+	if(video || (prev_type != imgType))
+	{
+		if(imgType == CV_32F)
+		{
+			cvtColor( lFrame, lFrame, CV_BGR2RGB );
+			cvtColor( rFrame, rFrame, CV_BGR2RGB );
+			lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
+			rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
+		}
+		else if(imgType == CV_8U)
+		{
+			lFrame.convertTo( lFrame, CV_8U, 255);
+			rFrame.convertTo( rFrame, CV_8U, 255);
+		}
+	}
+
+	if(prev_type == imgType)	return 0; //return if type is the same as last frame
+
 	delete SMDE;
-
-	if(type == CV_32F)
-	{
-		lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
-		rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
-	}
-	else if(type == CV_8U)
-	{
-		lFrame.convertTo( lFrame, CV_8U, 255);
-		rFrame.convertTo( rFrame, CV_8U, 255);
-	}
-
+    printf("SM: Re-constructing SMDE Object.\n");
 	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
 	return 0;
 }
@@ -185,15 +191,6 @@ int StereoMatch::Compute()
 
 		lFrame.copyTo(leftInputImg);
 		rFrame.copyTo(rightInputImg);
-
-		if(MatchingAlgorithm == STEREO_GIF && imgType == CV_32F)
-		{
-			cvtColor( lFrame, lFrame, CV_BGR2RGB );
-			cvtColor( rFrame, rFrame, CV_BGR2RGB );
-
-			lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
-			rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
-		}
 	}
 
 	//#############################################################################################################
@@ -201,15 +198,23 @@ int StereoMatch::Compute()
 	//#############################################################################################################
 	if(MatchingAlgorithm == STEREO_SGBM)
 	{
+		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_8U){
+			lFrame.convertTo( lFrame, CV_8U, 255);
+			rFrame.convertTo( rFrame, CV_8U, 255);
+		}
+
 		//OpenCV code
 		ssgbm->compute(lFrame, rFrame, imgDisparity16S); //Compute the disparity map
 		minMaxLoc( imgDisparity16S, &minVal, &maxVal ); //Check its extreme values
 		imgDisparity16S.convertTo(lDispMap, CV_8UC1, 255/(maxVal - minVal));
 		applyColorMap( lDispMap, lDispMap, COLORMAP_JET);
 		lDispMap.copyTo(leftDispMap); //Load the disparity map to the display
+		blankDispMap.copyTo(rightDispMap);
 	}
 	else if(MatchingAlgorithm == STEREO_GIF)
 	{
+		updateFrameType();
+
 		SMDE->lImg = lFrame;
 		SMDE->rImg = rFrame;
 		SMDE->threads = num_threads;
@@ -262,13 +267,13 @@ int StereoMatch::Compute()
 		rDispMap.copyTo(rightDispMap); //copy to rightDispMap display rectangle
 		// ******** Show Disparity Map  ******** //
 
-		printf("CVC Time: %.2f ms\n",cvc_time/1000);
-		printf("CVF Time: %.2f ms\n",cvf_time/1000);
-		printf("DispSel Time: %.2f ms\n",dispsel_time/1000);
-		printf("PP Time: %.2f ms\n",pp_time/1000);
+//		printf("CVC Time: %.2f ms\n",cvc_time/1000);
+//		printf("CVF Time: %.2f ms\n",cvf_time/1000);
+//		printf("DispSel Time: %.2f ms\n",dispsel_time/1000);
+//		printf("PP Time: %.2f ms\n",pp_time/1000);
 
-		imwrite("leftDisparityMap.png", leftDispMap);
-		imwrite("rightDisparityMap.png", rightDispMap);
+//		imwrite("leftDisparityMap.png", leftDispMap);
+//		imwrite("rightDisparityMap.png", rightDispMap);
 
 	}
 	printf("DE Time: %.2f ms\n",(get_rt() - de_time)/1000);
@@ -442,90 +447,78 @@ int StereoMatch::captureChessboards(void)
 int StereoMatch::inputArgParser(int argc, char *argv[])
 {
 	if( argc < 3 ) {
-        printf("\nPlease specify a Matching Algorithm and Media Type as a minimum requirement:\n" );
-        printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] VIDEO ( [RECALIBRATE?] [RECAPTURE] )\n" );
+        printf("\nInput Argument Error: Please specify the Media Type as a minimum requirement:\n" );
+        printf("Usage: ./DE_APP VIDEO ( [RECALIBRATE?] [RECAPTURE] )\n" );
         printf("Usage: \t or");
-        printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
+        printf("Usage: ./DE_APP IMAGE left_image_filename right_image_filename\n" );
 		exit(1);
 	}
+	printf("Matching Algorithm Type: %s.\n", MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
 
-	if(!strcmp(argv[1],"STEREO_SGBM")){
-		printf("Matching Algorithm: \t STEREO_SGBM.\n");
-		MatchingAlgorithm = STEREO_SGBM;
-	}
-	else if(!strcmp(argv[1],"STEREO_GIF")){
-		printf("Matching Algorithm: \t STEREO_GIF.\n");
-		MatchingAlgorithm = STEREO_GIF;
-	}
-	else{
-		printf("Invalid matching algorithm chosen:\n");
-		printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] [MEDIA TYPE]\n" );
-		exit(1);
-	}
-	if(!strcmp(argv[2],"VIDEO")){
+	if(!strcmp(argv[1],"VIDEO")){
 		printf("Media Type: \t\t Video Processing from Stereo Camera.\n");
 		video = true;
 		recalibrate = false;
-		if(argc > 3){
-			if(!strcmp(argv[3],"RECALIBRATE")) {
+		if(argc > 2){
+			if(!strcmp(argv[2],"RECALIBRATE")) {
 				printf("Recalibrating...\n");
 				recalibrate = true;
 			}
 		}
 		recaptureChessboards = false;
-		if(argc > 4){
-			if(!strcmp(argv[4],"RECAPTURE")) {
+		if(argc > 3){
+			if(!strcmp(argv[3],"RECAPTURE")) {
 				printf("Recapturing...\n");
 				recaptureChessboards = true;
 			}
 		}
 	}
-	else if(!strcmp(argv[2],"IMAGE"))
+	else if(!strcmp(argv[1],"IMAGE"))
 	{
 		printf("Media Type: \t\t Image Processing from Static Image.\n");
-		if( argc < 4 )
+		if( argc < 3 )
 		{
 			printf("Please specify the image filenames to use, e.g. left_img.png right_img.png\n");
-			printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
+			printf("Usage: ./DE_APP IMAGE left_image_filename right_image_filename\n" );
 			exit(1);
 		}
 		else
 		{
-			if((strlen(argv[3]) > 100) || (strlen(argv[4]) > 100))
+			if((strlen(argv[2]) > 100) || (strlen(argv[3]) > 100))
 			{
 				printf("Left or right image filename is too long, please shorten to fewer than 100 char and retry.\n");
 				exit(1);
 
 			}
-			if((strlen(argv[3]) < 4) || (strlen(argv[4]) < 4))
+			if((strlen(argv[2]) < 4) || (strlen(argv[3]) < 4))
 			{
 				printf("Left or right image filename is too short, did you forget to include the file extension?\n");
 				exit(1);
 
 			}
-			char *img_ext = &argv[3][strlen(argv[3])-4];
+			char *img_ext = &argv[2][strlen(argv[2])-4];
 			if(!strcmp(img_ext, ".png") || !strcmp(img_ext, ".jpg") || !strcmp(img_ext, ".ppm"))
 			{
-				strcpy(left_img_filename, argv[3]);
+				strcpy(left_img_filename, argv[2]);
 				printf("Left Image : %s\n", left_img_filename);
 			}
 			else
 			{
 				printf("Left Image: Incompatible image filename extension specified. \nPlease use either .png, .ppm .jpg images\n");
-				printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
+				printf("Usage: ./DE_APP IMAGE left_image_filename right_image_filename\n" );
 				exit(1);
 			}
 
-			img_ext = &argv[4][strlen(argv[4])-4];
+			img_ext = &argv[3][strlen(argv[3])-4];
 			if(!strcmp(img_ext, ".png") || !strcmp(img_ext, ".jpg") || !strcmp(img_ext, ".ppm"))
 			{
-				strcpy(right_img_filename, argv[4]);
+				strcpy(right_img_filename, argv[3]);
 				printf("Right Image : %s\n", right_img_filename);
 			}
 			else
 			{
 				printf("Right Image: Incompatible image filename extension specified. \nPlease use either .png or jpg images\n");
-				printf("Usage: ./DE_APP [Matching Algorithm = STEREO_SGBM|STEREO_GIF] IMAGE left_image_filename right_image_filename\n" );
+				printf("Usage: ./DE_APP IMAGE left_image_filename right_image_filename\n" );
 				exit(1);
 			}
 			video = false;
@@ -533,13 +526,8 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 	}
 	else{
 		printf("Invalid media type chosen:\n");
-		printf("Usage: ./DE_APP [Matching Algorithm] [MEDIA TYPE = VIDEO|IMAGE [image_filenames]] ([RECALIBRATE?] [RECAPTURE])\n" );
+		printf("Usage: ./DE_APP [MEDIA TYPE = VIDEO|IMAGE [image_filenames]] ([RECALIBRATE?] [RECAPTURE])\n" );
 		exit(1);
-	}
-	if(atoi(argv[argc-1]) > 0)
-	{
-		num_threads = atoi(argv[argc-1]);
-		printf("Using %d threads for executing the Application\n", num_threads);
 	}
 	return 0;
 }

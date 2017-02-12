@@ -20,7 +20,7 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 	if(lImg.type() == rImg.type())
 	{
 		imgType = (lImg.type() & CV_MAT_DEPTH_MASK);
-		//printf("imgType = %d, CV_32F = %d, CV_8U = %d\n", imgType, CV_32F, CV_8U);
+		printf("imgType = %d, CV_32F = %d, CV_8U = %d\n", imgType, CV_32F, CV_8U);
 	}
 	else
 	{

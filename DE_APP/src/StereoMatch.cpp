@@ -446,7 +446,7 @@ int StereoMatch::captureChessboards(void)
 
 int StereoMatch::inputArgParser(int argc, char *argv[])
 {
-	if( argc < 3 ) {
+	if( argc < 2 ) {
         printf("\nInput Argument Error: Please specify the Media Type as a minimum requirement:\n" );
         printf("Usage: ./DE_APP VIDEO ( [RECALIBRATE?] [RECAPTURE] )\n" );
         printf("Usage: \t or");

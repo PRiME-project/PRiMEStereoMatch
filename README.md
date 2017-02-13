@@ -70,6 +70,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 
 * Press h to display a help menu on the command line. This shows input and control options for the program which change the way the algorithm behaves for the next frame.
 * Control Options:
+	* Matching Algorithm (a): STEREO_GIF or STEREO_SGBM
 	* STEREO_GIF:
 		* Numbers 1 - 8: (CPU only) change the number of simultaneous pthreads created
 		* m: switch the computational mode between OpenCl (GPU) and pthreads (CPU)

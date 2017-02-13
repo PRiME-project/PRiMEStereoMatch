@@ -23,7 +23,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* C++ parallelism is introduced via the POSIX threads (pthreads) library. Disparity level parallelism is supported, enabling up to 64 concurrent threads.  
 	* OpenCL parallelism is inherent through the concurrent execution of kernels on an OpenCL-compatible device. The optimum level of parallelism will be bounded by the platform & devices.  
 * Support for live video disparity estimation using the OpenCV VideoCapture interface as well as static image computation.
-* Embedded support for experimentation with the OpenCV standard Semi-Global Block Matching (SGBM) algorithm.
+* Additional integration of the OpenCV Semi-Global Block Matching (SGBM) algorithm.
 
 ## Installation
 
@@ -45,11 +45,8 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* Set N to the number of simultaneous threads supported on your compilation platform, e.g. 8.
 
 ### Deployment
-* Run the application fromt eh build dir: `./DE_APP <program arguments>`
+* Run the application from the build dir: `./DE_APP <program arguments>`
 * The following program arguments must be specified:
-	* Matching Algorithm type: 
-		* STEREO_GIF - Guided Image Filter
-		* STEREO_SGBM - Semi Global Block Matching
 	* Media type:
 		* VIDEO
 		* IMAGE <left image filename> <right image filename>
@@ -57,25 +54,27 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* RECALIBRATE - recalculate the intrinsic and extrinsic parameters of the stereo camera. Previously captured chessboard images must be supplied if the RECAPTURE flag is not also set.
 	* RECAPTURE - record chessboard image pairs in preparation for calibration. A chessboard image must be presented in front of the stereo camera and in full view of both cameras. Press the R key to capture a frame. The last frame captured is shown beneath the video stream.
 	
-* For example, to run with the guided image filter algorithm using a stereo camera, specify:
-	* `./DE_APP STEREO_GIF VIDEO`
+* For example, to run using a stereo camera, specify:
+	* `./DE_APP VIDEO`
 * To run with calibration and capture beforehand, specify:
-	* `./DE_APP STEREO_GIF VIDEO RECALIBRATE RECAPTURE`
-* Image disparity estimation is achieved using for example:
-	* `./DE_APP STEREO_GIF IMAGE left_img.png right_img.png`
+	* `./DE_APP VIDEO RECALIBRATE RECAPTURE`
+* Image disparity estimation is achieved using:
+	* `./DE_APP IMAGE left_img.png right_img.png`
 
 * The first time the application is deployed using a stereo camera, the RECALIBRATE and RECAPTURE flags must be set in order to capture chessboard image to calculate the intrinsic and extrinsic parameters.
 * This process only needs to be repeated if the relative orientations of the left and right cameras are changed or a different resolution is specified.
-* Once the intrinsic and extrinsic parameters have been calucalted and saved to .yml files, the application can be re-run with the same camera without needing to recalibrate as teh parameters will be loaded from these files. The files can be found in the data directory.
+* Once the intrinsic and extrinsic parameters have been calucalted and saved to .yml files, the application can be re-run with the same camera without needing to recalibrate as the parameters will be loaded from these files. The files can be found in the data directory.
 
 ### Interactivity
 
 * Press h to display a help menu on the command line. This shows input and control options for the program which change the way the algorithm behaves for the next frame.
 * Control Options:
-	* Numbers 1 - 8: change the number of threads created by the process
-	* m: switch the computational mode between OpenCl and pthreads
-	* t: switch the data type use for processing between 32-bit and 8-bit
-* Control options are only available for the STEREO_GIF matching algorithm.
+	* STEREO_GIF:
+		* Numbers 1 - 8: (CPU only) change the number of simultaneous pthreads created
+		* m: switch the computational mode between OpenCl (GPU) and pthreads (CPU)
+		* t: switch the data type use for processing between 32-bit float and 8-bit char
+	* STEREO_SGBM:
+		* m: switch the computational mode between MODE_SGBM, MODE_HH and MODE_SGDM_3WAY
 
 ## Additional Resources
 * [Configuring OpenCL on the ODROID-XU3](http://granolamatt.com/working/2015/02/configure-opencl-on-odroid-xu3/)
@@ -87,20 +86,15 @@ DE_APP		- Project top level directory
 
 folders:
 	assets			- OpenCL kernel files
-	bin				- binary executable files
-	common			- OpenCL common utility/helper functions (C) ARM Ltd
-	data			- program data including input images, stereo camera parameters, calibration images, etc
+	data			- program data including input images, stereo camera parameters, calibration images
 	include			- Project header files (h/hpp)
-	src				- Project source files (c/cpp)
+	src			- Project source files (c/cpp)
 	
 files:
-	cbp2make.linux-x86_64 	- codeblocks project to makefile tool (for x86_64 PC - see (https://sourceforge.net/projects/cbp2make/) for sourceforge project)
-	cbp2make_usage.txt		- cbp2make tool manual
-	DE_APP.cbp				- Code::Blocks project file
-	DE_APP.depend			- Code::Blocks settings file
-	DE_APP.layout			- Code::Blocks settings file
-	main.cpp				- main C++ file
-	Makefile				- project Makefile
+	CMakeLists.txt		- cmake project compilation file
+	DE_APP.cbp		- Code::Blocks project file
+	DE_APP.depend		- Code::Blocks settings file
+	DE_APP.layout		- Code::Blocks settings file
 ```
 
 ## References

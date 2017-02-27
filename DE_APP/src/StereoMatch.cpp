@@ -96,10 +96,12 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 
 	lFrame.copyTo(leftInputImg);
 	rFrame.copyTo(rightInputImg);
-	gtFrameImg.copyTo(gtDispMap);
 
+	if(!video){
+		gtFrameImg.copyTo(gtDispMap);
+		eDispMap = Mat(lFrame.rows, lFrame.cols, CV_8UC1);
+	}
 	imshow("InputOutput", display_container);
-	eDispMap = Mat(lFrame.rows, lFrame.cols, CV_8UC1);
 
 	//#############################################################################################################
     //# SGBM Mode Setup
@@ -310,38 +312,41 @@ int StereoMatch::Compute()
 	//Perform these steps for all algorithms:
 	imshow("InputOutput", display_container);
 
-	//Check pixel errors against ground truth depth map here.
-	float num_bad_pixels = 0;
-	float avg_err = 0;
+	if(!video){
+		//Check pixel errors against ground truth depth map here.
+		//Can only be done with images as golden reference is required.
+		float num_bad_pixels = 0;
+		float avg_err = 0;
 
-	for(int y = 0; y < gtFrame.rows; y++)
-	{
-		uchar* eData = (uchar*) eDispMap.ptr<uchar>( y );
-		uchar* lData = (uchar*) lDispMap.ptr<uchar>( y );
-		uchar* gtData = (uchar*) gtFrame.ptr<uchar>( y );
-		for(int x = 0; x < gtFrame.cols; x++)
+		for(int y = 0; y < gtFrame.rows; y++)
 		{
-			//printf("lDispMap[%d][%d] = %d\n", y, x, lData[x]);
-			//printf("gtFrame[%d][%d] = %d\n", y, x, gtData[x]);
-			eData[x] = abs(lData[x] - gtData[x]);
-			avg_err += (float)eData[x];
-			if(eData[x] > error_threshold){
-				num_bad_pixels++;
+			uchar* eData = (uchar*) eDispMap.ptr<uchar>( y );
+			uchar* lData = (uchar*) lDispMap.ptr<uchar>( y );
+			uchar* gtData = (uchar*) gtFrame.ptr<uchar>( y );
+			for(int x = 0; x < gtFrame.cols; x++)
+			{
+				//printf("lDispMap[%d][%d] = %d\n", y, x, lData[x]);
+				//printf("gtFrame[%d][%d] = %d\n", y, x, gtData[x]);
+				eData[x] = abs(lData[x] - gtData[x]);
+				avg_err += (float)eData[x];
+				if(eData[x] > error_threshold){
+					num_bad_pixels++;
+				}
+				else{
+					eData[x] = 0;
+				}
 			}
-			else{
-				eData[x] = 0;
-			}
+			//exit(1);
 		}
-		//exit(1);
-	}
-	float num_pixels = gtFrame.cols*gtFrame.rows;
-	printf("percent_bad_pixels = %.2f\%\n", (float)num_bad_pixels*100/num_pixels);
-	printf("avg err = %.2f\n", (float)avg_err/num_pixels);
+		float num_pixels = gtFrame.cols*gtFrame.rows;
+		printf("percent_bad_pixels = %.2f\%\n", (float)num_bad_pixels*100/num_pixels);
+		printf("avg err = %.2f\n", (float)avg_err/num_pixels);
 
-	minMaxLoc(eDispMap, &minVal, &maxVal);
-	//eDispMap.convertTo(eDispMap, CV_8U, 255/(maxVal - minVal));
-	cvtColor(eDispMap, errDispMap, CV_GRAY2RGB);
-	imshow("InputOutput", display_container);
+		minMaxLoc(eDispMap, &minVal, &maxVal);
+		//eDispMap.convertTo(eDispMap, CV_8U, 255/(maxVal - minVal));
+		cvtColor(eDispMap, errDispMap, CV_GRAY2RGB);
+		imshow("InputOutput", display_container);
+	}
 	return de_time;
 }
 

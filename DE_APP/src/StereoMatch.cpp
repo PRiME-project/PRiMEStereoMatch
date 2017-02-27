@@ -19,14 +19,21 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
     //#############################################################################################################
     printf("Disparity Estimation for Depth Analysis in Stereo Vision Applications.\n");
 	end_de = false;
+
+	video = false;
 	maxDis = 64;
 	imgType = CV_32F;
 	de_mode = OCV_DE;
 	num_threads = MAX_CPU_THREADS;
 	gotOCLDev = gotOpenCLDev;
-	MatchingAlgorithm = STEREO_SGBM;
+	//MatchingAlgorithm = STEREO_SGBM;
+	MatchingAlgorithm = STEREO_GIF;
+	error_threshold = 4 * (256/maxDis);
+	strcpy(left_img_filename, "../data/teddy2.png");
+	strcpy(right_img_filename, "../data/teddy6.png");
+	strcpy(gt_img_filename, "../data/teddy2_gt.png");
 
-	inputArgParser(argc, argv);
+	//inputArgParser(argc, argv);
 
 	if(video){
 		cap = VideoCapture(0);
@@ -62,23 +69,37 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 		else{
 			printf("Loaded %s.\n", right_img_filename);
 		}
+		gtFrameImg = imread(gt_img_filename, CV_LOAD_IMAGE_COLOR);
+		if(rFrame.empty()){
+			printf("SM: Failed to read right image \"%s\".\n", gt_img_filename);
+			exit(1);
+		}else{
+			printf("SM: Loaded %s.\n", gt_img_filename);
+		}
+		cvtColor(gtFrameImg, gtFrame, CV_RGB2GRAY);
+		minMaxLoc(gtFrame, &minVal_gt, &maxVal_gt);
+		gtFrame.convertTo(gtFrame, CV_8U, 255/(maxVal_gt - minVal_gt));
 	}
 
 	//#############################################################################################################
 	//# Display Setup
 	//#############################################################################################################
 	//Set up display window to hold both input images and both output disparity maps
-	resizeWindow("InputOutput", lFrame.cols*2, lFrame.rows*2); //Rectified image size - not camera resolution size
-	display_container = Mat(lFrame.rows*2, lFrame.cols*2, CV_8UC3);
-	leftInputImg  = Mat(display_container, Rect(0,           0,           lFrame.cols, lFrame.rows)); //Top Left
-	rightInputImg = Mat(display_container, Rect(lFrame.cols, 0,           lFrame.cols, lFrame.rows)); //Top Right
-	leftDispMap   = Mat(display_container, Rect(0,           lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
-	rightDispMap  = Mat(display_container, Rect(lFrame.cols, lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
+	resizeWindow("InputOutput", lFrame.cols*3, lFrame.rows*2); //Rectified image size - not camera resolution size
+	display_container = Mat(lFrame.rows*2, lFrame.cols*3, CV_8UC3);
+	leftInputImg  = Mat(display_container, Rect(0,             0,           lFrame.cols, lFrame.rows)); //Top Left
+	rightInputImg = Mat(display_container, Rect(lFrame.cols,   0,           lFrame.cols, lFrame.rows)); //Top Right
+	leftDispMap   = Mat(display_container, Rect(0,             lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
+	rightDispMap  = Mat(display_container, Rect(lFrame.cols,   lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
+	gtDispMap	  = Mat(display_container, Rect(lFrame.cols*2, 0, 			lFrame.cols, lFrame.rows)); //Top Far Right
+	errDispMap	  = Mat(display_container, Rect(lFrame.cols*2, lFrame.rows,	lFrame.cols, lFrame.rows)); //Bottom Far Right
 
 	lFrame.copyTo(leftInputImg);
 	rFrame.copyTo(rightInputImg);
+	gtFrameImg.copyTo(gtDispMap);
 
 	imshow("InputOutput", display_container);
+	eDispMap = Mat(lFrame.rows, lFrame.cols, CV_8UC1);
 
 	//#############################################################################################################
     //# SGBM Mode Setup
@@ -112,7 +133,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 StereoMatch::~StereoMatch(void)
 {
 	printf("SM: Shutting down StereoMatch Application\n");
-	delete ssgbm;
+	//delete ssgbm;
 	delete SMDE;
 	if(video) cap.release();
 	printf("SM: Application Shut down\n");
@@ -159,6 +180,10 @@ int StereoMatch::updateFrameType(void)
 int StereoMatch::Compute()
 {
 	//printf("Computing Depth Map\n");
+
+	if(MatchingAlgorithm == STEREO_GIF)
+		updateFrameType();
+
 	de_time = get_rt();
 	//#############################################################################################################
 	//# Frame Capture and Preprocessing
@@ -199,17 +224,17 @@ int StereoMatch::Compute()
 	if(MatchingAlgorithm == STEREO_SGBM)
 	{
 		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_8U){
-			lFrame.convertTo( lFrame, CV_8U, 255);
-			rFrame.convertTo( rFrame, CV_8U, 255);
+			lFrame.convertTo(lFrame, CV_8U, 255);
+			rFrame.convertTo(rFrame, CV_8U, 255);
 		}
 
 		//OpenCV code
 		ssgbm->compute(lFrame, rFrame, imgDisparity16S); //Compute the disparity map
-		minMaxLoc( imgDisparity16S, &minVal, &maxVal ); //Check its extreme values
-		imgDisparity16S.convertTo(lDispMap, CV_8UC1, 255/(maxVal - minVal));
-		applyColorMap( lDispMap, lDispMap, COLORMAP_JET);
-		lDispMap.copyTo(leftDispMap); //Load the disparity map to the display
-		blankDispMap.copyTo(rightDispMap);
+		minMaxLoc(imgDisparity16S, &minVal, &maxVal); //Check its extreme values
+		imgDisparity16S.convertTo(lDispMap, CV_8U, 255/(maxVal - minVal));
+		//lDispMap.copyTo(leftDispMap); //Load the disparity map to the display
+		//applyColorMap( leftDispMap, leftDispMap, COLORMAP_JET);
+		cvtColor(lDispMap, leftDispMap, CV_GRAY2RGB);
 	}
 	else if(MatchingAlgorithm == STEREO_GIF)
 	{
@@ -260,11 +285,16 @@ int StereoMatch::Compute()
 		}
 
 		// ******** Show Disparity Map  ******** //
-		applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET); // *4 for conversion from disparty range (0-64) to RGB char range (0-255)
-		lDispMap.copyTo(leftDispMap); //copy to leftDispMap display rectangle
+		//applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET); // *4 for conversion from disparty range (0-64) to RGB char range (0-255)
+		//lDispMap.copyTo(leftDispMap); //copy to leftDispMap display rectangle
+		minMaxLoc(SMDE->lDisMap, &minVal, &maxVal);
+		SMDE->lDisMap.convertTo(lDispMap, CV_8U, 4);//255/(maxVal - minVal));
+		cvtColor(lDispMap, leftDispMap, CV_GRAY2RGB);
 
-		applyColorMap( SMDE->rDisMap*4, rDispMap, COLORMAP_JET);
-		rDispMap.copyTo(rightDispMap); //copy to rightDispMap display rectangle
+		//applyColorMap( SMDE->rDisMap*4, rDispMap, COLORMAP_JET);
+		//rDispMap.copyTo(rightDispMap); //copy to rightDispMap display rectangle
+		SMDE->rDisMap.convertTo(rDispMap, CV_8U, 255/(maxVal - minVal));
+		cvtColor(rDispMap, rightDispMap, CV_GRAY2RGB);
 		// ******** Show Disparity Map  ******** //
 
 //		printf("CVC Time: %.2f ms\n",cvc_time/1000);
@@ -280,6 +310,38 @@ int StereoMatch::Compute()
 	//Perform these steps for all algorithms:
 	imshow("InputOutput", display_container);
 
+	//Check pixel errors against ground truth depth map here.
+	float num_bad_pixels = 0;
+	float avg_err = 0;
+
+	for(int y = 0; y < gtFrame.rows; y++)
+	{
+		uchar* eData = (uchar*) eDispMap.ptr<uchar>( y );
+		uchar* lData = (uchar*) lDispMap.ptr<uchar>( y );
+		uchar* gtData = (uchar*) gtFrame.ptr<uchar>( y );
+		for(int x = 0; x < gtFrame.cols; x++)
+		{
+			//printf("lDispMap[%d][%d] = %d\n", y, x, lData[x]);
+			//printf("gtFrame[%d][%d] = %d\n", y, x, gtData[x]);
+			eData[x] = abs(lData[x] - gtData[x]);
+			avg_err += (float)eData[x];
+			if(eData[x] > error_threshold){
+				num_bad_pixels++;
+			}
+			else{
+				eData[x] = 0;
+			}
+		}
+		//exit(1);
+	}
+	float num_pixels = gtFrame.cols*gtFrame.rows;
+	printf("percent_bad_pixels = %.2f\%\n", (float)num_bad_pixels*100/num_pixels);
+	printf("avg err = %.2f\n", (float)avg_err/num_pixels);
+
+	minMaxLoc(eDispMap, &minVal, &maxVal);
+	//eDispMap.convertTo(eDispMap, CV_8U, 255/(maxVal - minVal));
+	cvtColor(eDispMap, errDispMap, CV_GRAY2RGB);
+	imshow("InputOutput", display_container);
 	return de_time;
 }
 

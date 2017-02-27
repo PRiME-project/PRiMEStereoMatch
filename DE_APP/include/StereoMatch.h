@@ -18,19 +18,25 @@ public:
 	int gotOCLDev;
 	char cap_key;
 
-	Ptr<StereoSGBM> ssgbm;
-	StereoCameraProperties camProps;
+	char left_img_filename[128];
+	char right_img_filename[128];
+	char gt_img_filename[128];
 
+	//Display Variables
 	Mat display_container;
 	Mat leftInputImg, rightInputImg;
 	Mat leftDispMap, rightDispMap;
-    Mat lDispMap, rDispMap;
+    Mat gtDispMap, errDispMap;
     Mat blankDispMap;
+
+	//local disparity map containers
+    Mat lDispMap, rDispMap, eDispMap;
 
 	//input values
     int maxDis;
     int imgType;
 	int MatchingAlgorithm;
+	int error_threshold;
 
     //stage & process time measurements
     float cvc_time, cvf_time, dispsel_time, pp_time;
@@ -43,16 +49,19 @@ public:
 	Mat mapl[2], mapr[2];
 	Rect cropBox;
 	Mat lFrame_rec, rFrame_rec;
+	Mat gtFrame, gtFrameImg;
+
 	//StereoSGBM Variables
+	Ptr<StereoSGBM> ssgbm;
+	StereoCameraProperties camProps;
 	double minVal; double maxVal;
+	double minVal_gt; double maxVal_gt;
 	Mat imgDisparity16S;
+
 	//StereoGIF Variables
 	DispEst* SMDE;
 	int de_mode;
 	int num_threads;
-
-	char left_img_filename[100];
-	char right_img_filename[100];
 
 	//Function prototypes
 	int stereoCameraSetup(void);

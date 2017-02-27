@@ -149,6 +149,22 @@ void HCI(void)
 				}
 				break;
             }
+            case '=':
+            {
+				sm->error_threshold++;
+				printf("| =: Error threshold increased to %d.\n", sm->error_threshold);
+				break;
+			}
+            case '-':
+            {
+				if(sm->error_threshold > 0){
+					sm->error_threshold--;
+				printf("| -: Error threshold decreased to %d.\n", sm->error_threshold);
+				}
+				else
+					printf("| -: Cannot decrease error threshold below 0.\n");
+				break;
+			}
         }
         key = waitKey(5);
     }

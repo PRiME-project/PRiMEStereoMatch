@@ -39,14 +39,15 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 
 ### Compilation 
 * Clone repo to the platform: `git clone https://github.com/PRiME-project/PRiMEStereoMatch.git`
-* Enter the base directory: `cd PRiMEStereoMatch/DE_APP`.
-* Create and enter build directory: `mkdir build && cd build`
-* Invoke cmake to build the makefile: `cmake ..` (Two dots are required in order to reference the base dir)
+* Enter the base directory: `cd PRiMEStereoMatch/`.
+* Create a build directory: `mkdir build`
+* Enter the build directory: `cd build`
+* Invoke cmake to build the compilation files: `cmake ..` (Two dots are required in order to reference the base directory)
 * Compile the project with the generated makefile: `make -jN`. 
-	* Set N to the number of simultaneous threads supported on your compilation platform, e.g. 8.
+	* Set N to the number of simultaneous threads supported on your compilation platform, e.g. `make -j8`.
 
 ### Deployment
-* Run the application from the build dir: `./DE_APP <program arguments>`
+* Run the application from the build dir: `./PRiMEStereoMatch <program arguments>`
 * The following program arguments must be specified:
 	* Media type:
 		* VIDEO
@@ -56,11 +57,11 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* RECAPTURE - record chessboard image pairs in preparation for calibration. A chessboard image must be presented in front of the stereo camera and in full view of both cameras. Press the R key to capture a frame. The last frame captured is shown beneath the video stream.
 	
 * For example, to run using a stereo camera, specify:
-	* `./DE_APP VIDEO`
+	* `./PRiMEStereoMatch VIDEO`
 * To run with calibration and capture beforehand, specify:
-	* `./DE_APP VIDEO RECALIBRATE RECAPTURE`
+	* `./PRiMEStereoMatch VIDEO RECALIBRATE RECAPTURE`
 * Image disparity estimation is achieved using:
-	* `./DE_APP IMAGE left_img.png right_img.png`
+	* `./PRiMEStereoMatch IMAGE left_img.png right_img.png`
 
 * The first time the application is deployed using a stereo camera, the RECALIBRATE and RECAPTURE flags must be set in order to capture chessboard image to calculate the intrinsic and extrinsic parameters.
 * This process only needs to be repeated if the relative orientations of the left and right cameras are changed or a different resolution is specified.
@@ -78,32 +79,28 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* STEREO_SGBM:
 		* m: switch the computational mode between MODE_SGBM, MODE_HH and MODE_SGDM_3WAY
 
-## Additional Resources
-* [Configuring OpenCL on the ODROID-XU3](http://granolamatt.com/working/2015/02/configure-opencl-on-odroid-xu3/)
-
 ## Directory Structure
 
 ```
-DE_APP		- Project top level directory
-
 folders:
 	assets			- OpenCL kernel files
 	data			- program data including input images, stereo camera parameters, calibration images
+	docs			- images for the readme & wiki
 	include			- Project header files (h/hpp)
 	src			- Project source files (c/cpp)
 	
 files:
 	CMakeLists.txt		- cmake project compilation file
-	DE_APP.cbp		- Code::Blocks project file
-	DE_APP.depend		- Code::Blocks settings file
-	DE_APP.layout		- Code::Blocks settings file
+	PRiMEStereoMatch.cbp	- Code::Blocks project file
+	PRiMEStereoMatch.depend	- Code::Blocks settings file
+	PRiMEStereoMatch.layout	- Code::Blocks settings file
 ```
 
 ## References
 
 ### Code
 
- [CrossScaleStereo](https://github.com/rookiepig/CrossScaleStereo) - The basis for some C++ DE functions (GNU Public License)
+ [CrossScaleStereo](https://github.com/rookiepig/CrossScaleStereo) - The basis for some C++ functions (GNU Public License)
 
 ### Literature
 

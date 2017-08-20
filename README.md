@@ -74,7 +74,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* Matching Algorithm (a): STEREO_GIF or STEREO_SGBM
 	* STEREO_GIF:
 		* Numbers 1 - 8: (CPU only) change the number of simultaneous pthreads created
-		* m: switch the computational mode between OpenCl (GPU) and pthreads (CPU)
+		* m: switch the computational mode between OpenCL (GPU) and pthreads (CPU)
 		* t: switch the data type use for processing between 32-bit float and 8-bit char
 	* STEREO_SGBM:
 		* m: switch the computational mode between MODE_SGBM, MODE_HH and MODE_SGDM_3WAY

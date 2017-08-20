@@ -339,7 +339,7 @@ int StereoMatch::Compute()
 			//exit(1);
 		}
 		float num_pixels = gtFrame.cols*gtFrame.rows;
-		printf("percent_bad_pixels = %.2f\%\n", (float)num_bad_pixels*100/num_pixels);
+		printf("percent_bad_pixels = %.2f%%\n", (float)num_bad_pixels*100/num_pixels);
 		printf("avg err = %.2f\n", (float)avg_err/num_pixels);
 
 		minMaxLoc(eDispMap, &minVal, &maxVal);

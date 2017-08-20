@@ -18,9 +18,9 @@ public:
 	int gotOCLDev;
 	char cap_key;
 
-	char left_img_filename[128];
-	char right_img_filename[128];
-	char gt_img_filename[128];
+	string left_img_filename;
+	string right_img_filename;
+	string gt_img_filename;
 
 	//Display Variables
 	Mat display_container;
@@ -40,7 +40,6 @@ public:
 
     //stage & process time measurements
     float cvc_time, cvf_time, dispsel_time, pp_time;
-    float de_time;
 
     //Frame Holders & Camera object
 	Mat lFrame, rFrame, vFrame;
@@ -69,7 +68,7 @@ public:
 	int setupOpenCVSGBM(int, int);
 	int inputArgParser(int argc, char *argv[]);
 	int updateFrameType(void);
-	int Compute(void);
+	int Compute(float& de_time_ms);
 	StereoMatch(int argc, char *argv[], int gotOpenCLDev);
     ~StereoMatch(void);
 };

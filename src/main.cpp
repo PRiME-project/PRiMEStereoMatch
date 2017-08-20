@@ -34,6 +34,8 @@ int main(int argc, char** argv)
 	printf("Starting Stereo Matching Application.\n");
 	sm = new StereoMatch(argc, argv, nOpenCLDev);
 
+	printf("MAIN: Press h for help text.\n\n");
+
 	//pthread setup
     void *status;
 	pthread_t thread_de;
@@ -61,11 +63,14 @@ int main(int argc, char** argv)
 
 void *getDepthMap(void *arg)
 {
-	while(!end_de)
+	int ret = 0;
+	float de_time;
+
+	while(!(end_de || ret))
 	{
-		sm->Compute();
+
+		ret = sm->Compute(de_time);
 		//printf("MAIN: DE Computed...\n");
-		//printf("MAIN: Press h for help text.\n\n");
 	}
 	return(void*)0;
 }
@@ -80,24 +85,26 @@ void HCI(void)
             case 'h':
             {
                 printf("|-------------------------------------------------------------------|\n");
-                printf("| Input Options:                                                    |\n");
-                printf("| h: Display this help text.                                        |\n");
-                printf("| q: Quit.                                                          |\n");
+                printf("| Input Options:\n");
+                printf("| h: Display this help text.\n");
+                printf("| q: Quit.\n");
                 printf("|-------------------------------------------------------------------|\n");
-                printf("| Control Options:                                                  |\n");
-                printf("|   1-8: Change thread/core number.                                 |\n");
-                printf("|   a: Switch matching algorithm: STEREO_GIF, STEREO_SGBM           |\n");
-                printf("|   m: Switch computation mode:                                     |\n");
-                printf("|   m:    STEREO_GIF:  OpenCL <-> pthreads.                         |\n");
-                printf("|   m:    STEREO_SGBM: MODE_SGBM, MODE_HH, MODE_SGBM_3WAY           |\n");
-                printf("|   t: Switch data type float 32 bit <-> unsigned char 8bit.        |\n");
+                printf("| Control Options:\n");
+                printf("|   1-8: Change thread/core number.\n");
+                printf("|   a:   Switch matching algorithm: STEREO_GIF, STEREO_SGBM\n");
+                printf("|   m:   Switch computation mode:\n");
+                printf("|   m:      STEREO_GIF:  OpenCL <-> pthreads.\n");
+                printf("|   m:      STEREO_SGBM: MODE_SGBM, MODE_HH, MODE_SGBM_3WAY\n");
+                printf("|   t:   Switch data type: float 32 bit <-> unsigned char 8bit\n");
+                printf("|   -/=: Increase or decrease the error threshold\n");
                 printf("|-------------------------------------------------------------------|\n");
-                printf("| Current Options:                                                  |\n");
-                printf("|   Matching Algorithm: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
-                printf("|   Computation mode: %s\n", sm->MatchingAlgorithm ? (sm->de_mode ? "OpenCL" : "pthreads") : (
+                printf("| Current Options:\n");
+                printf("|   a:   Matching Algorithm: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
+                printf("|   m:   Computation mode: %s\n", sm->MatchingAlgorithm ? (sm->de_mode ? "OpenCL" : "pthreads") : (
 														sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
 														sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" : "MODE_SGBM_3WAY" ));
-                printf("|   Type mode: %s\n", sm->imgType ? "CV_32F" : "CV_8U");
+                printf("|   t:   Data type: %s\n", sm->imgType ? "CV_32F" : "CV_8U");
+                printf("|   -/=: Error Threshold: %d\n", sm->error_threshold);
                 printf("|-------------------------------------------------------------------|\n");
                 break;
             }
@@ -133,19 +140,15 @@ void HCI(void)
             }
             case 't':
             {
-				if(sm->MatchingAlgorithm == STEREO_GIF)
-				{
-					if(sm->imgType == CV_32F){
-						sm->imgType = CV_8U;
-						printf("| p: STEREO_GIF Algorithm Image Type = %s |\n", "CV_8U");
-					}
-					else {
-						sm->imgType = CV_32F;
-						printf("| p: STEREO_GIF algorithm image type = %s |\n", "CV_32F");
-					}
+				if(sm->imgType == CV_32F){
+					sm->imgType = CV_8U;
+					printf("| p: STEREO_GIF algorithm data type = %s |\n", "CV_8U");
+				} else {
+					sm->imgType = CV_32F;
+					printf("| p: STEREO_GIF algorithm data type = %s |\n", "CV_32F");
 				}
-				else{
-					printf("| p: Must be using the STEREO_GIF algorithm to change image type.\n");
+				if(sm->MatchingAlgorithm != STEREO_GIF){
+					printf("| p: Data type only affects the STEREO_GIF algorithm.\n");
 				}
 				break;
             }

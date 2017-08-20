@@ -13,13 +13,13 @@
 //#############################################################################################################
 StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 {
+    printf("Disparity Estimation for Depth Analysis in Stereo Vision Applications.\n");
     printf("Preprocessing for Stereo Matching.\n");
+
 	//#############################################################################################################
     //# Setup - check input arguments
     //#############################################################################################################
-    printf("Disparity Estimation for Depth Analysis in Stereo Vision Applications.\n");
 	end_de = false;
-
 	video = false;
 	maxDis = 64;
 	imgType = CV_32F;
@@ -29,14 +29,17 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 	//MatchingAlgorithm = STEREO_SGBM;
 	MatchingAlgorithm = STEREO_GIF;
 	error_threshold = 4 * (256/maxDis);
-	strcpy(left_img_filename, "../data/teddy2.png");
-	strcpy(right_img_filename, "../data/teddy6.png");
-	strcpy(gt_img_filename, "../data/teddy2_gt.png");
+	left_img_filename = string(BASE_DIR) + string("data/teddy2.png");
+	right_img_filename = string(BASE_DIR) + string("data/teddy6.png");
+	gt_img_filename = string(BASE_DIR) + string("data/teddy2_gt.png");
 
 	//inputArgParser(argc, argv);
 
 	if(video){
-		cap = VideoCapture(0);
+		//#############################################################################################################
+		//# Video Loading
+		//#############################################################################################################
+        cap = VideoCapture(0);
 		if (cap.isOpened()){
 			printf("Opened the VideoCapture device.\n");
 			stereoCameraSetup();
@@ -50,35 +53,41 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 		//#############################################################################################################
 		//# Image Loading
 		//#############################################################################################################
-        printf("Loading Images...\n");
+        std::cout << "Loading Images...\n" << std::endl;
 		lFrame = imread(left_img_filename, CV_LOAD_IMAGE_COLOR);
 		if(lFrame.empty())
 		{
-			printf("Failed to read left image \"%s\".\n", left_img_filename);
+			std::cout << "Failed to read left image \"" << left_img_filename << "\"" << std::endl;
+			std::cout << "Exiting" << std::endl;
 			exit(1);
 		}
 		else{
-			printf("Loaded %s.\n", left_img_filename);
+			std::cout << "Loaded " << left_img_filename << std::endl;
 		}
 		rFrame = imread(right_img_filename, CV_LOAD_IMAGE_COLOR);
 		if(lFrame.empty())
 		{
-			printf("Failed to read right image \"%s\".\n", right_img_filename);
+			std::cout << "Failed to read right image \"" << right_img_filename << "\"" << std::endl;
+			std::cout << "Exiting" << std::endl;
 			exit(1);
 		}
 		else{
-			printf("Loaded %s.\n", right_img_filename);
+			std::cout << "Loaded " << right_img_filename << std::endl;
 		}
 		gtFrameImg = imread(gt_img_filename, CV_LOAD_IMAGE_COLOR);
 		if(rFrame.empty()){
-			printf("SM: Failed to read right image \"%s\".\n", gt_img_filename);
+			std::cout << "Failed to read ground truth image \"" << gt_img_filename << "\"" << std::endl;
+			std::cout << "Exiting" << std::endl;
 			exit(1);
 		}else{
-			printf("SM: Loaded %s.\n", gt_img_filename);
+			std::cout << "Loaded " << gt_img_filename << std::endl;
 		}
+		//Pre-process grund truth image data
 		cvtColor(gtFrameImg, gtFrame, CV_RGB2GRAY);
 		minMaxLoc(gtFrame, &minVal_gt, &maxVal_gt);
 		gtFrame.convertTo(gtFrame, CV_8U, 255/(maxVal_gt - minVal_gt));
+		//Init error map
+		eDispMap = Mat(lFrame.rows, lFrame.cols, CV_8UC1);
 	}
 
 	//#############################################################################################################
@@ -99,7 +108,6 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 
 	if(!video){
 		gtFrameImg.copyTo(gtDispMap);
-		eDispMap = Mat(lFrame.rows, lFrame.cols, CV_8UC1);
 	}
 	imshow("InputOutput", display_container);
 
@@ -128,17 +136,16 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
     //#############################################################################################################
 	//printf("End of Preprocessing\n");
 
-    printf("SM: StereoMatch Application Initialised\n");
+    printf("StereoMatch Application Initialised\n");
 	return;
 }
 
 StereoMatch::~StereoMatch(void)
 {
-	printf("SM: Shutting down StereoMatch Application\n");
-	//delete ssgbm;
+	printf("Shutting down StereoMatch Application\n");
 	delete SMDE;
 	if(video) cap.release();
-	printf("SM: Application Shut down\n");
+	printf("Application Shut down\n");
 }
 
 float get_rt(){
@@ -149,29 +156,30 @@ float get_rt(){
 
 int StereoMatch::updateFrameType(void)
 {
-	int prev_type = lFrame.type() & CV_MAT_DEPTH_MASK;
-	// frames need converting every time for video
-	// or when the STEREO_GIF imgType changes
-	if(video || (prev_type != imgType))
+	if(!video && (lFrame.type() & CV_MAT_DEPTH_MASK) == imgType)
 	{
-		if(imgType == CV_32F)
-		{
-			cvtColor( lFrame, lFrame, CV_BGR2RGB );
-			cvtColor( rFrame, rFrame, CV_BGR2RGB );
-			lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
-			rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
-		}
-		else if(imgType == CV_8U)
-		{
-			lFrame.convertTo( lFrame, CV_8U, 255);
-			rFrame.convertTo( rFrame, CV_8U, 255);
-		}
+		return 0; //return if type is the same as last frame
+	}
+	printf("Updating Frame type\n");
+	printf("STEREO_GIF Image Type = %s\n", imgType ? "CV_32F" : "CV_8U");
+
+	// frames need converting every time for video
+	// or when imgType changes in STEREO_GIF mode
+	if(imgType == CV_32F)
+	{
+		cvtColor(lFrame, lFrame, CV_BGR2RGB);
+		cvtColor(rFrame, rFrame, CV_BGR2RGB);
+		lFrame.convertTo(lFrame, CV_32F, 1 / 255.0f);
+		rFrame.convertTo(rFrame, CV_32F,  1 / 255.0f);
+	}
+	else if(imgType == CV_8U)
+	{
+		lFrame.convertTo(lFrame, CV_8U, 255);
+		rFrame.convertTo(rFrame, CV_8U, 255);
 	}
 
-	if(prev_type == imgType)	return 0; //return if type is the same as last frame
-
 	delete SMDE;
-    printf("SM: Re-constructing SMDE Object.\n");
+	printf("Re-constructing SMDE Object.\n");
 	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
 	return 0;
 }
@@ -179,14 +187,11 @@ int StereoMatch::updateFrameType(void)
 //#############################################################################################################
 //# Complete GIF stereo matching process
 //#############################################################################################################
-int StereoMatch::Compute()
+int StereoMatch::Compute(float& de_time_ms)
 {
-	//printf("Computing Depth Map\n");
+	std::cout << "Computing Depth Map" << std::endl;
 
-	if(MatchingAlgorithm == STEREO_GIF)
-		updateFrameType();
-
-	de_time = get_rt();
+	float start_time = get_rt();
 	//#############################################################################################################
 	//# Frame Capture and Preprocessing
 	//#############################################################################################################
@@ -308,7 +313,8 @@ int StereoMatch::Compute()
 //		imwrite("rightDisparityMap.png", rightDispMap);
 
 	}
-	printf("DE Time: %.2f ms\n",(get_rt() - de_time)/1000);
+	de_time_ms = (get_rt() - start_time)/1000;
+	printf("DE Time: %.2f ms\n", de_time_ms);
 	//Perform these steps for all algorithms:
 	imshow("InputOutput", display_container);
 
@@ -347,7 +353,7 @@ int StereoMatch::Compute()
 		cvtColor(eDispMap, errDispMap, CV_GRAY2RGB);
 		imshow("InputOutput", display_container);
 	}
-	return de_time;
+	return 0;
 }
 
 //#############################################################################################################
@@ -566,8 +572,8 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 			char *img_ext = &argv[2][strlen(argv[2])-4];
 			if(!strcmp(img_ext, ".png") || !strcmp(img_ext, ".jpg") || !strcmp(img_ext, ".ppm"))
 			{
-				strcpy(left_img_filename, argv[2]);
-				printf("Left Image : %s\n", left_img_filename);
+				left_img_filename = std::string(argv[2]);
+				std::cout << "Left Image: " << left_img_filename << std::endl;
 			}
 			else
 			{
@@ -579,8 +585,8 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 			img_ext = &argv[3][strlen(argv[3])-4];
 			if(!strcmp(img_ext, ".png") || !strcmp(img_ext, ".jpg") || !strcmp(img_ext, ".ppm"))
 			{
-				strcpy(right_img_filename, argv[3]);
-				printf("Right Image : %s\n", right_img_filename);
+				right_img_filename = std::string(argv[3]);
+				std::cout << "Right Image: " << right_img_filename << std::endl;
 			}
 			else
 			{

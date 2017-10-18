@@ -33,7 +33,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev)
 	right_img_filename = string(BASE_DIR) + string("data/teddy6.png");
 	gt_img_filename = string(BASE_DIR) + string("data/teddy2_gt.png");
 
-	//inputArgParser(argc, argv);
+	inputArgParser(argc, argv);
 
 	if(video){
 		//#############################################################################################################
@@ -361,10 +361,20 @@ int StereoMatch::Compute(float& de_time_ms)
 //#############################################################################################################
 int StereoMatch::stereoCameraSetup(void)
 {
-	cap.set(CAP_PROP_FRAME_HEIGHT, 480); //480, 720, 1080, 1242
-	cap.set(CAP_PROP_FRAME_WIDTH, 1280); //1280, 2560, 3840, 4416
+	if(cap.get(CAP_PROP_FRAME_HEIGHT) != 376){
+		cap.set(CAP_PROP_FRAME_HEIGHT, 376); //  376  (was 480),  720, 1080, 1242
+		cap.set(CAP_PROP_FRAME_WIDTH, 1344); // 1344 (was 1280), 2560, 3840, 4416
+		cap.set(CAP_PROP_FPS, 30); //376: {15, 30, 60, 100}, 720: {15, 30, 60}, 1080: {15, 30}, 1242: {15},
+
+		if(cap.get(CAP_PROP_FRAME_HEIGHT) != 480){
+			printf("Could not set correct frame resolution.\n");
+			exit(1);
+		}
+	}
+	cout << "CAP_PROP_FPS: " << cap.get(CAP_PROP_FPS) << endl;
 	cout << "CAP_PROP_FRAME_HEIGHT: " << cap.get(CAP_PROP_FRAME_HEIGHT) << endl;
 	cout << "CAP_PROP_FRAME_WIDTH: " << cap.get(CAP_PROP_FRAME_WIDTH) << endl;
+
 
 	cap >> vFrame;
 	if(!vFrame.data)
@@ -521,9 +531,9 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 {
 	if( argc < 2 ) {
         printf("\nInput Argument Error: Please specify the Media Type as a minimum requirement:\n" );
-        printf("Usage: ./DE_APP VIDEO ( [RECALIBRATE?] [RECAPTURE] )\n" );
-        printf("Usage: \t or");
-        printf("Usage: ./DE_APP IMAGE left_image_filename right_image_filename\n" );
+        printf("Usage: ./PRiMEStereoMatch VIDEO ( [RECALIBRATE?] [RECAPTURE] )\n" );
+        printf("Usage: \t or\n");
+        printf("Usage: ./PRiMEStereoMatch IMAGE left_image_filename right_image_filename\n" );
 		exit(1);
 	}
 	printf("Matching Algorithm Type: %s.\n", MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
@@ -552,7 +562,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 		if( argc < 3 )
 		{
 			printf("Please specify the image filenames to use, e.g. left_img.png right_img.png\n");
-			printf("Usage: ./DE_APP IMAGE left_image_filename right_image_filename\n" );
+			printf("Usage: ./PRiMEStereoMatch IMAGE left_image_filename right_image_filename\n" );
 			exit(1);
 		}
 		else
@@ -578,7 +588,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 			else
 			{
 				printf("Left Image: Incompatible image filename extension specified. \nPlease use either .png, .ppm .jpg images\n");
-				printf("Usage: ./DE_APP IMAGE left_image_filename right_image_filename\n" );
+				printf("Usage: ./PRiMEStereoMatch IMAGE left_image_filename right_image_filename\n" );
 				exit(1);
 			}
 
@@ -591,7 +601,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 			else
 			{
 				printf("Right Image: Incompatible image filename extension specified. \nPlease use either .png or jpg images\n");
-				printf("Usage: ./DE_APP IMAGE left_image_filename right_image_filename\n" );
+				printf("Usage: ./PRiMEStereoMatch IMAGE left_image_filename right_image_filename\n" );
 				exit(1);
 			}
 			video = false;
@@ -599,7 +609,7 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 	}
 	else{
 		printf("Invalid media type chosen:\n");
-		printf("Usage: ./DE_APP [MEDIA TYPE = VIDEO|IMAGE [image_filenames]] ([RECALIBRATE?] [RECAPTURE])\n" );
+		printf("Usage: ./PRiMEStereoMatch [MEDIA TYPE = VIDEO|IMAGE [image_filenames]] ([RECALIBRATE?] [RECAPTURE])\n" );
 		exit(1);
 	}
 	return 0;

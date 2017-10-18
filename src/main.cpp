@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 	//#############################################################################################################
     //# Start Application Processes
     //#############################################################################################################
-	namedWindow("InputOutput", CV_WINDOW_AUTOSIZE );
+	namedWindow("InputOutput", CV_WINDOW_AUTOSIZE);
 	printf("Starting Stereo Matching Application.\n");
 	sm = new StereoMatch(argc, argv, nOpenCLDev);
 

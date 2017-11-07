@@ -91,9 +91,8 @@ folders:
 	
 files:
 	CMakeLists.txt		- cmake project compilation file
-	PRiMEStereoMatch.cbp	- Code::Blocks project file
-	PRiMEStereoMatch.depend	- Code::Blocks settings file
-	PRiMEStereoMatch.layout	- Code::Blocks settings file
+	LICENCE.txt			- license file
+	README.md			- this readme file
 ```
 
 ## References

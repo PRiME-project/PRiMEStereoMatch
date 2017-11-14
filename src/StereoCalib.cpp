@@ -73,7 +73,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
     {
         for( k = 0; k < 2; k++ )
         {
-            const string& filename = (string)BASE_DIR + "data/" + imagelist[i*2+k];
+            string filename = string(BASE_DIR) + string("data/") + string(imagelist[i*2+k]);
             Mat img = imread(filename, 0);
             if(img.empty())
                 break;
@@ -169,7 +169,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
                     CALIB_RATIONAL_MODEL +
                     CALIB_FIX_K3 + CALIB_FIX_K4 + CALIB_FIX_K5,
                     TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 100, 1e-5) );
-    cout << "done with RMS error=" << rms << endl;
+    cout << "done with RMS error = " << rms << endl;
 
 // CALIBRATION QUALITY CHECK
 // because the output fundamental matrix implicitly
@@ -209,8 +209,9 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
             "M2" << cameraMatrix[1] << "D2" << distCoeffs[1];
         fs.release();
     }
-    else
-        cout << "Error: can not save the intrinsic parameters\n";
+    else{
+        cout << "Error: can not save the intrinsic parameters " << endl;
+	}
 
 	props.cameraMatrix[0] = cameraMatrix[0];
 	props.cameraMatrix[1] = cameraMatrix[1];
@@ -231,8 +232,13 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
         fs << "R" << R << "T" << T << "R1" << R1 << "R2" << R2 << "P1" << P1 << "P2" << P2 << "Q" << Q;
         fs.release();
     }
-    else
-        cout << "Error: can not save the extrinsic parameters\n";
+    else{
+        cout << "Error: can not save the extrinsic parameters" << endl;
+	}
+
+    cout << "Valid ROI:" << endl;
+    cout << "Left: " <<  validRoi[0] << endl;
+    cout << "VRight: " << validRoi[1] << endl;
 
 	props.R = R;
 	props.T = T;
@@ -307,7 +313,8 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
     {
         for( k = 0; k < 2; k++ )
         {
-            Mat img = imread(goodImageList[i*2+k], 0), rimg, cimg;
+            string filename = string(BASE_DIR) + string("data/") + string(goodImageList[i*2+k]);
+            Mat img = imread(filename, 0), rimg, cimg;
             remap(img, rimg, rmap[k][0], rmap[k][1], INTER_LINEAR);
             cvtColor(rimg, cimg, COLOR_GRAY2BGR);
             Mat canvasPart = !isVerticalStereo ? canvas(Rect(w*k, 0, w, h)) : canvas(Rect(0, h*k, w, h));
@@ -326,12 +333,17 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
         else
             for( j = 0; j < canvas.cols; j += 16 )
                 line(canvas, Point(j, 0), Point(j, canvas.rows), Scalar(0, 255, 0), 1, 8);
-        imshow("rectified", canvas);
-        char c = (char)waitKey();
-        if( c == 27 || c == 'q' || c == 'Q' )
-            break;
+
+        imshow("InputOutput", canvas);
+		if(!i)
+		{
+			imwrite("rectifiedImage.png", canvas);
+		}
+			char c = (char)waitKey();
+			if( c == 27 || c == 'q' || c == 'Q' )
+				break;
     }
-    destroyWindow("rectified");
+    //destroyWindow("rectified");
 }
 
 bool readStringList( const string& filename, vector<string>& l )
@@ -355,7 +367,7 @@ int calibrateCamera(int boardWidth, int boardHeight, StereoCameraProperties& pro
     boardSize.width = boardWidth;
     boardSize.height = boardHeight;
 	bool useCalibrated = true;
-	bool showRectified = false;
+	bool showRectified = true;
 
 	//imagelistfn = "data/stereo_calib.xml";
 

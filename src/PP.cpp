@@ -265,8 +265,8 @@ void *wgtMed_row(void *thread_arg)
     float* disHist = new float[maxDis];
 	uchar* DisData = (uchar*) Dis->ptr<uchar>(y);
 	//32 bit float data
-	if(Img->type() == CV_32FC3)
-	{
+//	if(Img->type() == CV_32FC3)
+//	{
 		float* p = (float*) Img->ptr<float>(y);
 		for( int x = 0; x < wid; x ++ ) {
 			if( pValid[x] == 0 ) {
@@ -308,56 +308,56 @@ void *wgtMed_row(void *thread_arg)
 				DisData[ x ] = filterDep;
 			}
 		}
-    }
-    //8 bit unsigned char data
-    else if(Img->type() == CV_8UC3)
-    {
-		uchar* p = (uchar*) Img->ptr<uchar>(y);
-		for( int x = 0; x < wid; x ++ ) {
-			if( pValid[x] == 0 ) {
-				// just filter invalid pixels
-				memset( disHist, 0, sizeof( float ) * maxDis );
-				float sumWgt = 0.0f;
-				// set disparity histogram by bilateral weight
-				for( int wy = - wndR; wy <= wndR; wy++ ) {
-					int qy = ( y + wy + hei ) % hei;
-					uchar* q = ( uchar* ) Img->ptr<uchar>( qy );
-					uchar* qDisData = ( uchar* ) Dis->ptr<uchar>( qy );
-					for( int wx = - wndR; wx <= wndR; wx ++ ) {
-						int qx = ( x + wx + wid ) % wid;
-						// invalid pixel also used
-						int qDep = qDisData[ qx ];
-						if( qDep != 0 ) {
-							float disWgt = wx * wx + wy * wy;
-							float clrWgt =
-								( p[ 3 * x ] - q[ 3 * qx ] ) * ( p[ 3 * x ] - q[ 3 * qx ] ) +
-								( p[ 3 * x + 1 ] - q[ 3 * qx + 1 ] ) * ( p[ 3 * x + 1 ] - q[ 3 * qx + 1 ] ) +
-								( p[ 3 * x + 2 ] - q[ 3 * qx + 2 ] ) * ( p[ 3 * x + 2 ] - q[ 3 * qx + 2 ] );
-							float biWgt = exp( - disWgt / ( SIG_DIS * SIG_DIS ) - clrWgt / ( SIG_CLR * SIG_CLR ) );
-							disHist[ qDep ] += biWgt;
-							sumWgt += biWgt;
-						}
-					}
-				}
-				float halfWgt = sumWgt / 2.0f;
-				sumWgt = 0.0f;
-				int filterDep = 0;
-				for( int d = 0; d < maxDis; d ++ ) {
-					sumWgt += disHist[ d ];
-					if( sumWgt >= halfWgt ) {
-						filterDep = d;
-						break;
-					}
-				}
-				// set new disparity
-				DisData[ x ] = filterDep;
-			}
-		}
-	}
-    else{
-		printf("PP: Error - Unrecognised data type in processing! (wgtMed_row)\n");
-		exit(1);
-    }
+//    }
+//    //8 bit unsigned char data
+//    else if(Img->type() == CV_8UC3)
+//    {
+//		uchar* p = (uchar*) Img->ptr<uchar>(y);
+//		for( int x = 0; x < wid; x ++ ) {
+//			if( pValid[x] == 0 ) {
+//				// just filter invalid pixels
+//				memset( disHist, 0, sizeof( float ) * maxDis );
+//				float sumWgt = 0.0f;
+//				// set disparity histogram by bilateral weight
+//				for( int wy = - wndR; wy <= wndR; wy++ ) {
+//					int qy = ( y + wy + hei ) % hei;
+//					uchar* q = ( uchar* ) Img->ptr<uchar>( qy );
+//					uchar* qDisData = ( uchar* ) Dis->ptr<uchar>( qy );
+//					for( int wx = - wndR; wx <= wndR; wx ++ ) {
+//						int qx = ( x + wx + wid ) % wid;
+//						// invalid pixel also used
+//						int qDep = qDisData[ qx ];
+//						if( qDep != 0 ) {
+//							float disWgt = wx * wx + wy * wy;
+//							float clrWgt =
+//								( p[ 3 * x ] - q[ 3 * qx ] ) * ( p[ 3 * x ] - q[ 3 * qx ] ) +
+//								( p[ 3 * x + 1 ] - q[ 3 * qx + 1 ] ) * ( p[ 3 * x + 1 ] - q[ 3 * qx + 1 ] ) +
+//								( p[ 3 * x + 2 ] - q[ 3 * qx + 2 ] ) * ( p[ 3 * x + 2 ] - q[ 3 * qx + 2 ] );
+//							float biWgt = exp( - disWgt / ( SIG_DIS * SIG_DIS ) - clrWgt / ( SIG_CLR * SIG_CLR ) );
+//							disHist[ qDep ] += biWgt;
+//							sumWgt += biWgt;
+//						}
+//					}
+//				}
+//				float halfWgt = sumWgt / 2.0f;
+//				sumWgt = 0.0f;
+//				int filterDep = 0;
+//				for( int d = 0; d < maxDis; d ++ ) {
+//					sumWgt += disHist[ d ];
+//					if( sumWgt >= halfWgt ) {
+//						filterDep = d;
+//						break;
+//					}
+//				}
+//				// set new disparity
+//				DisData[ x ] = filterDep;
+//			}
+//		}
+//	}
+//    else{
+//		printf("PP: Error - Unrecognised data type in processing! (wgtMed_row)\n");
+//		exit(1);
+//    }
 	return (void*)0;
 }
 
@@ -385,13 +385,13 @@ void wgtMedian_thread(const Mat& Img, Mat& Dis, Mat& Valid, const int maxDis, co
 
             WM_row_TD_Array[d] = {&Img, &Dis, ValidData, d, maxDis};
             pthread_create(&WM_row_threads[d], &attr, wgtMed_row, (void *)&WM_row_TD_Array[d]);
-            //fprintf(stderr, "WM Filtering Disparity Map @ y = %d\n", d);
+            //printf("WM Filtering Disparity Map @ y = %d\n", d);
 	    }
         for(int iter=0; iter < block_size; iter++)
 	    {
 	        int d = level*threads + iter;
             pthread_join(WM_row_threads[d], &status);
-            //fprintf(stderr, "Joining WM Filtering @ y = %d\n", d);
+            //printf("Joining WM Filtering @ y = %d\n", d);
         }
 	}
 	return;
@@ -404,13 +404,34 @@ void PP::processDM(const Mat& lImg, const Mat& rImg, Mat& lDisMap, Mat& rDisMap,
 	// according to weightedMedianMatlab.m from CVPR11
 
 	lrCheck(lDisMap, rDisMap, lValid, rValid);
-	//fprintf(stderr, "LR Check Done\n");
+	//printf("LR Check Done\n");
 	fillInv(lDisMap, rDisMap, lValid, rValid);
-	//fprintf(stderr, "Fill Inv Done\n");
+	//printf("Fill Inv Done\n");
 
 	//wgtMedian( lImg, rImg, lDisMap, rDisMap, lValid, rValid, maxDis);
-	wgtMedian_thread(lImg, lDisMap, lValid, maxDis, threads);
-	wgtMedian_thread(rImg, rDisMap, rValid, maxDis, threads);
-	//fprintf(stderr, "Weighted-Median Filter Done\n");
+
+//	wgtMedian_thread(lImg, lDisMap, lValid, maxDis, threads);
+//	wgtMedian_thread(rImg, rDisMap, rValid, maxDis, threads);
+	//printf("Weighted-Median Filter Done\n");
+
+	Mat lImg_8UC3, rImg_8UC3;
+	//use colour feature images:
+	lImg.convertTo(lImg_8UC3, CV_8UC3, 255);
+	rImg.convertTo(rImg_8UC3, CV_8UC3, 255);
+	//use greyscale feature images:
+//	cvtColor(lImg, lImg_8UC3, CV_RGB2GRAY );
+//	cvtColor(rImg, rImg_8UC3, CV_RGB2GRAY );
+//	lImg_8UC3.convertTo(lImg_8UC3, CV_8U, 255);
+//	rImg_8UC3.convertTo(rImg_8UC3, CV_8U, 255);
+//	namedWindow("ppPreview", CV_WINDOW_AUTOSIZE);
+//	resizeWindow("ppPreview", lImg_8UC3.cols, lImg_8UC3.rows);
+//	imshow("ppPreview", lImg_8UC3);
+//	waitKey(1);
+
+    lDisMap = JointWMF::filter(lDisMap, lImg_8UC3, (int)MED_SZ/2);
+    rDisMap = JointWMF::filter(rDisMap, rImg_8UC3, (int)MED_SZ/2);
+
+
+
 	return;
 }

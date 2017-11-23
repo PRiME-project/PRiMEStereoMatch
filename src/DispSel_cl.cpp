@@ -15,7 +15,7 @@ DispSel_cl::DispSel_cl(cl_context* context, cl_command_queue* commandQueue, cl_d
 
     //OpenCL Setup
     program = 0;
-    imgType = I->type() & CV_MAT_DEPTH_MASK;
+//    imgType = I->type() & CV_MAT_DEPTH_MASK;
 
     if (!createProgram(*context, device, FILE_DS_PROG, &program))
     {
@@ -23,25 +23,28 @@ DispSel_cl::DispSel_cl(cl_context* context, cl_command_queue* commandQueue, cl_d
         cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << endl;
     }
 
-	if(imgType == CV_32F)
-	{
+//	if(imgType == CV_32F)
+//	{
 		strcpy(kernel_name, "dispsel_float");
 		//strcpy(kernel_name, "dispsel_double");
-	}
-	else if(imgType == CV_8U)
-	{
-		strcpy(kernel_name, "dispsel_uchar");
-	}
-    else{
-		printf("DS_cl: Error - Unrecognised data type in processing! (DS_cl)\n");
-		exit(1);
-    }
+//	}
+//	else if(imgType == CV_8U)
+//	{
+//		strcpy(kernel_name, "dispsel_uchar");
+//	}
+//    else{
+//		printf("DS_cl: Error - Unrecognised data type in processing! (DS_cl)\n");
+//		exit(1);
+//    }
 	kernel = clCreateKernel(program, kernel_name, &errorNumber);
     if (!checkSuccess(errorNumber))
     {
         cleanUpOpenCL(NULL, NULL, NULL, kernel, NULL, 0);
         cerr << "Failed to create OpenCL kernel. " << __FILE__ << ":"<< __LINE__ << endl;
     }
+    else{
+		printf("DispSel_cl: OpenCL kernels created.\n");
+	}
 
     width = (cl_int)I->cols;
     height = (cl_int)I->rows;

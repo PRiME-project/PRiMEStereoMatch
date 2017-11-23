@@ -8,16 +8,36 @@
  * by a licensing agreement from ARM Limited.
  */
  /*---------------------------------------------------------------------------
-   common.h - OpenCL Utility Function Header
+   oclUtil.h - OpenCL Utility Function Header
   ---------------------------------------------------------------------------
    Co-Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
   ---------------------------------------------------------------------------*/
+#ifndef OCLUTIL_H
+#define OCLUTIL_H
 
-#ifndef COMMON_H
-#define COMMON_H
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <sstream>
+#include <cstddef>
+#include <string>
+#include <time.h>
+#include <unistd.h>
+#include <math.h>
+#include <ctime>
+#include <chrono>
 
-#include "ComFunc.h"
+//OpenCL Header
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+#include <CL/cl_ext.h>
 
 /**
  * \file common.h
@@ -44,7 +64,7 @@ inline bool checkSuccess(cl_int errorNumber)
 {
     if (errorNumber != CL_SUCCESS)
     {
-        cerr << "OpenCL error: " << errorNumberToString(errorNumber) << endl;
+        std::cerr << "OpenCL error: " << errorNumberToString(errorNumber) << std::endl;
         return false;
     }
     return true;
@@ -128,4 +148,5 @@ bool createProgram(cl_context context, cl_device_id device, std::string filename
  * \return True if the extension is supported on the given device, false otherwise.
  */
 bool isExtensionSupported(cl_device_id device, std::string extension);
+
 #endif

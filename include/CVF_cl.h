@@ -7,7 +7,7 @@
    All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
-#include "common.h"
+#include "oclUtil.h"
 
 #define FILE_CVF_PROG BASE_DIR "assets/cvf.cl"
 #define R_WIN 9
@@ -18,8 +18,13 @@
 class CVF_cl
 {
 public:
-    int imgType;
+	CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id device, Mat* I, const int d);
+	~CVF_cl(void);
 
+	int preprocess(cl_mem* Ir, cl_mem* Ig, cl_mem* Ib);
+	int filterCV(cl_mem* cl_costVol);
+
+private:
 	//OpenCL Variables
     cl_context* context;
 	cl_command_queue* commandQueue;
@@ -31,9 +36,9 @@ public:
     cl_int errorNumber;
     cl_event event;
 
+//    int imgType;
     cl_int width, height, channels, maxDis;
     size_t bufferSize_2D, bufferSize_3D;
-	//size_t bufferSize_2D_8UC1;
 
     size_t globalWorksize_3D[3], globalWorksize_2D[3];
     size_t globalWorksize_bf_3D[3], globalWorksize_bf_2D[3];
@@ -47,13 +52,7 @@ public:
 
 	cl_mem tmp_3DA_r, tmp_3DA_g, tmp_3DA_b;
 	cl_mem tmp_3DB_r, tmp_3DB_g, tmp_3DB_b;
-	cl_mem bf2Dtmp, bf3Dtmp;
-
-	CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id device, Mat* I, const int d);
-	~CVF_cl(void);
-
-	int preprocess(cl_mem* Ir, cl_mem* Ig, cl_mem* Ib);
-	int filterCV(cl_mem* cl_costVol);
+	//cl_mem bf2Dtmp, bf3Dtmp;
 
 	int elementwiseMulSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *globalworksize);
 	int elementwiseMulDD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out);

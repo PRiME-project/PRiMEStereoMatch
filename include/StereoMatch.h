@@ -6,16 +6,24 @@
    Copyright (c) 2016 Charlie Leech, University of Southampton.
    All rights reserved.
   ---------------------------------------------------------------------------*/
+#ifndef STEREOMATCH_H
+#define STEREOMATCH_H
+
 #include "ComFunc.h"
 #include "StereoCalib.h"
 #include "DispEst.h"
+
+#define DE_VIDEO 1
+#define DE_IMAGE 2
+
+#define DISPLAY
 
 class StereoMatch
 {
 public:
 	//Variables
-	bool end_de, recaptureChessboards, recalibrate, video;
-	int gotOCLDev;
+	bool end_de, recaptureChessboards, recalibrate;
+	int gotOCLDev, media_mode;
 	char cap_key;
 
 	string left_img_filename;
@@ -34,7 +42,7 @@ public:
 
 	//input values
     int maxDis;
-    int imgType;
+//    int imgType;
 	int MatchingAlgorithm;
 	int error_threshold;
 
@@ -68,7 +76,9 @@ public:
 	int setupOpenCVSGBM(int, int);
 	int inputArgParser(int argc, char *argv[]);
 	int updateFrameType(void);
-	int Compute(float& de_time_ms);
+	void compute(float& de_time_ms);
 	StereoMatch(int argc, char *argv[], int gotOpenCLDev);
     ~StereoMatch(void);
 };
+
+#endif //STEREOMATCH_H

@@ -14,39 +14,39 @@ CVC::CVC(void)
 }
 CVC::~CVC(void) {}
 
-inline uchar myCostGrd( uchar* lC, uchar* rC, uchar* lG, uchar* rG )
-{
-    ushort clrDiff = 0;
-    // three color
-    for( int c = 0; c < 3; c ++ )
-    {
-        ushort temp = abs( lC[ c ] - rC[ c ] );
-        clrDiff += temp;
-    }
-
-    clrDiff /= 3;
-    // gradient diff
-    ushort grdDiff = abs( lG[ 0 ] - rG[ 0 ] );
-    clrDiff = clrDiff > TAU_1_16U ? TAU_1_16U : clrDiff;
-    grdDiff = grdDiff > TAU_2_16U ? TAU_2_16U : grdDiff;
-    return ALPHA_16U * clrDiff + ( 1 - ALPHA_16U ) * grdDiff;
-}
-inline uchar myCostGrd( uchar* lC, uchar* lG )
-{
-    ushort clrDiff = 0;
-    // three color
-    for( int c = 0; c < 3; c ++ )
-    {
-        ushort temp = abs( lC[ c ] - BORDER_CONSTANT_8U);
-        clrDiff += temp;
-    }
-    clrDiff /= 3;
-    // gradient diff
-    ushort grdDiff = abs( lG[ 0 ] - BORDER_CONSTANT_8U );
-    clrDiff = clrDiff > TAU_1_16U ? TAU_1_16U : clrDiff;
-    grdDiff = grdDiff > TAU_2_16U ? TAU_2_16U : grdDiff;
-    return ALPHA_16U * clrDiff + ( 1 - ALPHA_16U ) * grdDiff;
-}
+//inline uchar myCostGrd( uchar* lC, uchar* rC, uchar* lG, uchar* rG )
+//{
+//    ushort clrDiff = 0;
+//    // three color
+//    for( int c = 0; c < 3; c ++ )
+//    {
+//        ushort temp = abs( lC[ c ] - rC[ c ] );
+//        clrDiff += temp;
+//    }
+//
+//    clrDiff /= 3;
+//    // gradient diff
+//    ushort grdDiff = abs( lG[ 0 ] - rG[ 0 ] );
+//    clrDiff = clrDiff > TAU_1_16U ? TAU_1_16U : clrDiff;
+//    grdDiff = grdDiff > TAU_2_16U ? TAU_2_16U : grdDiff;
+//    return ALPHA_16U * clrDiff + ( 1 - ALPHA_16U ) * grdDiff;
+//}
+//inline uchar myCostGrd( uchar* lC, uchar* lG )
+//{
+//    ushort clrDiff = 0;
+//    // three color
+//    for( int c = 0; c < 3; c ++ )
+//    {
+//        ushort temp = abs( lC[ c ] - BORDER_CONSTANT_8U);
+//        clrDiff += temp;
+//    }
+//    clrDiff /= 3;
+//    // gradient diff
+//    ushort grdDiff = abs( lG[ 0 ] - BORDER_CONSTANT_8U );
+//    clrDiff = clrDiff > TAU_1_16U ? TAU_1_16U : clrDiff;
+//    grdDiff = grdDiff > TAU_2_16U ? TAU_2_16U : grdDiff;
+//    return ALPHA_16U * clrDiff + ( 1 - ALPHA_16U ) * grdDiff;
+//}
 
 inline float myCostGrd( float* lC, float* rC, float* lG, float* rG )
 {
@@ -91,21 +91,21 @@ void CVC::preprocess(const Mat& Img, Mat& GrdX)
 
 	//Sobel filter to compute X gradient
 	//32 bit float data
-	if(Img.type() == CV_32FC3)
-	{
+//	if(Img.type() == CV_32FC3)
+//	{
 		Sobel(Gray, GrdX, CV_32F, 1, 0, 1 );
 		GrdX += 0.5;
-	}
-    //8 bit unsigned char data
-    else if(Img.type() == CV_8UC3)
-    {
-		Sobel(Gray, GrdX, CV_8U, 1, 0, 1);
-		//GrdX += 128;
-    }
-    else{
-		printf("CVC: Error - Unrecognised data type in processing! (preprocess)\n");
-		exit(1);
-    }
+//	}
+//    //8 bit unsigned char data
+//    else if(Img.type() == CV_8UC3)
+//    {
+//		Sobel(Gray, GrdX, CV_8U, 1, 0, 1);
+//		//GrdX += 128;
+//    }
+//    else{
+//		printf("CVC: Error - Unrecognised data type in processing! (preprocess)\n");
+//		exit(1);
+//    }
 	return;
 }
 
@@ -115,9 +115,9 @@ void CVC::buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const
 	int wid = lImg.cols;
 
     //32 bit float data
-	if(lImg.type() == CV_32FC3 && rImg.type() == CV_32FC3)
-	{
-		CV_Assert( lImg.type() == CV_32FC3 && rImg.type() == CV_32FC3 );
+//	if(lImg.type() == CV_32FC3 && rImg.type() == CV_32FC3)
+//	{
+//		CV_Assert( lImg.type() == CV_32FC3 && rImg.type() == CV_32FC3 );
 		for( int y = 0; y < hei; y ++ ) {
 			float* lData = ( float* ) lImg.ptr<float>( y );
 			float* rData = ( float* ) rImg.ptr<float>( y );
@@ -137,35 +137,35 @@ void CVC::buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const
 				cost[x] = myCostGrd( lC, lG );
 			}
 		}
-    }
-    //8 bit unsigned char data
-    else if(lImg.type() == CV_8UC3 && rImg.type() == CV_8UC3)
-    {
-		CV_Assert( lImg.type() == CV_8UC3 && rImg.type() == CV_8UC3 );
-		for( int y = 0; y < hei; y ++ ) {
-			uchar* lData = ( uchar* ) lImg.ptr<uchar>( y );
-			uchar* rData = ( uchar* ) rImg.ptr<uchar>( y );
-			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
-			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
-			uchar* cost   = ( uchar* ) costVol.ptr<uchar>( y );
-			for( int x = d; x < wid; x ++ ) {
-				uchar* lC = lData + 3 * x;
-				uchar* rC = rData + 3 * ( x - d );
-				uchar* lG = lGData + x;
-				uchar* rG = rGData + x - d;
-				cost[x] = myCostGrd( lC, rC, lG, rG );
-			}
-			for( int x = 0; x < d; x ++ ) {
-				uchar* lC = lData + 3 * x;
-				uchar* lG = lGData + x;
-				cost[x] = myCostGrd( lC, lG );
-			}
-		}
-    }
-    else{
-		printf("CVC: Error - Unrecognised data type in processing! (buildCV_left)\n");
-		exit(1);
-    }
+//    }
+//    //8 bit unsigned char data
+//    else if(lImg.type() == CV_8UC3 && rImg.type() == CV_8UC3)
+//    {
+//		CV_Assert( lImg.type() == CV_8UC3 && rImg.type() == CV_8UC3 );
+//		for( int y = 0; y < hei; y ++ ) {
+//			uchar* lData = ( uchar* ) lImg.ptr<uchar>( y );
+//			uchar* rData = ( uchar* ) rImg.ptr<uchar>( y );
+//			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
+//			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
+//			uchar* cost   = ( uchar* ) costVol.ptr<uchar>( y );
+//			for( int x = d; x < wid; x ++ ) {
+//				uchar* lC = lData + 3 * x;
+//				uchar* rC = rData + 3 * ( x - d );
+//				uchar* lG = lGData + x;
+//				uchar* rG = rGData + x - d;
+//				cost[x] = myCostGrd( lC, rC, lG, rG );
+//			}
+//			for( int x = 0; x < d; x ++ ) {
+//				uchar* lC = lData + 3 * x;
+//				uchar* lG = lGData + x;
+//				cost[x] = myCostGrd( lC, lG );
+//			}
+//		}
+//    }
+//    else{
+//		printf("CVC: Error - Unrecognised data type in processing! (buildCV_left)\n");
+//		exit(1);
+//    }
 }
 
 void CVC::buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol)
@@ -174,8 +174,8 @@ void CVC::buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, cons
 	int wid = lImg.cols;
 
     //32 bit float data
-	if(lImg.type() == CV_32FC3 && rImg.type() == CV_32FC3)
-	{
+//	if(lImg.type() == CV_32FC3 && rImg.type() == CV_32FC3)
+//	{
 		for( int y = 0; y < hei; y ++ ) {
 			float* lData = ( float* ) lImg.ptr<float>( y );
 			float* rData = ( float* ) rImg.ptr<float>( y );
@@ -195,34 +195,34 @@ void CVC::buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, cons
 				cost[x] = myCostGrd( lC, lG );
 			}
 		}
-    }
-    //8 bit unsigned char data
-    else if(lImg.type() == CV_8UC3 && rImg.type() == CV_8UC3)
-    {
-		for( int y = 0; y < hei; y ++ ) {
-			uchar* lData = ( uchar* ) lImg.ptr<uchar>( y );
-			uchar* rData = ( uchar* ) rImg.ptr<uchar>( y );
-			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
-			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
-			uchar* cost   = ( uchar* ) costVol.ptr<uchar>( y );
-			for( int x = 0; x < wid - d; x ++ ) {
-				uchar* lC = lData + 3 * x;
-				uchar* rC = rData + 3 * ( x + d );
-				uchar* lG = lGData + x;
-				uchar* rG = rGData + x + d;
-				cost[x] = myCostGrd( lC, rC, lG, rG );
-			}
-			for( int x = wid - d; x < wid; x ++ ) {
-				uchar* lC = lData + 3 * x;
-				uchar* lG = lGData + x;
-				cost[x] = myCostGrd( lC, lG );
-			}
-		}
-    }
-    else{
-		printf("CVC: Error - Unrecognised data type in processing! (buildCV_right)\n");
-		exit(1);
-    }
+//    }
+//    //8 bit unsigned char data
+//    else if(lImg.type() == CV_8UC3 && rImg.type() == CV_8UC3)
+//    {
+//		for( int y = 0; y < hei; y ++ ) {
+//			uchar* lData = ( uchar* ) lImg.ptr<uchar>( y );
+//			uchar* rData = ( uchar* ) rImg.ptr<uchar>( y );
+//			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
+//			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
+//			uchar* cost   = ( uchar* ) costVol.ptr<uchar>( y );
+//			for( int x = 0; x < wid - d; x ++ ) {
+//				uchar* lC = lData + 3 * x;
+//				uchar* rC = rData + 3 * ( x + d );
+//				uchar* lG = lGData + x;
+//				uchar* rG = rGData + x + d;
+//				cost[x] = myCostGrd( lC, rC, lG, rG );
+//			}
+//			for( int x = wid - d; x < wid; x ++ ) {
+//				uchar* lC = lData + 3 * x;
+//				uchar* lG = lGData + x;
+//				cost[x] = myCostGrd( lC, lG );
+//			}
+//		}
+//    }
+//    else{
+//		printf("CVC: Error - Unrecognised data type in processing! (buildCV_right)\n");
+//		exit(1);
+//    }
 }
 
 void *CVC::buildCV_left_thread(void *thread_arg)
@@ -240,8 +240,8 @@ void *CVC::buildCV_left_thread(void *thread_arg)
 	int wid = lImg.cols;
 
     //32 bit float data
-	if(lImg.type() == CV_32FC3 && rImg.type() == CV_32FC3)
-	{
+//	if(lImg.type() == CV_32FC3 && rImg.type() == CV_32FC3)
+//	{
 		for( int y = 0; y < hei; y ++ ) {
 			float* lData = ( float* ) lImg.ptr<float>( y );
 			float* rData = ( float* ) rImg.ptr<float>( y );
@@ -261,34 +261,34 @@ void *CVC::buildCV_left_thread(void *thread_arg)
 				cost[x] = myCostGrd( lC, lG );
 			}
 		}
-    }
-    //8 bit unsigned char data
-    else if(lImg.type() == CV_8UC3 && rImg.type() == CV_8UC3)
-    {
-		for( int y = 0; y < hei; y ++ ) {
-			uchar* lData = ( uchar* ) lImg.ptr<uchar>( y );
-			uchar* rData = ( uchar* ) rImg.ptr<uchar>( y );
-			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
-			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
-			uchar* cost   = ( uchar* ) costVol->ptr<uchar>( y );
-			for( int x = d; x < wid; x ++ ) {
-				uchar* lC = lData + 3 * x;
-				uchar* rC = rData + 3 * ( x - d );
-				uchar* lG = lGData + x;
-				uchar* rG = rGData + x - d;
-				cost[x] = myCostGrd( lC, rC, lG, rG );
-			}
-			for( int x = 0; x < d; x ++ ) {
-				uchar* lC = lData + 3 * x;
-				uchar* lG = lGData + x;
-				cost[x] = myCostGrd( lC, lG );
-			}
-		}
-    }
-    else{
-		printf("CVC: Error - Unrecognised data type in processing! (buildCV_left_thread)\n");
-		exit(1);
-    }
+//    }
+//    //8 bit unsigned char data
+//    else if(lImg.type() == CV_8UC3 && rImg.type() == CV_8UC3)
+//    {
+//		for( int y = 0; y < hei; y ++ ) {
+//			uchar* lData = ( uchar* ) lImg.ptr<uchar>( y );
+//			uchar* rData = ( uchar* ) rImg.ptr<uchar>( y );
+//			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
+//			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
+//			uchar* cost   = ( uchar* ) costVol->ptr<uchar>( y );
+//			for( int x = d; x < wid; x ++ ) {
+//				uchar* lC = lData + 3 * x;
+//				uchar* rC = rData + 3 * ( x - d );
+//				uchar* lG = lGData + x;
+//				uchar* rG = rGData + x - d;
+//				cost[x] = myCostGrd( lC, rC, lG, rG );
+//			}
+//			for( int x = 0; x < d; x ++ ) {
+//				uchar* lC = lData + 3 * x;
+//				uchar* lG = lGData + x;
+//				cost[x] = myCostGrd( lC, lG );
+//			}
+//		}
+//    }
+//    else{
+//		printf("CVC: Error - Unrecognised data type in processing! (buildCV_left_thread)\n");
+//		exit(1);
+//    }
     return (void*)0;
 }
 
@@ -307,8 +307,8 @@ void *CVC::buildCV_right_thread(void *thread_arg)
 	int wid = lImg.cols;
 
     //32 bit float data
-	if(lImg.type() == CV_32FC3 && rImg.type() == CV_32FC3)
-	{
+//	if(lImg.type() == CV_32FC3 && rImg.type() == CV_32FC3)
+//	{
 		for( int y = 0; y < hei; y ++ ) {
 			float* lData = ( float* ) lImg.ptr<float>( y );
 			float* rData = ( float* ) rImg.ptr<float>( y );
@@ -328,35 +328,35 @@ void *CVC::buildCV_right_thread(void *thread_arg)
 				cost[x] = myCostGrd( lC, lG );
 			}
 		}
-    }
-    //8 bit unsigned char data
-    else if(lImg.type() == CV_8UC3 && rImg.type() == CV_8UC3)
-    {
-		for( int y = 0; y < hei; y ++ ) {
-			uchar* lData = ( uchar* ) lImg.ptr<uchar>( y );
-			uchar* rData = ( uchar* ) rImg.ptr<uchar>( y );
-			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
-			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
-			uchar* cost   = ( uchar* ) costVol->ptr<uchar>( y );
-			for( int x = 0; x < wid; x ++ ) {
-				if( x + d < wid ) {
-					uchar* lC = lData + 3 * x;
-					uchar* rC = rData + 3 * ( x + d );
-					uchar* lG = lGData + x;
-					uchar* rG = rGData + x + d;
-					cost[x] = myCostGrd( lC, rC, lG, rG );
-				} else {
-					uchar* lC = lData + 3 * x;
-					uchar* lG = lGData + x;
-					cost[x] = myCostGrd( lC, lG );
-				}
-
-			}
-		}
-    }
-    else{
-		printf("CVC: Error - Unrecognised data type in processing! (buildCV_right_thread)\n");
-		exit(1);
-    }
+//    }
+//    //8 bit unsigned char data
+//    else if(lImg.type() == CV_8UC3 && rImg.type() == CV_8UC3)
+//    {
+//		for( int y = 0; y < hei; y ++ ) {
+//			uchar* lData = ( uchar* ) lImg.ptr<uchar>( y );
+//			uchar* rData = ( uchar* ) rImg.ptr<uchar>( y );
+//			uchar* lGData = ( uchar* ) lGrdX.ptr<uchar>( y );
+//			uchar* rGData = ( uchar* ) rGrdX.ptr<uchar>( y );
+//			uchar* cost   = ( uchar* ) costVol->ptr<uchar>( y );
+//			for( int x = 0; x < wid; x ++ ) {
+//				if( x + d < wid ) {
+//					uchar* lC = lData + 3 * x;
+//					uchar* rC = rData + 3 * ( x + d );
+//					uchar* lG = lGData + x;
+//					uchar* rG = rGData + x + d;
+//					cost[x] = myCostGrd( lC, rC, lG, rG );
+//				} else {
+//					uchar* lC = lData + 3 * x;
+//					uchar* lG = lGData + x;
+//					cost[x] = myCostGrd( lC, lG );
+//				}
+//
+//			}
+//		}
+//    }
+//    else{
+//		printf("CVC: Error - Unrecognised data type in processing! (buildCV_right_thread)\n");
+//		exit(1);
+//    }
     return (void*)0;
 }

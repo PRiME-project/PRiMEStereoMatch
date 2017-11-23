@@ -14,7 +14,7 @@
 #include "DispSel.h"
 #include "DispSel_cl.h"
 #include "PP.h"
-#include "common.h"
+#include "oclUtil.h"
 
 //
 // Overarching Disparity Estimation Class
@@ -31,7 +31,7 @@ public:
     int maxDis;
     int threads;
     bool useOCL;
-    int imgType;
+//    int imgType;
 
 	//CVC
     Mat lGrdX;

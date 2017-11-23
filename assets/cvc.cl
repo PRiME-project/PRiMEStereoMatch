@@ -8,6 +8,9 @@
   ---------------------------------------------------------------------------*/
 //#pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
+#define UCHAR_MAX 255
+#define USHRT_MAX 65535
+
 #define UC16M (uchar16)UCHAR_MAX
 #define US16M (ushort16)USHRT_MAX
 

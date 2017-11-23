@@ -7,11 +7,13 @@
    All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
-#include "common.h"
+#include "oclUtil.h"
 #include "StereoMatch.h"
+#include <chrono>
+#include <thread>
 
 //Functions in main
-void *getDepthMap(void*);
+void getDepthMap(void);
 void HCI(void);
 
 //Global variables
@@ -26,53 +28,50 @@ int main(int argc, char** argv)
     //# Introduction and Setup - poll for OpenCL devices
     //#############################################################################################################
 	nOpenCLDev = openCLdevicepoll();
-
+#ifdef DISPLAY
+	namedWindow("InputOutput", CV_WINDOW_NORMAL);
+#endif
 	//#############################################################################################################
     //# Start Application Processes
     //#############################################################################################################
-	namedWindow("InputOutput", CV_WINDOW_AUTOSIZE);
 	printf("Starting Stereo Matching Application.\n");
 	sm = new StereoMatch(argc, argv, nOpenCLDev);
+	//printf("MAIN: Press h for help text.\n\n");
 
-	printf("MAIN: Press h for help text.\n\n");
+	std::thread de_thread;
+   // de_thread = std::thread(&StereoMatch::compute, sm, std::ref(de_time));
+    //de_thread = std::thread(&getDepthMap);
 
-	//pthread setup
-    void *status;
-	pthread_t thread_de;
-	pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    //Launch app interaction thread
-    pthread_create(&thread_de, &attr, getDepthMap, NULL);
-
+#ifdef DISPLAY
 	//User interface function
 	HCI();
-
+#else
+	while(1){
+		std::this_thread::sleep_for (std::chrono::duration<int, std::milli>(1000));
+	}
+#endif
     //#############################################################################################################
     //# Clean up threads once quit signal called
     //#############################################################################################################
 	end_de = true;
 	printf("MAIN: Quit signal sent\n");
-    pthread_join(thread_de, &status);
+    //pthread_join(thread_de, &status);
+    de_thread.join();
 
 	delete sm;
 	printf("MAIN: Disparity Estimation Halted\n");
     return 0;
 }
 
-void *getDepthMap(void *arg)
+void getDepthMap(void)
 {
 	int ret = 0;
 	float de_time;
 
-	while(!(end_de || ret))
-	{
-
-		ret = sm->Compute(de_time);
-		//printf("MAIN: DE Computed...\n");
+	while(!(end_de || ret)){
+		sm->compute(de_time);
 	}
-	return(void*)0;
+	return;
 }
 
 
@@ -80,7 +79,10 @@ void HCI(void)
 {
 	//User interface input handler
     char key = ' ';
+	float de_time;
+
     while(key != 'q'){
+		sm->compute(de_time);
         switch(key){
             case 'h':
             {
@@ -95,7 +97,7 @@ void HCI(void)
                 printf("|   m:   Switch computation mode:\n");
                 printf("|   m:      STEREO_GIF:  OpenCL <-> pthreads.\n");
                 printf("|   m:      STEREO_SGBM: MODE_SGBM, MODE_HH, MODE_SGBM_3WAY\n");
-                printf("|   t:   Switch data type: float 32 bit <-> unsigned char 8bit\n");
+//                printf("|   t:   Switch data type: float 32 bit <-> unsigned char 8bit\n");
                 printf("|   -/=: Increase or decrease the error threshold\n");
                 printf("|-------------------------------------------------------------------|\n");
                 printf("| Current Options:\n");
@@ -103,7 +105,7 @@ void HCI(void)
                 printf("|   m:   Computation mode: %s\n", sm->MatchingAlgorithm ? (sm->de_mode ? "OpenCL" : "pthreads") : (
 														sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
 														sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" : "MODE_SGBM_3WAY" ));
-                printf("|   t:   Data type: %s\n", sm->imgType ? "CV_32F" : "CV_8U");
+//                printf("|   t:   Data type: %s\n", sm->imgType ? "CV_32F" : "CV_8U");
                 printf("|   -/=: Error Threshold: %d\n", sm->error_threshold);
                 printf("|-------------------------------------------------------------------|\n");
                 break;
@@ -138,20 +140,20 @@ void HCI(void)
 				}
 				break;
             }
-            case 't':
-            {
-				if(sm->imgType == CV_32F){
-					sm->imgType = CV_8U;
-					printf("| p: STEREO_GIF algorithm data type = %s |\n", "CV_8U");
-				} else {
-					sm->imgType = CV_32F;
-					printf("| p: STEREO_GIF algorithm data type = %s |\n", "CV_32F");
-				}
-				if(sm->MatchingAlgorithm != STEREO_GIF){
-					printf("| p: Data type only affects the STEREO_GIF algorithm.\n");
-				}
-				break;
-            }
+//            case 't':
+//            {
+//				if(sm->imgType == CV_32F){
+//					sm->imgType = CV_8U;
+//					printf("| p: STEREO_GIF algorithm data type = %s |\n", "CV_8U");
+//				} else {
+//					sm->imgType = CV_32F;
+//					printf("| p: STEREO_GIF algorithm data type = %s |\n", "CV_32F");
+//				}
+//				if(sm->MatchingAlgorithm != STEREO_GIF){
+//					printf("| p: Data type only affects the STEREO_GIF algorithm.\n");
+//				}
+//				break;
+//            }
             case '=':
             {
 				sm->error_threshold++;
@@ -169,7 +171,7 @@ void HCI(void)
 				break;
 			}
         }
-        key = waitKey(5);
+        key = waitKey(1);
     }
     return;
 }

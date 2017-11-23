@@ -17,7 +17,7 @@ CVC_cl::CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
     //OpenCL Setup
     program = 0;
     kernel = 0;
-    imgType = I->type() & CV_MAT_DEPTH_MASK;
+//    imgType = I->type() & CV_MAT_DEPTH_MASK;
 
     if (!createProgram(*context, device, FILE_CVC_PROG, &program))
     {
@@ -29,8 +29,8 @@ CVC_cl::CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
     height = (cl_int)I->rows;
     channels = (cl_int)I->channels();
 
-	if(imgType == CV_32F)
-	{
+//	if(imgType == CV_32F)
+//	{
 		strcpy(kernel_name, "cvc_float_nv");
 		//strcpy(kernel_name, "cvc_float_v4");
 
@@ -44,32 +44,32 @@ CVC_cl::CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
 
 		globalWorksize[1] = (size_t)height;
 		globalWorksize[2] = (size_t)maxDis;
-	}
-	else if(imgType == CV_8U)
-	{
-		strcpy(kernel_name, "cvc_uchar_vx");
-		//strcpy(kernel_name, "cvc_uchar_v16");
-		//strcpy(kernel_name, "cvc_uchar_nv");
-
-		bufferSize_2D = width * height * sizeof(cl_uchar);
-		bufferSize_3D = width * height * maxDis * sizeof(cl_uchar);
-
-		//cvc_uchar_vx
-	    globalWorksize[0] = (size_t)height;
-	    globalWorksize[1] = (size_t)1;
-		//cvc_uchar_v16
-//		globalWorksize[0] = (size_t)width/16;
-		//cvc_uchar_nv
-//		globalWorksize[0] = (size_t)width;
-//		globalWorksize[1] = (size_t)height;
-
-		globalWorksize[2] = (size_t)maxDis;
-
-	}
-    else{
-		printf("CVC_cl: Error - Unrecognised data type in processing! (CVC_cl)\n");
-		exit(1);
-    }
+//	}
+//	else if(imgType == CV_8U)
+//	{
+//		strcpy(kernel_name, "cvc_uchar_vx");
+//		//strcpy(kernel_name, "cvc_uchar_v16");
+//		//strcpy(kernel_name, "cvc_uchar_nv");
+//
+//		bufferSize_2D = width * height * sizeof(cl_uchar);
+//		bufferSize_3D = width * height * maxDis * sizeof(cl_uchar);
+//
+//		//cvc_uchar_vx
+//	    globalWorksize[0] = (size_t)height;
+//	    globalWorksize[1] = (size_t)1;
+//		//cvc_uchar_v16
+////		globalWorksize[0] = (size_t)width/16;
+//		//cvc_uchar_nv
+////		globalWorksize[0] = (size_t)width;
+////		globalWorksize[1] = (size_t)height;
+//
+//		globalWorksize[2] = (size_t)maxDis;
+//
+//	}
+//    else{
+//		printf("CVC_cl: Error - Unrecognised data type in processing! (CVC_cl)\n");
+//		exit(1);
+//    }
 	kernel = clCreateKernel(program, kernel_name, &errorNumber);
     if (!checkSuccess(errorNumber))
     {
@@ -77,6 +77,9 @@ CVC_cl::CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
         cerr << "Failed to create OpenCL kernel. " << __FILE__ << ":"<< __LINE__ << endl;
 		exit(1);
     }
+    else{
+		printf("CVC_cl: OpenCL kernels created.\n");
+	}
 
     /* An event to associate with the Kernel. Allows us to retreive profiling information later. */
     event = 0;
@@ -98,8 +101,8 @@ int CVC_cl::buildCV(const Mat& lImg, const Mat& rImg, cl_mem *memoryObjects)
 
 	/* Map the input memory objects to host side pointers. */
 	bool EnqueueMapBufferSuccess = true;
-	if(imgType == CV_32F)
-	{
+//	if(imgType == CV_32F)
+//	{
 	    //Sobel filter to compute X gradient     <-- investigate Mali Sobel OpenCL kernel
 		Sobel( lGray, lGrdX, CV_32F, 1, 0, 1 ); // ex time 16 -17ms
 		Sobel( rGray, rGrdX, CV_32F, 1, 0, 1 ); // for both
@@ -117,28 +120,28 @@ int CVC_cl::buildCV(const Mat& lImg, const Mat& rImg, cl_mem *memoryObjects)
 			memcpy(clbuffer_lImgRGB[i], lImgRGB[i].data, bufferSize_2D);
 			memcpy(clbuffer_rImgRGB[i], rImgRGB[i].data, bufferSize_2D);
 		}
-	}
-	else if(imgType == CV_8U)
-	{
-		//Sobel filter to compute X gradient
-		Sobel( lGray, lGrdX, CV_8U, 1, 0, 1 );
-		Sobel( rGray, rGrdX, CV_8U, 1, 0, 1 );
-		lGrdX += 0.5;
-		rGrdX += 0.5;
-
-		cl_uchar *clbuffer_lImgRGB[3], *clbuffer_rImgRGB[3];
-		//Six 1-channel 2D buffers W*H
-		for (int i = 0; i < channels; i++)
-		{
-			clbuffer_lImgRGB[i] = (cl_uchar*)clEnqueueMapBuffer(*commandQueue, memoryObjects[i], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D, 0, NULL, NULL, &errorNumber);
-			EnqueueMapBufferSuccess &= checkSuccess(errorNumber);
-			clbuffer_rImgRGB[i] = (cl_uchar*)clEnqueueMapBuffer(*commandQueue, memoryObjects[i+channels], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D, 0, NULL, NULL, &errorNumber);
-			EnqueueMapBufferSuccess &= checkSuccess(errorNumber);
-
-			memcpy(clbuffer_lImgRGB[i], lImgRGB[i].data, bufferSize_2D);
-			memcpy(clbuffer_rImgRGB[i], rImgRGB[i].data, bufferSize_2D);
-		}
-	}
+//	}
+//	else if(imgType == CV_8U)
+//	{
+//		//Sobel filter to compute X gradient
+//		Sobel( lGray, lGrdX, CV_8U, 1, 0, 1 );
+//		Sobel( rGray, rGrdX, CV_8U, 1, 0, 1 );
+//		lGrdX += 0.5;
+//		rGrdX += 0.5;
+//
+//		cl_uchar *clbuffer_lImgRGB[3], *clbuffer_rImgRGB[3];
+//		//Six 1-channel 2D buffers W*H
+//		for (int i = 0; i < channels; i++)
+//		{
+//			clbuffer_lImgRGB[i] = (cl_uchar*)clEnqueueMapBuffer(*commandQueue, memoryObjects[i], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D, 0, NULL, NULL, &errorNumber);
+//			EnqueueMapBufferSuccess &= checkSuccess(errorNumber);
+//			clbuffer_rImgRGB[i] = (cl_uchar*)clEnqueueMapBuffer(*commandQueue, memoryObjects[i+channels], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D, 0, NULL, NULL, &errorNumber);
+//			EnqueueMapBufferSuccess &= checkSuccess(errorNumber);
+//
+//			memcpy(clbuffer_lImgRGB[i], lImgRGB[i].data, bufferSize_2D);
+//			memcpy(clbuffer_rImgRGB[i], rImgRGB[i].data, bufferSize_2D);
+//		}
+//	}
 
 	//Two 1-channel 2D buffers W*H
 	cl_uchar *clbuffer_lGrdX = (cl_uchar*)clEnqueueMapBuffer(*commandQueue, memoryObjects[CVC_LGRDX], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D, 0, NULL, NULL, &errorNumber);

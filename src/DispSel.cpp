@@ -28,8 +28,8 @@ void *DS_X(void *thread_arg)
 	int wid = dispMap->cols;
 	uchar* dispData = (uchar*) dispMap->ptr<uchar>(y);
 
-	if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_32F)
-	{
+//	if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_32F)
+//	{
 		for(int x = 0; x < wid; x++)
 		{
 			float minCost = DBL_MAX;
@@ -46,30 +46,30 @@ void *DS_X(void *thread_arg)
 			}
 			dispData[x] = minDis;
 		}
-	}
-	else if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_8U)
-	{
-		for(int x = 0; x < wid; x++)
-		{
-			uchar minCost = UCHAR_MAX;
-			int minDis = 0;
-
-			for(int d = 1; d < maxDis; d++)
-			{
-				uchar* costData = (uchar*)costVol[d].ptr<uchar>(y);
-				if(costData[x] < minCost)
-				{
-					minCost = costData[x];
-					minDis = d;
-				}
-			}
-			dispData[x] = minDis;
-		}
-	}
-    else{
-		printf("DS: Error - Unrecognised data type in processing! (DS_X)\n");
-		exit(1);
-    }
+//	}
+//	else if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_8U)
+//	{
+//		for(int x = 0; x < wid; x++)
+//		{
+//			uchar minCost = UCHAR_MAX;
+//			int minDis = 0;
+//
+//			for(int d = 1; d < maxDis; d++)
+//			{
+//				uchar* costData = (uchar*)costVol[d].ptr<uchar>(y);
+//				if(costData[x] < minCost)
+//				{
+//					minCost = costData[x];
+//					minDis = d;
+//				}
+//			}
+//			dispData[x] = minDis;
+//		}
+//	}
+//    else{
+//		printf("DS: Error - Unrecognised data type in processing! (DS_X)\n");
+//		exit(1);
+//    }
 	return (void*)0;
 }
 
@@ -116,8 +116,8 @@ void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& dispMap)
     {
 		uchar* dispData = ( uchar* ) dispMap.ptr<uchar>( y );
 
-		if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_32F)
-		{
+//		if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_32F)
+//		{
 			for(int x = 0; x < wid; x++)
 			{
 				float minCost = DBL_MAX;
@@ -134,30 +134,30 @@ void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& dispMap)
 				}
 				dispData[x] = minDis;
 			}
-		}
-		else if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_8U)
-		{
-			for(int x = 0; x < wid; x++)
-			{
-				uchar minCost = UCHAR_MAX;
-				int minDis = 0;
-
-				for(int d = 1; d < maxDis; d++)
-				{
-					uchar* costData = (uchar*)costVol[d].ptr<uchar>(y);
-					if(costData[x] < minCost)
-					{
-						minCost = costData[x];
-						minDis = d;
-					}
-				}
-				dispData[x] = minDis;
-			}
-		}
-		else{
-			printf("DS: Error - Unrecognised data type in processing! (CVSelect)\n");
-			exit(1);
-		}
+//		}
+//		else if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_8U)
+//		{
+//			for(int x = 0; x < wid; x++)
+//			{
+//				uchar minCost = UCHAR_MAX;
+//				int minDis = 0;
+//
+//				for(int d = 1; d < maxDis; d++)
+//				{
+//					uchar* costData = (uchar*)costVol[d].ptr<uchar>(y);
+//					if(costData[x] < minCost)
+//					{
+//						minCost = costData[x];
+//						minDis = d;
+//					}
+//				}
+//				dispData[x] = minDis;
+//			}
+//		}
+//		else{
+//			printf("DS: Error - Unrecognised data type in processing! (CVSelect)\n");
+//			exit(1);
+//		}
     }
     return;
 }

@@ -7,7 +7,7 @@
    All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
-#include "common.h"
+#include "oclUtil.h"
 
 #define FILE_CVC_PROG BASE_DIR "assets/cvc.cl"
 
@@ -17,7 +17,6 @@
 class CVC_cl
 {
 public:
-	int imgType;
 
     //Data Variables
     Mat lGray, rGray;

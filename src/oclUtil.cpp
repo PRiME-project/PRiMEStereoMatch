@@ -8,12 +8,12 @@
  * by a licensing agreement from ARM Limited.
  */
  /*---------------------------------------------------------------------------
-   common.cpp - OpenCL Utility Function Code
+   oclUtil.cpp - OpenCL Utility Function Code
   ---------------------------------------------------------------------------
    Co-Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
   ---------------------------------------------------------------------------*/
-#include "common.h"
+#include "oclUtil.h"
 
 int openCLdevicepoll(void)
 {
@@ -28,6 +28,8 @@ int openCLdevicepoll(void)
     cl_uint maxComputeUnits;
     cl_uint maxWorkGroupSize;
     cl_uint maxWorkItemDims;
+    cl_ulong globalMemSize;
+    cl_uint imageSupport;
     //cl_device_partition_property *partition_properties;
 
     // get all platforms
@@ -109,10 +111,15 @@ int openCLdevicepoll(void)
                     sizeof(maxWorkItemDims), &maxWorkItemDims, NULL);
             printf(" %d.%d Max Work Item Dimensions: %d\n", j+1, 6, maxWorkItemDims);
 
+            // print workgroup sizes
+            clGetDeviceInfo(devices[j], CL_DEVICE_GLOBAL_MEM_SIZE,
+                    sizeof(globalMemSize), &globalMemSize, NULL);
+            printf(" %d.%d Max Global Memory Size: %lu\n", j+1, 7, globalMemSize);
+
             // image support?
             clGetDeviceInfo(devices[j], CL_DEVICE_IMAGE_SUPPORT,
-                    sizeof(maxWorkItemDims), &maxWorkItemDims, NULL);
-            printf(" %d.%d Image Support?: %s\n", j+1, 7, maxWorkItemDims ? "Yes" : "No");
+                    sizeof(imageSupport), &imageSupport, NULL);
+            printf(" %d.%d Image Support?: %s\n", j+1, 8, imageSupport ? "Yes" : "No");
 
 //            clGetDeviceInfo(devices[j], CL_DEVICE_PARTITION_PROPERTIES, sizeof(partition_properties), &partition_properties, NULL);
 //            printf(" %d.%d Partition Properties: %ld\n", j+1, 8, partition_properties[0]);
@@ -132,36 +139,36 @@ bool printProfilingInfo(cl_event event)
     cl_ulong queuedTime = 0;
     if (!checkSuccess(clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &queuedTime, NULL)))
     {
-        cerr << "Retrieving CL_PROFILING_COMMAND_QUEUED OpenCL profiling information failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Retrieving CL_PROFILING_COMMAND_QUEUED OpenCL profiling information failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
     cl_ulong submittedTime = 0;
     if (!checkSuccess(clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_SUBMIT, sizeof(cl_ulong), &submittedTime, NULL)))
     {
-        cerr << "Retrieving CL_PROFILING_COMMAND_SUBMIT OpenCL profiling information failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Retrieving CL_PROFILING_COMMAND_SUBMIT OpenCL profiling information failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
     cl_ulong startTime = 0;
     if (!checkSuccess(clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &startTime, NULL)))
     {
-        cerr << "Retrieving CL_PROFILING_COMMAND_START OpenCL profiling information failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Retrieving CL_PROFILING_COMMAND_START OpenCL profiling information failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
     cl_ulong endTime = 0;
     if (!checkSuccess(clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &endTime, NULL)))
     {
-        cerr << "Retrieving CL_PROFILING_COMMAND_END OpenCL profiling information failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Retrieving CL_PROFILING_COMMAND_END OpenCL profiling information failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
     //cout << "Profiling information:\n";
     /* OpenCL returns times in nano seconds. Print out the times in milliseconds (divide by a million). */
-    //cout << "Queued time: \t" << (submittedTime - queuedTime) / 1000000.0 << "ms\n";
-    //cout << "Wait time: \t" << (startTime - submittedTime) / 1000000.0 << "ms\n";
-    cout << "Run time: \t" << (endTime - startTime) / 1000000.0 << "ms" << endl;
+    std::cout << "Queued time: \t" << (submittedTime - queuedTime) / 1000000.0 << "ms, ";
+    std::cout << "Wait time: \t" << (startTime - submittedTime) / 1000000.0 << "ms, ";
+    std::cout << "Run time: \t" << (endTime - startTime) / 1000000.0 << "ms" << std::endl;
 
     return true;
 }
@@ -172,7 +179,7 @@ bool printSupported2DImageFormats(cl_context context)
     cl_uint numberOfImageFormats;
     if (!checkSuccess(clGetSupportedImageFormats(context, 0, CL_MEM_OBJECT_IMAGE2D, 0, NULL, &numberOfImageFormats)))
     {
-        cerr << "Getting the number of supported 2D image formats failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Getting the number of supported 2D image formats failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
@@ -180,24 +187,24 @@ bool printSupported2DImageFormats(cl_context context)
     cl_image_format* imageFormats = new cl_image_format[numberOfImageFormats];
     if (!checkSuccess(clGetSupportedImageFormats(context, 0, CL_MEM_OBJECT_IMAGE3D, numberOfImageFormats, imageFormats, NULL)))
     {
-        cerr << "Getting the list of supported 2D image formats failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Getting the list of supported 2D image formats failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
-    cout << numberOfImageFormats << " Image formats supported";
+    std::cout << numberOfImageFormats << " Image formats supported";
 
     if (numberOfImageFormats > 0)
     {
-        cout << " (channel order, channel data type):" << endl;
+        std::cout << " (channel order, channel data type):" << std::endl;
     }
     else
     {
-        cout << "." << endl;
+        std::cout << "." << std::endl;
     }
 
     for (unsigned int i = 0; i < numberOfImageFormats; i++)
     {
-        cout << imageChannelOrderToString(imageFormats[i].image_channel_order) << ", " << imageChannelDataTypeToString(imageFormats[i].image_channel_data_type) << endl;
+        std::cout << imageChannelOrderToString(imageFormats[i].image_channel_order) << ", " << imageChannelDataTypeToString(imageFormats[i].image_channel_data_type) << std::endl;
     }
 
     delete[] imageFormats;
@@ -212,7 +219,7 @@ bool cleanUpOpenCL(cl_context context, cl_command_queue commandQueue, cl_program
     {
         if (!checkSuccess(clReleaseContext(context)))
         {
-            cerr << "Releasing the OpenCL context failed. " << __FILE__ << ":"<< __LINE__ << endl;
+            std::cerr << "Releasing the OpenCL context failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
             returnValue = false;
         }
     }
@@ -221,7 +228,7 @@ bool cleanUpOpenCL(cl_context context, cl_command_queue commandQueue, cl_program
     {
         if (!checkSuccess(clReleaseCommandQueue(commandQueue)))
         {
-            cerr << "Releasing the OpenCL command queue failed. " << __FILE__ << ":"<< __LINE__ << endl;
+            std::cerr << "Releasing the OpenCL command queue failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
             returnValue = false;
         }
     }
@@ -230,7 +237,7 @@ bool cleanUpOpenCL(cl_context context, cl_command_queue commandQueue, cl_program
     {
         if (!checkSuccess(clReleaseKernel(kernel)))
         {
-            cerr << "Releasing the OpenCL kernel failed. " << __FILE__ << ":"<< __LINE__ << endl;
+            std::cerr << "Releasing the OpenCL kernel failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
             returnValue = false;
         }
     }
@@ -239,7 +246,7 @@ bool cleanUpOpenCL(cl_context context, cl_command_queue commandQueue, cl_program
     {
         if (!checkSuccess(clReleaseProgram(program)))
         {
-            cerr << "Releasing the OpenCL program failed. " << __FILE__ << ":"<< __LINE__ << endl;
+            std::cerr << "Releasing the OpenCL program failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
             returnValue = false;
         }
     }
@@ -250,7 +257,7 @@ bool cleanUpOpenCL(cl_context context, cl_command_queue commandQueue, cl_program
         {
             if (!checkSuccess(clReleaseMemObject(memoryObjects[index])))
             {
-                cerr << "Releasing the OpenCL memory object " << index << " failed. " << __FILE__ << ":"<< __LINE__ << endl;
+                std::cerr << "Releasing the OpenCL memory object " << index << " failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
                 returnValue = false;
             }
         }
@@ -268,13 +275,13 @@ bool createContext(cl_context* context)
     /* Retrieve a single platform ID. */
     if (!checkSuccess(clGetPlatformIDs(1, &firstPlatformID, &numberOfPlatforms)))
     {
-        cerr << "Retrieving OpenCL platforms failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Retrieving OpenCL platforms failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
     if (numberOfPlatforms <= 0)
     {
-        cerr << "No OpenCL platforms found. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "No OpenCL platforms found. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
@@ -313,7 +320,7 @@ bool createContext(cl_context* context)
 		*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_CPU, NULL, NULL, &errorNumber);
     if (!checkSuccess(errorNumber))
     {
-        cerr << "Creating an OpenCL context failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Creating an OpenCL context failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
@@ -329,13 +336,13 @@ bool createSubDeviceContext(cl_context* context, cl_int numComputeUnits) //work 
     /* Retrieve a single platform ID. */
     if (!checkSuccess(clGetPlatformIDs(1, &firstPlatformID, &numberOfPlatforms)))
     {
-        cerr << "Retrieving OpenCL platforms failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Retrieving OpenCL platforms failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
     if (numberOfPlatforms <= 0)
     {
-        cerr << "No OpenCL platforms found. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "No OpenCL platforms found. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
@@ -369,14 +376,14 @@ bool createSubDeviceContext(cl_context* context, cl_int numComputeUnits) //work 
 	//if (!checkSuccess(clCreateSubDevices(device_id, pprops, 1, &subdevice_id, &numDevices)))
 	#endif /* CL_VERSION_1_1 */
     {
-        cerr << "Creating an OpenCL Sub Device failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Creating an OpenCL Sub Device failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 	// Create the context:
 	*context = clCreateContext(contextProperties, 1, &subdevice_id, NULL, NULL, &errorNumber);
     if (!checkSuccess(errorNumber))
     {
-        cerr << "Creating an OpenCL context failed. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Creating an OpenCL context failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
@@ -392,13 +399,13 @@ bool createCommandQueue(cl_context context, cl_command_queue* commandQueue, cl_d
     /* Retrieve the size of the buffer needed to contain information about the devices in this OpenCL context. */
     if (!checkSuccess(clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, NULL, &deviceBufferSize)))
     {
-        cerr << "Failed to get OpenCL context information. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to get OpenCL context information. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
     if(deviceBufferSize == 0)
     {
-        cerr << "No OpenCL devices found. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "No OpenCL devices found. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
@@ -406,7 +413,7 @@ bool createCommandQueue(cl_context context, cl_command_queue* commandQueue, cl_d
     devices = new cl_device_id[deviceBufferSize / sizeof(cl_device_id)];
     if (!checkSuccess(clGetContextInfo(context, CL_CONTEXT_DEVICES, deviceBufferSize, devices, NULL)))
     {
-        cerr << "Failed to get the OpenCL context information. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to get the OpenCL context information. " << __FILE__ << ":"<< __LINE__ << std::endl;
         delete [] devices;
         return false;
     }
@@ -421,21 +428,21 @@ bool createCommandQueue(cl_context context, cl_command_queue* commandQueue, cl_d
     *commandQueue = clCreateCommandQueue(context, *device, CL_QUEUE_PROFILING_ENABLE, &errorNumber);
     if (!checkSuccess(errorNumber))
     {
-        cerr << "Failed to create the OpenCL command queue. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to create the OpenCL command queue. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
     return true;
 }
 
-bool createProgram(cl_context context, cl_device_id device, string filename, cl_program* program)
+bool createProgram(cl_context context, cl_device_id device, std::string filename, cl_program* program)
 {
     cl_int errorNumber = 0;
-    ifstream kernelFile(filename.c_str(), ios::in);
+    std::ifstream kernelFile(filename.c_str(), std::ios::in);
 
     if(!kernelFile.is_open())
     {
-        cerr << "Unable to open " << filename << ". " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Unable to open " << filename << ". " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
@@ -443,15 +450,15 @@ bool createProgram(cl_context context, cl_device_id device, string filename, cl_
      * Read the kernel file into an output stream.
      * Convert this into a char array for passing to OpenCL.
      */
-    ostringstream outputStringStream;
+    std::ostringstream outputStringStream;
     outputStringStream << kernelFile.rdbuf();
-    string srcStdStr = outputStringStream.str();
+    std::string srcStdStr = outputStringStream.str();
     const char* charSource = srcStdStr.c_str();
 
     *program = clCreateProgramWithSource(context, 1, &charSource, NULL, &errorNumber);
     if (!checkSuccess(errorNumber) || program == NULL)
     {
-        cerr << "Failed to create OpenCL program. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to create OpenCL program. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
@@ -471,8 +478,8 @@ bool createProgram(cl_context context, cl_device_id device, string filename, cl_
         char* log = new char[logSize];
         clGetProgramBuildInfo(*program, device, CL_PROGRAM_BUILD_LOG, logSize, log, NULL);
 
-        string* stringChars = new string(log, logSize);
-        cerr << "Build log:\n " << *stringChars << endl;
+        std::string* stringChars = new std::string(log, logSize);
+        std::cerr << "Build log:\n " << *stringChars << std::endl;
 
         delete[] log;
         delete stringChars;
@@ -481,7 +488,7 @@ bool createProgram(cl_context context, cl_device_id device, string filename, cl_
     if (!buildSuccess)
     {
         clReleaseProgram(*program);
-        cerr << "Failed to build OpenCL program. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to build OpenCL program. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
@@ -492,13 +499,13 @@ bool createProgram(cl_context context, cl_device_id device, string filename, cl_
 //{
 //    if (errorNumber != CL_SUCCESS)
 //    {
-//        cerr << "OpenCL error: " << errorNumberToString(errorNumber) << endl;
+//        std::cerr << "OpenCL error: " << errorNumberToString(errorNumber) << std::endl;
 //        return false;
 //    }
 //    return true;
 //}
 
-string imageChannelOrderToString(cl_channel_order channelOrder)
+std::string imageChannelOrderToString(cl_channel_order channelOrder)
 {
     switch (channelOrder)
     {
@@ -533,7 +540,7 @@ string imageChannelOrderToString(cl_channel_order channelOrder)
     }
 }
 
-string imageChannelDataTypeToString(cl_channel_type channelDataType)
+std::string imageChannelDataTypeToString(cl_channel_type channelDataType)
 {
     switch (channelDataType)
     {
@@ -572,7 +579,7 @@ string imageChannelDataTypeToString(cl_channel_type channelDataType)
     }
 }
 
-string errorNumberToString(cl_int errorNumber)
+std::string errorNumberToString(cl_int errorNumber)
 {
     switch (errorNumber)
     {
@@ -675,7 +682,7 @@ string errorNumberToString(cl_int errorNumber)
     }
 }
 
-bool isExtensionSupported(cl_device_id device, string extension)
+bool isExtensionSupported(cl_device_id device, std::string extension)
 {
     if (extension.empty())
     {
@@ -686,7 +693,7 @@ bool isExtensionSupported(cl_device_id device, string extension)
     size_t extensionsReturnSize = 0;
     if (!checkSuccess(clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionsReturnSize)))
     {
-        cerr << "Failed to get return size from clGetDeviceInfo for parameter CL_DEVICE_EXTENSIONS. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to get return size from clGetDeviceInfo for parameter CL_DEVICE_EXTENSIONS. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return false;
     }
 
@@ -696,15 +703,15 @@ bool isExtensionSupported(cl_device_id device, string extension)
     /* Get the list of all extensions supported. */
     if (!checkSuccess(clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, extensionsReturnSize, extensions, NULL)))
     {
-        cerr << "Failed to get data from clGetDeviceInfo for parameter CL_DEVICE_EXTENSIONS. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to get data from clGetDeviceInfo for parameter CL_DEVICE_EXTENSIONS. " << __FILE__ << ":"<< __LINE__ << std::endl;
         delete [] extensions;
         return false;
     }
 
     /* See if the requested extension is in the list. */
-    string* extensionsString = new string(extensions);
+    std::string* extensionsString = new std::string(extensions);
     bool returnResult = false;
-    if (extensionsString->find(extension) != string::npos)
+    if (extensionsString->find(extension) != std::string::npos)
     {
         returnResult = true;
     }

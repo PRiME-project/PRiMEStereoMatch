@@ -7,6 +7,7 @@
    All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
+#include "JointWMF.h"
 
 #define MED_SZ 19
 #define SIG_CLR 0.1

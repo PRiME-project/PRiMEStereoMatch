@@ -19,36 +19,29 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
     //Global Image Type Checking
 	if(lImg.type() == rImg.type())
 	{
-		imgType = (lImg.type() & CV_MAT_DEPTH_MASK);
-		printf("imgType = %d, CV_32F = %d, CV_8U = %d\n", imgType, CV_32F, CV_8U);
+		//int imgType = (lImg.type() & CV_MAT_DEPTH_MASK);
+		printf("Data type = %d, CV_32F = %d, CV_8U = %d\n", (lImg.type() & CV_MAT_DEPTH_MASK), CV_32F, CV_8U);
 	}
 	else
 	{
 		printf("DE: Error - Left & Right images are of different types.\n");
 		exit(1);
 	}
-	if(imgType != CV_32F && imgType != CV_8U)
-	{
-		printf("DE: Error - Unsupported Image type provided, supported types include:\n");
-		printf("DE:       - CV_32F:\n");
-		printf("DE:       - CV_8U:\n");
-		exit(1);
-	}
+//	if(imgType != CV_32F && imgType != CV_8U)
+//	{
+//		printf("DE: Error - Unsupported Image type provided, supported types include:\n");
+//		printf("DE:       - CV_32F:\n");
+//		printf("DE:       - CV_8U:\n");
+//		exit(1);
+//	}
+
 
     lcostVol = new Mat[maxDis];
     rcostVol = new Mat[maxDis];
     for (int i = 0; i < maxDis; i++)
     {
-		if(imgType == CV_32F)
-		{
-			lcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
-			rcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
-		}
-		else if(imgType == CV_8U)
-		{
-			lcostVol[i] = Mat::zeros(hei, wid, CV_8UC1);
-			rcostVol[i] = Mat::zeros(hei, wid, CV_8UC1);
-		}
+		lcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
+		rcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
     }
 
     lImg_rgb = new Mat[3];
@@ -98,16 +91,16 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 		channels = (cl_int)lImg.channels();
 
 		//OpenCL Buffers that are type dependent (in accending size order)
-		if(imgType == CV_32F)
-		{
+//		if(imgType == CV_32F)
+//		{
 			bufferSize_2D = width * height * sizeof(cl_float);
 			bufferSize_3D = width * height * maxDis * sizeof(cl_float);
-		}
-		else if(imgType == CV_8U)
-		{
-			bufferSize_2D = width * height * sizeof(cl_uchar);
-			bufferSize_3D = width * height * maxDis * sizeof(cl_uchar);
-		}
+//		}
+//		else if(imgType == CV_8U)
+//		{
+//			bufferSize_2D = width * height * sizeof(cl_uchar);
+//			bufferSize_3D = width * height * maxDis * sizeof(cl_uchar);
+//		}
 		//OpenCL Buffers that are always required
 		bufferSize_2D_8UC1 = width * height * sizeof(cl_uchar);
 
@@ -226,13 +219,11 @@ void DispEst::CostConst_CPU()
 	        int d = level*threads + iter;
             buildCV_TD_Array[d] = {&lImg, &rImg, &lGrdX, &rGrdX, d, &lcostVol[d]};
             pthread_create(&BCV_threads[d], &attr, CVC::buildCV_left_thread, (void *)&buildCV_TD_Array[d]);
-            //printf("Creating BCV L Thread %d\n",d);
 	    }
         for(int iter=0; iter < block_size; iter++)
 	    {
 	        int d = level*threads + iter;
             pthread_join(BCV_threads[d], &status);
-            //printf("Joining BCV L Thread %d\n",d);
         }
 	}
 	for(int level = 0; level <= maxDis/threads; level ++)
@@ -297,7 +288,7 @@ void DispEst::CostFilter_CPU()
 	        int d = level*threads + iter;
             filterCV_TD_Array[d] = {lImg_rgb, mean_lImg, var_lImg, &lcostVol[d]};
             pthread_create(&FCV_threads[d], &attr, CVF::filterCV_thread, (void *)&filterCV_TD_Array[d]);
-            //printf("Filtering Left CV @ Disparity %d\n", d);
+//            printf("Filtering Left CV @ Disparity %d\n", d);
 	    }
         for(int iter=0; iter < block_size; iter++)
 	    {
@@ -327,7 +318,7 @@ void DispEst::CostFilter_CPU()
 	}
 }
 
-void DispEst::CostFilter_GPU() //under construction
+void DispEst::CostFilter_GPU()
 {
     //printf("OpenCL Cost Filtering Underway...\n");
     filter_cl->preprocess(&memoryObjects[CVC_LIMGR], &memoryObjects[CVC_LIMGG], &memoryObjects[CVC_LIMGB]);

@@ -122,114 +122,57 @@ Mat GuidedFilter_cv(const Mat* rgb, const Mat* mean_I, const Mat* var_I, const M
     Mat a[ 3 ];
     for( int c = 0; c < 3; c ++  )
     {
-		if(rgb[0].type() == CV_32F)
-			a[ c ] = Mat::zeros( H, W, CV_32FC1 );
-		if(rgb[0].type() == CV_8U)
-			a[ c ] = Mat::zeros( H, W, CV_8UC1 );
+		a[ c ] = Mat::zeros( H, W, CV_32FC1 );
     }
-
-	if(rgb[0].type() == CV_8U)
-	{
-		for( int y = 0; y < H; y ++ ) {
-			uchar* vData[ 6 ];
-			for( int v = 0; v < 6; v ++ ) {
-				vData[ v ] = (uchar*) var_I[ v ].ptr<uchar>( y );
-			}
-			uchar* cData[ 3 ];
-			for( int c = 0; c < 3; c ++ ) {
-				cData[ c ] = (uchar*) cov_Ip[ c ].ptr<uchar>( y );
-			}
-			uchar* aData[ 3 ];
-			for( int c = 0; c < 3; c++  ) {
-				aData[ c ] = (uchar*) a[ c ].ptr<uchar>( y );
-			}
-			for( int x = 0; x < W; x ++ )
-			{
-				uchar c0 = cData[ 0 ][ x ];
-				uchar c1 = cData[ 1 ][ x ];
-				uchar c2 = cData[ 2 ][ x ];
-				uchar a11 = vData[ 0 ][ x ] + GIF_EPS_8UC;
-				uchar a12 = vData[ 1 ][ x ];
-				uchar a13 = vData[ 2 ][ x ];
-				uchar a21 = vData[ 1 ][ x ];
-				uchar a22 = vData[ 3 ][ x ] + GIF_EPS_8UC;
-				uchar a23 = vData[ 4 ][ x ];
-				uchar a31 = vData[ 2 ][ x ];
-				uchar a32 = vData[ 4 ][ x ];
-				uchar a33 = vData[ 5 ][ x ] + GIF_EPS_8UC;
-				uchar DET = a11 * ( a33 * a22 - a32 * a23 ) -
-					a21 * ( a33 * a12 - a32 * a13 ) +
-					a31 * ( a23 * a12 - a22 * a13 );
-				DET = DET ? 1 / DET : UCHAR_MAX;
-				aData[ 0 ][ x ] = DET * (
-					c0 * ( a33 * a22 - a32 * a23 ) +
-					c1 * ( a31 * a23 - a33 * a21 ) +
-					c2 * ( a32 * a21 - a31 * a22 )
-					);
-				aData[ 1 ][ x ] = DET * (
-					c0 * ( a32 * a13 - a33 * a12 ) +
-					c1 * ( a33 * a11 - a31 * a13 ) +
-					c2 * ( a31 * a12 - a32 * a11 )
-					);
-				aData[ 2 ][ x ] = DET * (
-					c0 * ( a23 * a12 - a22 * a13 ) +
-					c1 * ( a21 * a13 - a23 * a11 ) +
-					c2 * ( a22 * a11 - a21 * a12 )
-					);
-			}
+	for( int y = 0; y < H; y ++ ) {
+		float* vData[ 6 ];
+		for( int v = 0; v < 6; v ++ ) {
+			vData[ v ] = ( float* ) var_I[ v ].ptr<float>( y );
 		}
-    }
-	else if(rgb[0].type() == CV_32F)
-	{
-		for( int y = 0; y < H; y ++ ) {
-			float* vData[ 6 ];
-			for( int v = 0; v < 6; v ++ ) {
-				vData[ v ] = ( float* ) var_I[ v ].ptr<float>( y );
-			}
-			float* cData[ 3 ];
-			for( int c = 0; c < 3; c ++ ) {
-				cData[ c ] = ( float * ) cov_Ip[ c ].ptr<float>( y );
-			}
-			float* aData[ 3 ];
-			for( int c = 0; c < 3; c++  ) {
-				aData[ c ] = ( float* ) a[ c ].ptr<float>( y );
-			}
-			for( int x = 0; x < W; x ++ )
-			{
-				float c0 = cData[ 0 ][ x ];
-				float c1 = cData[ 1 ][ x ];
-				float c2 = cData[ 2 ][ x ];
-				float a11 = vData[ 0 ][ x ] + GIF_EPS_32F;
-				float a12 = vData[ 1 ][ x ];
-				float a13 = vData[ 2 ][ x ];
-				float a21 = vData[ 1 ][ x ];
-				float a22 = vData[ 3 ][ x ] + GIF_EPS_32F;
-				float a23 = vData[ 4 ][ x ];
-				float a31 = vData[ 2 ][ x ];
-				float a32 = vData[ 4 ][ x ];
-				float a33 = vData[ 5 ][ x ] + GIF_EPS_32F;
-				float DET = a11 * ( a33 * a22 - a32 * a23 ) -
-					a21 * ( a33 * a12 - a32 * a13 ) +
-					a31 * ( a23 * a12 - a22 * a13 );
-				DET = 1 / DET;
-				aData[ 0 ][ x ] = DET * (
-					c0 * ( a33 * a22 - a32 * a23 ) +
-					c1 * ( a31 * a23 - a33 * a21 ) +
-					c2 * ( a32 * a21 - a31 * a22 )
-					);
-				aData[ 1 ][ x ] = DET * (
-					c0 * ( a32 * a13 - a33 * a12 ) +
-					c1 * ( a33 * a11 - a31 * a13 ) +
-					c2 * ( a31 * a12 - a32 * a11 )
-					);
-				aData[ 2 ][ x ] = DET * (
-					c0 * ( a23 * a12 - a22 * a13 ) +
-					c1 * ( a21 * a13 - a23 * a11 ) +
-					c2 * ( a22 * a11 - a21 * a12 )
-					);
-			}
+		float* cData[ 3 ];
+		for( int c = 0; c < 3; c ++ ) {
+			cData[ c ] = ( float * ) cov_Ip[ c ].ptr<float>( y );
+		}
+		float* aData[ 3 ];
+		for( int c = 0; c < 3; c++  ) {
+			aData[ c ] = ( float* ) a[ c ].ptr<float>( y );
+		}
+		for( int x = 0; x < W; x ++ )
+		{
+			float c0 = cData[ 0 ][ x ];
+			float c1 = cData[ 1 ][ x ];
+			float c2 = cData[ 2 ][ x ];
+			float a11 = vData[ 0 ][ x ] + GIF_EPS_32F;
+			float a12 = vData[ 1 ][ x ];
+			float a13 = vData[ 2 ][ x ];
+			float a21 = vData[ 1 ][ x ];
+			float a22 = vData[ 3 ][ x ] + GIF_EPS_32F;
+			float a23 = vData[ 4 ][ x ];
+			float a31 = vData[ 2 ][ x ];
+			float a32 = vData[ 4 ][ x ];
+			float a33 = vData[ 5 ][ x ] + GIF_EPS_32F;
+			float DET = a11 * ( a33 * a22 - a32 * a23 ) -
+				a21 * ( a33 * a12 - a32 * a13 ) +
+				a31 * ( a23 * a12 - a22 * a13 );
+			DET = 1 / DET;
+			aData[ 0 ][ x ] = DET * (
+				c0 * ( a33 * a22 - a32 * a23 ) +
+				c1 * ( a31 * a23 - a33 * a21 ) +
+				c2 * ( a32 * a21 - a31 * a22 )
+				);
+			aData[ 1 ][ x ] = DET * (
+				c0 * ( a32 * a13 - a33 * a12 ) +
+				c1 * ( a33 * a11 - a31 * a13 ) +
+				c2 * ( a31 * a12 - a32 * a11 )
+				);
+			aData[ 2 ][ x ] = DET * (
+				c0 * ( a23 * a12 - a22 * a13 ) +
+				c1 * ( a21 * a13 - a23 * a11 ) +
+				c2 * ( a22 * a11 - a21 * a12 )
+				);
 		}
 	}
+
 
     //Mat b = mean_p.clone();
     for( int c = 0; c < 3; c ++ ) {

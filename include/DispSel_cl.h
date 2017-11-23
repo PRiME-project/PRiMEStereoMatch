@@ -7,14 +7,14 @@
    All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
-#include "common.h"
+#include "oclUtil.h"
 
 #define FILE_DS_PROG BASE_DIR "assets/dispsel.cl"
 
 class DispSel_cl
 {
 public:
-	int imgType;
+//	int imgType;
 	const int maxDis;
 
     //OpenCL Variables

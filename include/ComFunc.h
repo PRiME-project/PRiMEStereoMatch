@@ -19,6 +19,7 @@
 #include <math.h>
 #include <ctime>
 #include <chrono>
+#include <thread>
 
 //POSIX Threads
 #include <pthread.h>

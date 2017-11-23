@@ -22,8 +22,7 @@ public:
 	int preprocess(const Mat& Img, Mat* Img_rgb, Mat* mean_Img, Mat* var_Img);
 	void filterCV(const Mat* Img_rgb, const Mat* mean_Img, const Mat* var_Img, Mat& costVol);
 };
+Mat GuidedFilter_cv(const Mat* rgb, const Mat* mean_I, const Mat* var_I, const Mat& p);
 
 //CVF thread data struct
 struct filterCV_TD{Mat* Img_rgb; Mat* mean_Img; Mat* var_Img; Mat* costVol;};
-
-Mat GuidedFilter_cv(const Mat* rgb, const Mat* mean_I, const Mat* var_I, const Mat& p);

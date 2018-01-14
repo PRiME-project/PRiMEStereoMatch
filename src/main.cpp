@@ -29,7 +29,7 @@ int main(int argc, char** argv)
     //#############################################################################################################
 	nOpenCLDev = openCLdevicepoll();
 #ifdef DISPLAY
-	namedWindow("InputOutput", CV_WINDOW_NORMAL);
+	namedWindow("InputOutput", CV_WINDOW_AUTOSIZE);
 #endif
 	//#############################################################################################################
     //# Start Application Processes
@@ -38,8 +38,8 @@ int main(int argc, char** argv)
 	sm = new StereoMatch(argc, argv, nOpenCLDev);
 	//printf("MAIN: Press h for help text.\n\n");
 
-	std::thread de_thread;
-   // de_thread = std::thread(&StereoMatch::compute, sm, std::ref(de_time));
+	//std::thread de_thread;
+	//de_thread = std::thread(&StereoMatch::compute, sm, std::ref(de_time));
     //de_thread = std::thread(&getDepthMap);
 
 #ifdef DISPLAY
@@ -55,8 +55,7 @@ int main(int argc, char** argv)
     //#############################################################################################################
 	end_de = true;
 	printf("MAIN: Quit signal sent\n");
-    //pthread_join(thread_de, &status);
-    de_thread.join();
+    //de_thread.join();
 
 	delete sm;
 	printf("MAIN: Disparity Estimation Halted\n");

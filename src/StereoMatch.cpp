@@ -29,8 +29,8 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	num_threads = MIN_CPU_THREADS;
 	//num_threads = MAX_CPU_THREADS;
 	gotOCLDev = gotOpenCLDev;
-	MatchingAlgorithm = STEREO_SGBM;
-	//MatchingAlgorithm = STEREO_GIF;
+	//MatchingAlgorithm = STEREO_SGBM;
+	MatchingAlgorithm = STEREO_GIF;
 	error_threshold = 4 * (256/maxDis);
 	left_img_filename = string(BASE_DIR) + string("data/teddy2.png");
 	right_img_filename = string(BASE_DIR) + string("data/teddy6.png");
@@ -65,7 +65,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 			exit(1);
 		}
 		else{
-			std::cout << "Loaded " << left_img_filename << std::endl;
+			std::cout << "Loaded Left: " << left_img_filename << std::endl;
 		}
 		rFrame = imread(right_img_filename, CV_LOAD_IMAGE_COLOR);
 		if(lFrame.empty())
@@ -75,7 +75,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 			exit(1);
 		}
 		else{
-			std::cout << "Loaded " << right_img_filename << std::endl;
+			std::cout << "Loaded Right: " << right_img_filename << std::endl;
 		}
 		gtFrameImg = imread(gt_img_filename, CV_LOAD_IMAGE_COLOR);
 		if(rFrame.empty()){
@@ -83,7 +83,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 			std::cout << "Exiting" << std::endl;
 			exit(1);
 		}else{
-			std::cout << "Loaded " << gt_img_filename << std::endl;
+			std::cout << "Loaded Ground Truth: " << gt_img_filename << std::endl;
 		}
 		//Pre-process grund truth image data
 		cvtColor(gtFrameImg, gtFrame, CV_RGB2GRAY);
@@ -195,7 +195,7 @@ float get_rt(){
 //#############################################################################################################
 void StereoMatch::compute(float& de_time_ms)
 {
-//	std::cout << "Computing Depth Map" << std::endl;
+	std::cout << "Computing Depth Map" << std::endl;
 
 	float start_time = get_rt();
 	//#############################################################################################################

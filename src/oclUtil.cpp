@@ -114,7 +114,7 @@ int openCLdevicepoll(void)
             // print workgroup sizes
             clGetDeviceInfo(devices[j], CL_DEVICE_GLOBAL_MEM_SIZE,
                     sizeof(globalMemSize), &globalMemSize, NULL);
-            printf(" %d.%d Max Global Memory Size: %lu\n", j+1, 7, globalMemSize);
+            printf(" %d.%d Max Global Memory Size: %llu\n", j+1, 7, globalMemSize);
 
             // image support?
             clGetDeviceInfo(devices[j], CL_DEVICE_IMAGE_SUPPORT,
@@ -313,11 +313,11 @@ bool createContext(cl_context* context)
     /* Get a context with a device from the platform found above. */
     cl_context_properties contextProperties [] = {CL_CONTEXT_PLATFORM, (cl_context_properties)firstPlatformID, 0};
     if(devices[NUM_OF_DEVICE_TYPES-1].dcount > 0) //choose Accelerator as first preference if present
-		*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_ACCELERATOR, NULL, NULL, &errorNumber);
+		*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_ACCELERATOR, context_notify, NULL, &errorNumber);
     else if(devices[NUM_OF_DEVICE_TYPES-2].dcount > 0) //choose GPU as second preference if present
-		*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_GPU, NULL, NULL, &errorNumber);
+		*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_GPU, context_notify, NULL, &errorNumber);
 	else //choose CPU as last preference
-		*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_CPU, NULL, NULL, &errorNumber);
+		*context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_CPU, context_notify, NULL, &errorNumber);
     if (!checkSuccess(errorNumber))
     {
         std::cerr << "Creating an OpenCL context failed. " << __FILE__ << ":"<< __LINE__ << std::endl;
@@ -720,4 +720,9 @@ bool isExtensionSupported(cl_device_id device, std::string extension)
     delete extensionsString;
 
     return returnResult;
+}
+
+void context_notify(const char *notify_message, const void *private_info, size_t cb, void *user_data)
+{
+          printf("OpenCL Notification:\n\t%s\n", notify_message);
 }

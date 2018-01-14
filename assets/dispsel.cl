@@ -6,7 +6,10 @@
    Copyright (c) 2016 Charlie Leech, University of Southampton.
    All rights reserved.
   ---------------------------------------------------------------------------*/
-
+  
+#define UCHAR_MAX 	255
+#define USHRT_MAX 	65535
+#define FLT_MAX 	0x1.fffffep127f
 /**
  * \brief Disparity Selection kernel function.
  * \param[in] lcostVol - Calculated pixel cost for Cost Volume.
@@ -89,32 +92,32 @@ __kernel void dispsel_float(__global const float* lcostVol,
 	int costVol_offset;
 
     /* *************** Left Disparity Selection ********************** */
-	float minCost = 1e5f;
+	float minCost = FLT_MAX;
 	char minDis = 0;
 
 	for(int d = 1; d < maxDis; d++)
 	{
-    	float costData = *(lcostVol + ((d * height) + y) * width + x);
+    	float costData = lcostVol[((d * height) + y) * width + x];
 		if(costData < minCost)
 		{
 			minCost = costData;
 			minDis = d;
 		}
 	}
-	*(ldispMap + dispMap_offset + x) = minDis;
+	ldispMap[dispMap_offset + x] = minDis;
 
 	/* *************** Right Disparity Selection ********************** */
-	minCost = 1e5f;
+	minCost = FLT_MAX;
 	minDis = 0;
 
 	for(int d = 1; d < maxDis; d++)
 	{
-    	float costData = *(rcostVol + ((d * height) + y) * width + x);
+    	float costData = rcostVol[((d * height) + y) * width + x];
 		if(costData < minCost)
 		{
 			minCost = costData;
 			minDis = d;
 		}
 	}
-	*(rdispMap + dispMap_offset + x) = minDis;
+	rdispMap[dispMap_offset + x] = minDis;
 }

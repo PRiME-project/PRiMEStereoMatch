@@ -50,6 +50,7 @@ DispSel_cl::DispSel_cl(cl_context* context, cl_command_queue* commandQueue, cl_d
     height = (cl_int)I->rows;
 
 	//OpenCL Buffers in accending size order
+	//bufferSize_2D_8UC1 = width * height * sizeof(cl_float);
 	bufferSize_2D_8UC1 = width * height * sizeof(cl_char);
 
     /* An event to associate with the Kernel. Allows us to retreive profiling information later. */
@@ -67,6 +68,11 @@ DispSel_cl::~DispSel_cl(void)
 
 int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
 {
+
+	namedWindow("dispPreview", CV_WINDOW_AUTOSIZE);
+	imshow("dispPreview", ldispMap);
+	waitKey(0);
+
 	int arg_num = 0;
     /* Setup the kernel arguments. */
     bool setKernelArgumentsSuccess = true;
@@ -109,12 +115,14 @@ int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
         cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
         return 1;
     }
+	imshow("dispPreview", ldispMap);
+	waitKey(0);
 
 	/* Map the output memory objects to host side pointers. */
 	bool EnqueueMapBufferSuccess = true;
-	cl_char *clbuffer_lDispMap = (cl_char*)clEnqueueMapBuffer(*commandQueue, memoryObjects[DS_LDM], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D_8UC1, 0, NULL, NULL, &errorNumber);
+	cl_char *clbuffer_lDispMap = (cl_char*)clEnqueueMapBuffer(*commandQueue, memoryObjects[DS_LDM], CL_TRUE, CL_MAP_READ, 0, bufferSize_2D_8UC1, 0, NULL, NULL, &errorNumber);
 	EnqueueMapBufferSuccess &= checkSuccess(errorNumber);
-	cl_char *clbuffer_rDispMap = (cl_char*)clEnqueueMapBuffer(*commandQueue, memoryObjects[DS_RDM], CL_TRUE, CL_MAP_WRITE | CL_MAP_READ, 0, bufferSize_2D_8UC1, 0, NULL, NULL, &errorNumber);
+	cl_char *clbuffer_rDispMap = (cl_char*)clEnqueueMapBuffer(*commandQueue, memoryObjects[DS_RDM], CL_TRUE, CL_MAP_READ, 0, bufferSize_2D_8UC1, 0, NULL, NULL, &errorNumber);
 	EnqueueMapBufferSuccess &= checkSuccess(errorNumber);
 	if (!EnqueueMapBufferSuccess)
 	{
@@ -124,5 +132,9 @@ int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
 
 	memcpy(ldispMap.data, clbuffer_lDispMap, bufferSize_2D_8UC1);
 	memcpy(rdispMap.data, clbuffer_rDispMap, bufferSize_2D_8UC1);
-    return 0;
+
+	imshow("dispPreview", ldispMap);
+	waitKey(0);
+
+//    return 0;
 }

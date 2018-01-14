@@ -149,4 +149,6 @@ bool createProgram(cl_context context, cl_device_id device, std::string filename
  */
 bool isExtensionSupported(cl_device_id device, std::string extension);
 
+void context_notify(const char *notify_message, const void *private_info, size_t cb, void *user_data);
+
 #endif

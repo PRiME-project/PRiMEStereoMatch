@@ -9,20 +9,19 @@
 #include "StereoMatch.h"
 #define DEBUG_APP
 
-//#############################################################################################################
+//#############################################################################
 //# SM Preprocessing that we don't want to repeat
-//#############################################################################################################
+//#############################################################################
 StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	end_de(false)
 {
     printf("Disparity Estimation for Depth Analysis in Stereo Vision Applications.\n");
     printf("Preprocessing for Stereo Matching.\n");
 
-	//#############################################################################################################
+	//#########################################################################
     //# Setup - check input arguments
-    //#############################################################################################################
+    //#########################################################################
 	maxDis = 64;
-//	imgType = CV_8U;
 	de_mode = OCL_DE;
 	//de_mode = OCV_DE;
 	media_mode = DE_IMAGE;
@@ -35,13 +34,21 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	left_img_filename = string(BASE_DIR) + string("data/teddy2.png");
 	right_img_filename = string(BASE_DIR) + string("data/teddy6.png");
 	gt_img_filename = string(BASE_DIR) + string("data/teddy2_gt.png");
+	
+	left_img_filename = string(BASE_DIR) + string("data/tsukuba3.ppm");
+	right_img_filename = string(BASE_DIR) + string("data/tsukuba5.ppm");
+	gt_img_filename = string(BASE_DIR) + string("data/tsukuba3_gt.pgm");
+	
+	left_img_filename = string(BASE_DIR) + string("data/teddy2.png");
+	right_img_filename = string(BASE_DIR) + string("data/teddy6.png");
+	gt_img_filename = string(BASE_DIR) + string("data/teddy2_gt.png");
 
 	//inputArgParser(argc, argv);
 
 	if(media_mode == DE_VIDEO){
-		//#############################################################################################################
+		//#####################################################################
 		//# Video Loading
-		//#############################################################################################################
+		//#####################################################################
         cap = VideoCapture(0);
 		if (cap.isOpened()){
 			printf("Opened the VideoCapture device.\n");
@@ -53,9 +60,9 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 		}
 	}
 	else{
-		//#############################################################################################################
+		//#####################################################################
 		//# Image Loading
-		//#############################################################################################################
+		//#####################################################################
         std::cout << "Loading Images...\n" << std::endl;
 		lFrame = imread(left_img_filename, CV_LOAD_IMAGE_COLOR);
 		if(lFrame.empty())
@@ -94,9 +101,9 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	}
 
 #ifdef DISPLAY
-	//#############################################################################################################
+	//#########################################################################
 	//# Display Setup
-	//#############################################################################################################
+	//#########################################################################
 	//Set up display window to hold both input images and both output disparity maps
 	resizeWindow("InputOutput", lFrame.cols*3, lFrame.rows*2); //Rectified image size - not camera resolution size
 #endif
@@ -117,16 +124,16 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 #ifdef DISPLAY
 	imshow("InputOutput", display_container);
 #endif
-	//#############################################################################################################
+	//#########################################################################
     //# SGBM Mode Setup
-    //#############################################################################################################
+    //#########################################################################
 	setupOpenCVSGBM(lFrame.channels(), maxDis);
 	imgDisparity16S = Mat(lFrame.rows, lFrame.cols, CV_16S);
 	blankDispMap = Mat(rFrame.rows, rFrame.cols, CV_8UC3);
 
-	//#############################################################################################################
+	//#########################################################################
     //# GIF Mode Setup
-    //#############################################################################################################
+    //#########################################################################
 //	if(imgType == CV_32F){
 		// Frame Preprocessing
 		cvtColor( lFrame, lFrame, CV_BGR2RGB );
@@ -137,9 +144,9 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 //	}
 	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
 
-	//#############################################################################################################
+	//#########################################################################
 	//# End of Preprocessing (that we don't want to repeat)
-    //#############################################################################################################
+    //#########################################################################
 	//printf("End of Preprocessing\n");
 
     printf("StereoMatch Application Initialised\n");
@@ -161,46 +168,17 @@ float get_rt(){
 	return (float)(realtime.tv_sec*1000000+realtime.tv_nsec/1000);
 }
 
-//int StereoMatch::updateFrameType(void)
-//{
-//	if((lFrame.type() & CV_MAT_DEPTH_MASK) == imgType) && media_mode == DE_IMAGE)
-//		return 0; //return if using images and type is the same as the type before the previous frame
-//	}
-//	printf("Updating Frame type\n");
-//	printf("STEREO_GIF Image Type = %s\n", imgType ? "CV_32F" : "CV_8U");
-//
-//	// frames need converting every time for video
-//	// or when imgType changes in STEREO_GIF mode
-//	if(imgType == CV_32F)
-//	{
-//		cvtColor(lFrame, lFrame, CV_BGR2RGB);
-//		cvtColor(rFrame, rFrame, CV_BGR2RGB);
-//		lFrame.convertTo(lFrame, CV_32F, 1 / 255.0f);
-//		rFrame.convertTo(rFrame, CV_32F,  1 / 255.0f);
-//	}
-//	else if(imgType == CV_8U)
-//	{
-//		lFrame.convertTo(lFrame, CV_8U, 255);
-//		rFrame.convertTo(rFrame, CV_8U, 255);
-//	}
-//
-//	//delete SMDE;
-//	//printf("Re-constructing SMDE Object.\n");
-//	//SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
-//	return 0;
-//}
-
-//#############################################################################################################
+//#############################################################################
 //# Complete GIF stereo matching process
-//#############################################################################################################
+//#############################################################################
 void StereoMatch::compute(float& de_time_ms)
 {
 	std::cout << "Computing Depth Map" << std::endl;
 
 	float start_time = get_rt();
-	//#############################################################################################################
+	//#########################################################################
 	//# Frame Capture and Preprocessing
-	//#############################################################################################################
+	//#########################################################################
 	if(media_mode == DE_VIDEO)
 	{
 		for(int drop=0;drop<30;drop++)
@@ -232,9 +210,9 @@ void StereoMatch::compute(float& de_time_ms)
 		rFrame.copyTo(rightInputImg);
 	}
 
-	//#############################################################################################################
+	//#########################################################################
 	//# Start of Disparity Map Creation
-	//#############################################################################################################
+	//#########################################################################
 	if(MatchingAlgorithm == STEREO_SGBM)
 	{
 		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_8U){
@@ -366,9 +344,9 @@ void StereoMatch::compute(float& de_time_ms)
 	return;
 }
 
-//#############################################################################################################
+//#############################################################################
 //# Calibration and Paramter loading for stereo camera setup
-//#############################################################################################################
+//#############################################################################
 int StereoMatch::stereoCameraSetup(void)
 {
 	if(cap.get(CAP_PROP_FRAME_HEIGHT) != 376){
@@ -416,9 +394,9 @@ int StereoMatch::stereoCameraSetup(void)
 		rFrame.copyTo(rightInputImg);
 		imshow("InputOutput", display_container);
 
-		//#############################################################################################################
+		//###########################################################################################################
 		//# Camera Calibration - find intrinsic & extrinsic parameters from first principles (contains rectification)
-		//#############################################################################################################
+		//###########################################################################################################
 		if(recaptureChessboards)
 		{
 			//Capture a series of calibration images from the camera.
@@ -432,9 +410,9 @@ int StereoMatch::stereoCameraSetup(void)
 	}
 	else
 	{
-		//#############################################################################################################
+		//#####################################################################
 		//# Camera Setup - load existing intrinsic & extrinsic parameters
-		//#############################################################################################################
+		//#####################################################################
 		string intrinsic_filename = FILE_INTRINSICS;
 		string extrinsic_filename = FILE_EXTRINSICS;
 
@@ -497,9 +475,9 @@ int StereoMatch::stereoCameraSetup(void)
 	return 0;
 }
 
-//#############################################################################################################
+//#############################################################################
 //# Chessboard image capture for camera calibration
-//#############################################################################################################
+//#############################################################################
 int StereoMatch::captureChessboards(void)
 {
     int img_num = 0;
@@ -627,9 +605,9 @@ int StereoMatch::inputArgParser(int argc, char *argv[])
 	return 0;
 }
 
-//#############################################################################################################
+//#############################################################################################
 //# Setup for OpenCV implementation of Stereo matching using Semi-Global Block Matching (SGBM)
-//#############################################################################################################
+//#############################################################################################
 int StereoMatch::setupOpenCVSGBM(int channels, int ndisparities)
 {
 	int mindisparity = 0;

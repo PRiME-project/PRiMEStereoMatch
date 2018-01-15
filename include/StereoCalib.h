@@ -50,7 +50,7 @@
 struct StereoCameraProperties{
     Mat cameraMatrix[2];
     Mat distCoeffs[2];
-	Mat R, T, E, F;
+	Mat R, T, E, F; //rotation matrix, translation vector, essential matrix E=[T*R], fundamental matrix
 	Mat R1, R2, P1, P2, Q;
 	Size imgSize;
     Rect roi[2]; //region of interest

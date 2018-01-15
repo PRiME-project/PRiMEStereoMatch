@@ -7,7 +7,6 @@
    All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "StereoMatch.h"
-#define DEBUG_APP
 
 //#############################################################################
 //# SM Preprocessing that we don't want to repeat
@@ -28,17 +27,17 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	//num_threads = MIN_CPU_THREADS;
 	num_threads = MAX_CPU_THREADS;
 	gotOCLDev = gotOpenCLDev;
-	MatchingAlgorithm = STEREO_SGBM;
-	//MatchingAlgorithm = STEREO_GIF;
+	//MatchingAlgorithm = STEREO_SGBM;
+	MatchingAlgorithm = STEREO_GIF;
 	error_threshold = 4 * (256/maxDis);
 	left_img_filename = string(BASE_DIR) + string("data/teddy2.png");
 	right_img_filename = string(BASE_DIR) + string("data/teddy6.png");
 	gt_img_filename = string(BASE_DIR) + string("data/teddy2_gt.png");
-	
+
 	left_img_filename = string(BASE_DIR) + string("data/tsukuba3.ppm");
 	right_img_filename = string(BASE_DIR) + string("data/tsukuba5.ppm");
 	gt_img_filename = string(BASE_DIR) + string("data/tsukuba3_gt.pgm");
-	
+
 	left_img_filename = string(BASE_DIR) + string("data/teddy2.png");
 	right_img_filename = string(BASE_DIR) + string("data/teddy6.png");
 	gt_img_filename = string(BASE_DIR) + string("data/teddy2_gt.png");
@@ -137,13 +136,14 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
     //#########################################################################
 //	if(imgType == CV_32F){
 		// Frame Preprocessing
-		cvtColor( lFrame, lFrame, CV_BGR2RGB );
-		cvtColor( rFrame, rFrame, CV_BGR2RGB );
+    cvtColor( lFrame, lFrame, CV_BGR2RGB );
+    cvtColor( rFrame, rFrame, CV_BGR2RGB );
 
-		//lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
-		//rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
+    lFrame.convertTo( lFrame_tmp, CV_32F, 1 / 255.0f );
+    rFrame.convertTo( rFrame_tmp, CV_32F,  1 / 255.0f );
 //	}
-	SMDE = new DispEst(lFrame.getMat(ACCESS_READ), rFrame.getMat(ACCESS_READ), maxDis, num_threads, gotOCLDev);
+
+	SMDE = new DispEst(lFrame_tmp.getMat(ACCESS_READ), rFrame_tmp.getMat(ACCESS_READ), maxDis, num_threads, gotOCLDev);
 
 	//#########################################################################
 	//# End of Preprocessing (that we don't want to repeat)
@@ -151,10 +151,6 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	//printf("End of Preprocessing\n");
 
     printf("StereoMatch Application Initialised\n");
-    
-#ifdef DISPLAY
-	//waitKey(0);
-#endif
 	return;
 }
 
@@ -178,14 +174,19 @@ float get_rt(){
 //#############################################################################
 void StereoMatch::compute(float& de_time_ms)
 {
+#ifdef DEBUG_APP
 	std::cout << "Computing Depth Map" << std::endl;
+#endif // DEBUG_APP
 
 	float start_time = get_rt();
 	//#########################################################################
-	//# Frame Capture and Preprocessing
+	//# Frame Capture and Preprocessing (that we have to repeat)
 	//#########################################################################
 	if(media_mode == DE_VIDEO)
 	{
+#ifdef DEBUG_APP
+        std::cout << "media_mode == DE_VIDEO" << std::endl;
+#endif // DEBUG_APP
 		for(int drop=0;drop<30;drop++)
 			cap >> vFrame; //capture a frame from the camera
 		if(vFrame.empty())
@@ -214,22 +215,26 @@ void StereoMatch::compute(float& de_time_ms)
 		lFrame.copyTo(leftInputImg);
 		rFrame.copyTo(rightInputImg);
 	}
+#ifdef DEBUG_APP
+	else{
+        std::cout << "media_mode == DE_IMAGE" << std::endl;
+	}
+#endif // DEBUG_APP
 
 	//#########################################################################
 	//# Start of Disparity Map Creation
 	//#########################################################################
 	if(MatchingAlgorithm == STEREO_SGBM)
 	{
+#ifdef DEBUG_APP
 		printf("MatchingAlgorithm == STEREO_SGBM\n");
+#endif // DEBUG_APP
 		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_8U){
-			printf("lFrame type != CV_8U\n");
-			lFrame.convertTo(lFrame, CV_8U, 255);
-			rFrame.convertTo(rFrame, CV_8U, 255);
-			printf("lFrame type != CV_8U\n");
+			lFrame.convertTo(lFrame_tmp, CV_8U, 255);
+			rFrame.convertTo(rFrame_tmp, CV_8U, 255);
 		}
-		printf("MatchingAlgorithm == STEREO_SGBM\n");
 		ssgbm->setMinDisparity(0);
-		ssgbm->compute(lFrame, rFrame, imgDisparity16S); //Compute the disparity map
+		ssgbm->compute(lFrame_tmp, rFrame_tmp, imgDisparity16S); //Compute the disparity map
 		minMaxLoc(imgDisparity16S, &minVal, &maxVal); //Check its extreme values
 		imgDisparity16S.convertTo(lDispMap, CV_8U, 255/(maxVal - minVal));
 		//Load the disparity map to the display
@@ -238,19 +243,22 @@ void StereoMatch::compute(float& de_time_ms)
 	}
 	else if(MatchingAlgorithm == STEREO_GIF)
 	{
+#ifdef DEBUG_APP
 		printf("MatchingAlgorithm == STEREO_GIF\n");
-//		updateFrameType();
+#endif // DEBUG_APP
 		cvtColor(lFrame, lFrame, CV_BGR2RGB);
 		cvtColor(rFrame, rFrame, CV_BGR2RGB);
-		lFrame.convertTo(lFrame, CV_32F, 1 / 255.0f);
-		rFrame.convertTo(rFrame, CV_32F,  1 / 255.0f);
+		lFrame.convertTo(lFrame_tmp, CV_32F, 1 / 255.0f);
+		rFrame.convertTo(rFrame_tmp, CV_32F,  1 / 255.0f);
 
-		SMDE->lImg = lFrame.getMat(ACCESS_READ);
-		SMDE->rImg = rFrame.getMat(ACCESS_READ);
+		SMDE->lImg = lFrame_tmp.getMat(ACCESS_READ);
+		SMDE->rImg = rFrame_tmp.getMat(ACCESS_READ);
 		SMDE->threads = num_threads;
 
 		// ******** Disparity Estimation Code ******** //
-//		std::cout <<  "Disparity Estimation Started..." << std::endl;
+#ifdef DEBUG_APP
+		std::cout <<  "Disparity Estimation Started..." << std::endl;
+#endif // DEBUG_APP
 
 		if(de_mode == OCV_DE || !gotOCLDev)
 		{
@@ -290,30 +298,30 @@ void StereoMatch::compute(float& de_time_ms)
 		}
 
 		// ******** Show Disparity Map  ******** //
-		//applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET); // *4 for conversion from disparty range (0-64) to RGB char range (0-255)
+		//cv::applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET); // *4 for conversion from disparty range (0-64) to RGB char range (0-255)
 		//lDispMap.copyTo(leftDispMap); //copy to leftDispMap display rectangle
-		minMaxLoc(SMDE->lDisMap, &minVal, &maxVal);
+		cv::minMaxLoc(SMDE->lDisMap, &minVal, &maxVal);
 		SMDE->lDisMap.convertTo(lDispMap, CV_8U, 4);//255/(maxVal - minVal));
-		cvtColor(lDispMap, leftDispMap, CV_GRAY2RGB);
+		cv::cvtColor(lDispMap, leftDispMap, CV_GRAY2RGB);
 
-		//applyColorMap( SMDE->rDisMap*4, rDispMap, COLORMAP_JET);
+		//cv::applyColorMap( SMDE->rDisMap*4, rDispMap, COLORMAP_JET);
 		//rDispMap.copyTo(rightDispMap); //copy to rightDispMap display rectangle
 		SMDE->rDisMap.convertTo(rDispMap, CV_8U, 255/(maxVal - minVal));
-		cvtColor(rDispMap, rightDispMap, CV_GRAY2RGB);
+		cv::cvtColor(rDispMap, rightDispMap, CV_GRAY2RGB);
 		// ******** Show Disparity Map  ******** //
 
 #ifdef DEBUG_APP
-		printf("CVC Time: %.2f ms\n",cvc_time/1000);
-		printf("CVF Time: %.2f ms\n",cvf_time/1000);
-		printf("DispSel Time: %.2f ms\n",dispsel_time/1000);
-		printf("PP Time: %.2f ms\n",pp_time/1000);
+		printf("CVC Time:\t | %8.2f ms\n",cvc_time/1000);
+		printf("CVF Time:\t | %8.2f ms\n",cvf_time/1000);
+		printf("DispSel Time:\t | %8.2f ms\n",dispsel_time/1000);
+		printf("PP Time:\t | %8.2f ms\n",pp_time/1000);
 #endif
 	}
 	de_time_ms = (get_rt() - start_time)/1000;
 	printf("DE Time: %.2f ms\n", de_time_ms);
 #ifdef DEBUG_APP
-	imwrite("leftDisparityMap.png", leftDispMap);
-	imwrite("rightDisparityMap.png", rightDispMap);
+	cv::imwrite("leftDisparityMap.png", leftDispMap.getMat(ACCESS_READ));
+	cv::imwrite("rightDisparityMap.png", rightDispMap.getMat(ACCESS_READ));
 #endif
 	if(media_mode == DE_IMAGE){
 		//Check pixel errors against ground truth depth map here.
@@ -324,7 +332,7 @@ void StereoMatch::compute(float& de_time_ms)
 		Mat eDispMap_Mat = eDispMap.getMat(ACCESS_READ);
 		Mat lDispMap_Mat = lDispMap.getMat(ACCESS_READ);
 		Mat gtFrame_Mat = gtFrame.getMat(ACCESS_READ);
-		
+
 		for(int y = 0; y < gtFrame.rows; y++)
 		{
 			uchar* eData = (uchar*) eDispMap_Mat.ptr<uchar>( y );
@@ -345,7 +353,9 @@ void StereoMatch::compute(float& de_time_ms)
 			}
 		}
 		float num_pixels = gtFrame.cols*gtFrame.rows;
+#ifdef DEBUG_APP
 		printf("%%BP = %.2f%% \t Avg Err = %.2f\n", (float)num_bad_pixels*100/num_pixels, (float)avg_err/num_pixels);
+#endif
 
 		minMaxLoc(eDispMap, &minVal, &maxVal);
 		//eDispMap.convertTo(eDispMap, CV_8U, 255/(maxVal - minVal));

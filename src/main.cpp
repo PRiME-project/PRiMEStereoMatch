@@ -38,9 +38,9 @@ int main(int argc, char** argv)
 	sm = new StereoMatch(argc, argv, nOpenCLDev);
 	//printf("MAIN: Press h for help text.\n\n");
 
-	//std::thread de_thread;
+	std::thread de_thread;
 	//de_thread = std::thread(&StereoMatch::compute, sm, std::ref(de_time));
-    //de_thread = std::thread(&getDepthMap);
+    de_thread = std::thread(&getDepthMap);
 
 #ifdef DISPLAY
 	//User interface function

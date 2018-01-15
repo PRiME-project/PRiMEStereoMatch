@@ -159,7 +159,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
     cameraMatrix[1] = Mat::eye(3, 3, CV_64F);
     Mat R, T, E, F;
 
-    double rms = stereoCalibrate(objectPoints, imagePoints[0], imagePoints[1],
+    double rms = cv::stereoCalibrate(objectPoints, imagePoints[0], imagePoints[1],
                     cameraMatrix[0], distCoeffs[0],
                     cameraMatrix[1], distCoeffs[1],
                     imageSize, R, T, E, F,

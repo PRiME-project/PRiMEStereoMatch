@@ -11,8 +11,6 @@
 DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
     : lImg(l), rImg(r), maxDis(d), threads(t), useOCL(ocl)
 {
-    //printf("Disparity Estimation for Stereo Matching\n" );
-
     hei = lImg.rows;
     wid = lImg.cols;
 
@@ -20,7 +18,7 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 	if(lImg.type() == rImg.type())
 	{
 		//int imgType = (lImg.type() & CV_MAT_DEPTH_MASK);
-		printf("Data type = %d, CV_32F = %d, CV_8U = %d\n", (lImg.type() & CV_MAT_DEPTH_MASK), CV_32F, CV_8U);
+//		printf("Data type = %d, CV_32F = %d, CV_8U = %d\n", (lImg.type() & CV_MAT_DEPTH_MASK), CV_32F, CV_8U);
 	}
 	else
 	{

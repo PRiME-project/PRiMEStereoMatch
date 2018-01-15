@@ -16,7 +16,8 @@
 #define DE_VIDEO 1
 #define DE_IMAGE 2
 
-#define DISPLAY
+//#define DISPLAY
+#define DEBUG_APP
 
 class StereoMatch
 {
@@ -26,19 +27,19 @@ public:
 	int gotOCLDev, media_mode;
 	char cap_key;
 
-	string left_img_filename;
-	string right_img_filename;
-	string gt_img_filename;
+	std::string left_img_filename;
+	std::string right_img_filename;
+	std::string gt_img_filename;
 
 	//Display Variables
-	UMat display_container;
-	UMat leftInputImg, rightInputImg;
-	UMat leftDispMap, rightDispMap;
-    UMat gtDispMap, errDispMap;
-    UMat blankDispMap;
+	cv::UMat display_container;
+	cv::UMat leftInputImg, rightInputImg;
+	cv::UMat leftDispMap, rightDispMap;
+    cv::UMat gtDispMap, errDispMap;
+    cv::UMat blankDispMap;
 
 	//local disparity map containers
-    UMat lDispMap, rDispMap, eDispMap;
+    cv::UMat lDispMap, rDispMap, eDispMap;
 
 	//input values
     int maxDis;
@@ -47,23 +48,26 @@ public:
 	int error_threshold;
 
     //stage & process time measurements
-    float cvc_time, cvf_time, dispsel_time, pp_time;
+    double cvc_time, cvf_time, dispsel_time, pp_time;
 
     //Frame Holders & Camera object
-	UMat lFrame, rFrame, vFrame;
+	cv::UMat lFrame, rFrame, vFrame;
+    cv::UMat lFrame_tmp;
+    cv::UMat rFrame_tmp;
+
 	VideoCapture cap;
 	//Image rectification maps
-	UMat mapl[2], mapr[2];
-	Rect cropBox;
-	UMat lFrame_rec, rFrame_rec;
-	UMat gtFrame, gtFrameImg;
+	cv::UMat mapl[2], mapr[2];
+	cv::Rect cropBox;
+	cv::UMat lFrame_rec, rFrame_rec;
+	cv::UMat gtFrame, gtFrameImg;
 
 	//StereoSGBM Variables
-	Ptr<StereoSGBM> ssgbm;
+	cv::Ptr<StereoSGBM> ssgbm;
 	StereoCameraProperties camProps;
-	double minVal; double maxVal;
-	double minVal_gt; double maxVal_gt;
-	UMat imgDisparity16S;
+	double minVal, maxVal;
+	double minVal_gt, maxVal_gt;
+	cv::UMat imgDisparity16S;
 
 	//StereoGIF Variables
 	DispEst* SMDE;

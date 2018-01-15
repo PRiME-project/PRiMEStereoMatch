@@ -28,7 +28,7 @@ int openCLdevicepoll(void)
     cl_uint maxComputeUnits;
     cl_uint maxWorkGroupSize;
     cl_uint maxWorkItemDims;
-    cl_ulong globalMemSize;
+    long long globalMemSize;
     cl_uint imageSupport;
     //cl_device_partition_property *partition_properties;
 

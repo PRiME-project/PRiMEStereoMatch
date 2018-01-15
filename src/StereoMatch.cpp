@@ -25,11 +25,11 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	de_mode = OCL_DE;
 	//de_mode = OCV_DE;
 	media_mode = DE_IMAGE;
-	num_threads = MIN_CPU_THREADS;
-	//num_threads = MAX_CPU_THREADS;
+	//num_threads = MIN_CPU_THREADS;
+	num_threads = MAX_CPU_THREADS;
 	gotOCLDev = gotOpenCLDev;
-	//MatchingAlgorithm = STEREO_SGBM;
-	MatchingAlgorithm = STEREO_GIF;
+	MatchingAlgorithm = STEREO_SGBM;
+	//MatchingAlgorithm = STEREO_GIF;
 	error_threshold = 4 * (256/maxDis);
 	left_img_filename = string(BASE_DIR) + string("data/teddy2.png");
 	right_img_filename = string(BASE_DIR) + string("data/teddy6.png");
@@ -64,7 +64,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 		//# Image Loading
 		//#####################################################################
         std::cout << "Loading Images...\n" << std::endl;
-		lFrame = imread(left_img_filename, CV_LOAD_IMAGE_COLOR);
+		lFrame = imread(left_img_filename).getUMat(ACCESS_READ);
 		if(lFrame.empty())
 		{
 			std::cout << "Failed to read left image \"" << left_img_filename << "\"" << std::endl;
@@ -74,7 +74,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 		else{
 			std::cout << "Loaded Left: " << left_img_filename << std::endl;
 		}
-		rFrame = imread(right_img_filename, CV_LOAD_IMAGE_COLOR);
+		rFrame = imread(right_img_filename).getUMat(ACCESS_READ);
 		if(lFrame.empty())
 		{
 			std::cout << "Failed to read right image \"" << right_img_filename << "\"" << std::endl;
@@ -84,7 +84,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 		else{
 			std::cout << "Loaded Right: " << right_img_filename << std::endl;
 		}
-		gtFrameImg = imread(gt_img_filename, CV_LOAD_IMAGE_COLOR);
+		gtFrameImg = imread(gt_img_filename).getUMat(ACCESS_READ);
 		if(rFrame.empty()){
 			std::cout << "Failed to read ground truth image \"" << gt_img_filename << "\"" << std::endl;
 			std::cout << "Exiting" << std::endl;
@@ -97,7 +97,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 		minMaxLoc(gtFrame, &minVal_gt, &maxVal_gt);
 		gtFrame.convertTo(gtFrame, CV_8U, 255/(maxVal_gt - minVal_gt));
 		//Init error map
-		eDispMap = Mat(lFrame.rows, lFrame.cols, CV_8UC1);
+		eDispMap = UMat(lFrame.rows, lFrame.cols, CV_8UC1);
 	}
 
 #ifdef DISPLAY
@@ -107,13 +107,13 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	//Set up display window to hold both input images and both output disparity maps
 	resizeWindow("InputOutput", lFrame.cols*3, lFrame.rows*2); //Rectified image size - not camera resolution size
 #endif
-	display_container = Mat(lFrame.rows*2, lFrame.cols*3, CV_8UC3);
-	leftInputImg  = Mat(display_container, Rect(0,             0,           lFrame.cols, lFrame.rows)); //Top Left
-	rightInputImg = Mat(display_container, Rect(lFrame.cols,   0,           lFrame.cols, lFrame.rows)); //Top Right
-	leftDispMap   = Mat(display_container, Rect(0,             lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
-	rightDispMap  = Mat(display_container, Rect(lFrame.cols,   lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
-	gtDispMap	  = Mat(display_container, Rect(lFrame.cols*2, 0, 			lFrame.cols, lFrame.rows)); //Top Far Right
-	errDispMap	  = Mat(display_container, Rect(lFrame.cols*2, lFrame.rows,	lFrame.cols, lFrame.rows)); //Bottom Far Right
+	display_container = UMat(lFrame.rows*2, lFrame.cols*3, CV_8UC3);
+	leftInputImg  = UMat(display_container, Rect(0,             0,           lFrame.cols, lFrame.rows)); //Top Left
+	rightInputImg = UMat(display_container, Rect(lFrame.cols,   0,           lFrame.cols, lFrame.rows)); //Top Right
+	leftDispMap   = UMat(display_container, Rect(0,             lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
+	rightDispMap  = UMat(display_container, Rect(lFrame.cols,   lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
+	gtDispMap	  = UMat(display_container, Rect(lFrame.cols*2, 0, 			lFrame.cols, lFrame.rows)); //Top Far Right
+	errDispMap	  = UMat(display_container, Rect(lFrame.cols*2, lFrame.rows,	lFrame.cols, lFrame.rows)); //Bottom Far Right
 
 	lFrame.copyTo(leftInputImg);
 	rFrame.copyTo(rightInputImg);
@@ -124,12 +124,13 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 #ifdef DISPLAY
 	imshow("InputOutput", display_container);
 #endif
+
 	//#########################################################################
     //# SGBM Mode Setup
     //#########################################################################
 	setupOpenCVSGBM(lFrame.channels(), maxDis);
-	imgDisparity16S = Mat(lFrame.rows, lFrame.cols, CV_16S);
-	blankDispMap = Mat(rFrame.rows, rFrame.cols, CV_8UC3);
+	imgDisparity16S = UMat(lFrame.rows, lFrame.cols, CV_16S);
+	blankDispMap = UMat(rFrame.rows, rFrame.cols, CV_8UC3);
 
 	//#########################################################################
     //# GIF Mode Setup
@@ -139,10 +140,10 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 		cvtColor( lFrame, lFrame, CV_BGR2RGB );
 		cvtColor( rFrame, rFrame, CV_BGR2RGB );
 
-		lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
-		rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
+		//lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
+		//rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
 //	}
-	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
+	SMDE = new DispEst(lFrame.getMat(ACCESS_READ), rFrame.getMat(ACCESS_READ), maxDis, num_threads, gotOCLDev);
 
 	//#########################################################################
 	//# End of Preprocessing (that we don't want to repeat)
@@ -150,6 +151,10 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	//printf("End of Preprocessing\n");
 
     printf("StereoMatch Application Initialised\n");
+    
+#ifdef DISPLAY
+	//waitKey(0);
+#endif
 	return;
 }
 
@@ -183,7 +188,7 @@ void StereoMatch::compute(float& de_time_ms)
 	{
 		for(int drop=0;drop<30;drop++)
 			cap >> vFrame; //capture a frame from the camera
-		if(!vFrame.data)
+		if(vFrame.empty())
 		{
 			printf("Could not load camera frame\n");
 			return;
@@ -192,7 +197,7 @@ void StereoMatch::compute(float& de_time_ms)
 		lFrame = vFrame(Rect(0,0, vFrame.cols/2,vFrame.rows)); //split the frame into left
 		rFrame = vFrame(Rect(vFrame.cols/2, 0, vFrame.cols/2, vFrame.rows)); //and right images
 
-		if(!lFrame.data || !rFrame.data)
+		if(lFrame.empty() || rFrame.empty())
 		{
 			printf("No data in left or right frames\n");
 			return;
@@ -215,11 +220,14 @@ void StereoMatch::compute(float& de_time_ms)
 	//#########################################################################
 	if(MatchingAlgorithm == STEREO_SGBM)
 	{
+		printf("MatchingAlgorithm == STEREO_SGBM\n");
 		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_8U){
+			printf("lFrame type != CV_8U\n");
 			lFrame.convertTo(lFrame, CV_8U, 255);
 			rFrame.convertTo(rFrame, CV_8U, 255);
+			printf("lFrame type != CV_8U\n");
 		}
-
+		printf("MatchingAlgorithm == STEREO_SGBM\n");
 		ssgbm->setMinDisparity(0);
 		ssgbm->compute(lFrame, rFrame, imgDisparity16S); //Compute the disparity map
 		minMaxLoc(imgDisparity16S, &minVal, &maxVal); //Check its extreme values
@@ -230,14 +238,15 @@ void StereoMatch::compute(float& de_time_ms)
 	}
 	else if(MatchingAlgorithm == STEREO_GIF)
 	{
+		printf("MatchingAlgorithm == STEREO_GIF\n");
 //		updateFrameType();
 		cvtColor(lFrame, lFrame, CV_BGR2RGB);
 		cvtColor(rFrame, rFrame, CV_BGR2RGB);
 		lFrame.convertTo(lFrame, CV_32F, 1 / 255.0f);
 		rFrame.convertTo(rFrame, CV_32F,  1 / 255.0f);
 
-		SMDE->lImg = lFrame;
-		SMDE->rImg = rFrame;
+		SMDE->lImg = lFrame.getMat(ACCESS_READ);
+		SMDE->rImg = rFrame.getMat(ACCESS_READ);
 		SMDE->threads = num_threads;
 
 		// ******** Disparity Estimation Code ******** //
@@ -312,11 +321,15 @@ void StereoMatch::compute(float& de_time_ms)
 		float num_bad_pixels = 0;
 		float avg_err = 0;
 
+		Mat eDispMap_Mat = eDispMap.getMat(ACCESS_READ);
+		Mat lDispMap_Mat = lDispMap.getMat(ACCESS_READ);
+		Mat gtFrame_Mat = gtFrame.getMat(ACCESS_READ);
+		
 		for(int y = 0; y < gtFrame.rows; y++)
 		{
-			uchar* eData = (uchar*) eDispMap.ptr<uchar>( y );
-			uchar* lData = (uchar*) lDispMap.ptr<uchar>( y );
-			uchar* gtData = (uchar*) gtFrame.ptr<uchar>( y );
+			uchar* eData = (uchar*) eDispMap_Mat.ptr<uchar>( y );
+			uchar* lData = (uchar*) lDispMap_Mat.ptr<uchar>( y );
+			uchar* gtData = (uchar*) gtFrame_Mat.ptr<uchar>( y );
 			for(int x = 0; x < gtFrame.cols; x++)
 			{
 				//printf("lDispMap[%d][%d] = %d\n", y, x, lData[x]);
@@ -367,7 +380,7 @@ int StereoMatch::stereoCameraSetup(void)
 	cout << "CAP_PROP_FRAME_WIDTH: " << cap.get(CAP_PROP_FRAME_WIDTH) << endl;
 
 	cap >> vFrame;
-	if(!vFrame.data)
+	if(vFrame.empty())
 	{
 		printf("Could not load camera frame\n");
 		exit(1);
@@ -375,7 +388,7 @@ int StereoMatch::stereoCameraSetup(void)
 
 	lFrame = vFrame(Rect(0,0, vFrame.cols/2,vFrame.rows));
 	rFrame = vFrame(Rect(vFrame.cols/2, 0, vFrame.cols/2, vFrame.rows));
-	if(!lFrame.data || !rFrame.data)
+	if(lFrame.empty() || rFrame.empty())
 	{
 		printf("No data in left or right frames\n");
 		exit(1);
@@ -384,11 +397,11 @@ int StereoMatch::stereoCameraSetup(void)
 	if(recalibrate)
     {
 		resizeWindow("InputOutput", lFrame.cols*2, lFrame.rows*2); //Native camera image resolution
-		display_container = Mat(lFrame.rows*2, lFrame.cols*2, CV_8UC3);
-		leftInputImg  = Mat(display_container, Rect(0,           0,           lFrame.cols, lFrame.rows)); //Top Left
-		rightInputImg = Mat(display_container, Rect(lFrame.cols, 0,           lFrame.cols, lFrame.rows)); //Top Right
-		leftDispMap   = Mat(display_container, Rect(0,           lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
-		rightDispMap  = Mat(display_container, Rect(lFrame.cols, lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
+		display_container = UMat(lFrame.rows*2, lFrame.cols*2, CV_8UC3);
+		leftInputImg  = UMat(display_container, Rect(0,           0,           lFrame.cols, lFrame.rows)); //Top Left
+		rightInputImg = UMat(display_container, Rect(lFrame.cols, 0,           lFrame.cols, lFrame.rows)); //Top Right
+		leftDispMap   = UMat(display_container, Rect(0,           lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
+		rightDispMap  = UMat(display_container, Rect(lFrame.cols, lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
 
 		lFrame.copyTo(leftInputImg);
 		rFrame.copyTo(rightInputImg);
@@ -487,7 +500,7 @@ int StereoMatch::captureChessboards(void)
 	{
 		cap >> vFrame;
 
-		if(!vFrame.data)
+		if(vFrame.empty())
 		{
 			printf("Cannot capture data from video source\n");
 			img_num = 10;

@@ -31,14 +31,14 @@ public:
 	string gt_img_filename;
 
 	//Display Variables
-	Mat display_container;
-	Mat leftInputImg, rightInputImg;
-	Mat leftDispMap, rightDispMap;
-    Mat gtDispMap, errDispMap;
-    Mat blankDispMap;
+	UMat display_container;
+	UMat leftInputImg, rightInputImg;
+	UMat leftDispMap, rightDispMap;
+    UMat gtDispMap, errDispMap;
+    UMat blankDispMap;
 
 	//local disparity map containers
-    Mat lDispMap, rDispMap, eDispMap;
+    UMat lDispMap, rDispMap, eDispMap;
 
 	//input values
     int maxDis;
@@ -50,20 +50,20 @@ public:
     float cvc_time, cvf_time, dispsel_time, pp_time;
 
     //Frame Holders & Camera object
-	Mat lFrame, rFrame, vFrame;
+	UMat lFrame, rFrame, vFrame;
 	VideoCapture cap;
 	//Image rectification maps
-	Mat mapl[2], mapr[2];
+	UMat mapl[2], mapr[2];
 	Rect cropBox;
-	Mat lFrame_rec, rFrame_rec;
-	Mat gtFrame, gtFrameImg;
+	UMat lFrame_rec, rFrame_rec;
+	UMat gtFrame, gtFrameImg;
 
 	//StereoSGBM Variables
 	Ptr<StereoSGBM> ssgbm;
 	StereoCameraProperties camProps;
 	double minVal; double maxVal;
 	double minVal_gt; double maxVal_gt;
-	Mat imgDisparity16S;
+	UMat imgDisparity16S;
 
 	//StereoGIF Variables
 	DispEst* SMDE;

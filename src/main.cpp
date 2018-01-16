@@ -13,14 +13,13 @@
 #include <thread>
 
 //Functions in main
-void getDepthMap(void);
 void HCI(void);
 
 //Global variables
-StereoMatch *sm;
 bool end_de = false;
 int nOpenCLDev = 0;
 int sgbm_mode = StereoSGBM::MODE_HH;
+std::mutex dispMap_m;
 
 int main(int argc, char** argv)
 {
@@ -29,25 +28,36 @@ int main(int argc, char** argv)
     //#############################################################################################################
 	nOpenCLDev = openCLdevicepoll();
 #ifdef DISPLAY
-	namedWindow("InputOutput", CV_WINDOW_AUTOSIZE);
+	cv::namedWindow("InputOutput", CV_WINDOW_AUTOSIZE);
 #endif
 	//#############################################################################################################
     //# Start Application Processes
     //#############################################################################################################
 	printf("Starting Stereo Matching Application.\n");
-	sm = new StereoMatch(argc, argv, nOpenCLDev);
+    StereoMatch sm = StereoMatch(argc, argv, nOpenCLDev);
 	//printf("MAIN: Press h for help text.\n\n");
 
-	std::thread de_thread;
-	//de_thread = std::thread(&StereoMatch::compute, sm, std::ref(de_time));
-    de_thread = std::thread(&getDepthMap);
+	cv::resizeWindow("InputOutput", sm.display_container.cols, sm.display_container.rows);
+
+	std::thread sgbm_threads[MAX_CPU_THREADS];
+	std::mutex cap_m;
+
+    for(int thread_id = 0; thread_id < MAX_CPU_THREADS; thread_id++)
+    {
+        sgbm_threads[thread_id] = std::thread(&StereoMatch::sgbm_thread, std::addressof(sm),  std::ref(cap_m),  std::ref(dispMap_m), std::ref(end_de));
+    }
 
 #ifdef DISPLAY
-	//User interface function
-	HCI();
+	//std::thread display_t = std::thread(&StereoMatch::display_thread, std::addressof(sm), std::ref(dispMap_m));
+
+    char key = ' ';
+    while(key != 'q'){
+        cv::imshow("InputOutput", sm.display_container);
+        key = cv::waitKey(1);
+    }
 #else
 	while(1){
-		std::this_thread::sleep_for (std::chrono::duration<int, std::milli>(1000));
+		std::this_thread::sleep_for (std::chrono::duration<int, std::milli>(100));
 	}
 #endif
     //#############################################################################################################
@@ -55,122 +65,12 @@ int main(int argc, char** argv)
     //#############################################################################################################
 	end_de = true;
 	printf("MAIN: Quit signal sent\n");
-    //de_thread.join();
 
-	delete sm;
+    for(int thread_id=0; thread_id < MAX_CPU_THREADS; thread_id++)
+    {
+        sgbm_threads[thread_id].join();
+    }
+
 	printf("MAIN: Disparity Estimation Halted\n");
     return 0;
-}
-
-void getDepthMap(void)
-{
-	int ret = 0;
-	float de_time;
-
-	while(!(end_de || ret)){
-		sm->compute(de_time);
-	}
-	return;
-}
-
-
-void HCI(void)
-{
-	//User interface input handler
-    char key = ' ';
-	float de_time;
-
-    while(key != 'q'){
-		sm->compute(de_time);
-        switch(key){
-            case 'h':
-            {
-                printf("|-------------------------------------------------------------------|\n");
-                printf("| Input Options:\n");
-                printf("| h: Display this help text.\n");
-                printf("| q: Quit.\n");
-                printf("|-------------------------------------------------------------------|\n");
-                printf("| Control Options:\n");
-                printf("|   1-8: Change thread/core number.\n");
-                printf("|   a:   Switch matching algorithm: STEREO_GIF, STEREO_SGBM\n");
-                printf("|   m:   Switch computation mode:\n");
-                printf("|   m:      STEREO_GIF:  OpenCL <-> pthreads.\n");
-                printf("|   m:      STEREO_SGBM: MODE_SGBM, MODE_HH, MODE_SGBM_3WAY\n");
-//                printf("|   t:   Switch data type: float 32 bit <-> unsigned char 8bit\n");
-                printf("|   -/=: Increase or decrease the error threshold\n");
-                printf("|-------------------------------------------------------------------|\n");
-                printf("| Current Options:\n");
-                printf("|   a:   Matching Algorithm: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
-                printf("|   m:   Computation mode: %s\n", sm->MatchingAlgorithm ? (sm->de_mode ? "OpenCL" : "pthreads") : (
-														sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
-														sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" : "MODE_SGBM_3WAY" ));
-//                printf("|   t:   Data type: %s\n", sm->imgType ? "CV_32F" : "CV_8U");
-                printf("|   -/=: Error Threshold: %d\n", sm->error_threshold);
-                printf("|-------------------------------------------------------------------|\n");
-                break;
-            }
-            case 'a':
-            {
-				sm->MatchingAlgorithm = sm->MatchingAlgorithm ? STEREO_SGBM : STEREO_GIF;
-				printf("| a: Matching Algorithm Changed to: %s |\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
-				break;
-            }
-            case 'm':
-            {
-				if(sm->MatchingAlgorithm == STEREO_GIF){
-					if(nOpenCLDev){
-						sm->de_mode = sm->de_mode ? OCV_DE : OCL_DE;
-						printf("| m: STEREO_GIF Matching Algoritm:\n");
-						printf("| m: Mode changed to %s |\n", sm->de_mode ? "OpenCL on the GPU" : "C++ & pthreads on the CPU");
-					}
-					else{
-						printf("| m: Platform must contain an OpenCL compatible device to use OpenCL Mode.\n");
-					}
-				}
-				else if(sm->MatchingAlgorithm == STEREO_SGBM){
-					sgbm_mode = (sgbm_mode == StereoSGBM::MODE_HH ? StereoSGBM::MODE_SGBM :
-								sgbm_mode == StereoSGBM::MODE_SGBM ? StereoSGBM::MODE_SGBM_3WAY :
-								StereoSGBM::MODE_HH);
-					sm->ssgbm->setMode(sgbm_mode);
-					printf("| m: STEREO_GIF Matching Algoritm:\n");
-					printf("| m: Mode changed to %s |\n", sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
-															sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" :
-															"MODE_SGBM_3WAY");
-				}
-				break;
-            }
-//            case 't':
-//            {
-//				if(sm->imgType == CV_32F){
-//					sm->imgType = CV_8U;
-//					printf("| p: STEREO_GIF algorithm data type = %s |\n", "CV_8U");
-//				} else {
-//					sm->imgType = CV_32F;
-//					printf("| p: STEREO_GIF algorithm data type = %s |\n", "CV_32F");
-//				}
-//				if(sm->MatchingAlgorithm != STEREO_GIF){
-//					printf("| p: Data type only affects the STEREO_GIF algorithm.\n");
-//				}
-//				break;
-//            }
-            case '=':
-            {
-				sm->error_threshold++;
-				printf("| =: Error threshold increased to %d.\n", sm->error_threshold);
-				break;
-			}
-            case '-':
-            {
-				if(sm->error_threshold > 0){
-					sm->error_threshold--;
-				printf("| -: Error threshold decreased to %d.\n", sm->error_threshold);
-				}
-				else
-					printf("| -: Cannot decrease error threshold below 0.\n");
-				break;
-			}
-        }
-        key = waitKey(1);
-    }
-    return;
 }

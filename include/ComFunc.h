@@ -49,7 +49,7 @@
 #define GIF_EPS_32F 0.0001f
 #define GIF_EPS_8UC 1
 
-#define MAX_CPU_THREADS 2
+#define MAX_CPU_THREADS 8
 #define MIN_CPU_THREADS 1
 
 #define MAX_GPU_THREADS 256

@@ -36,6 +36,7 @@ public:
 	int MatchingAlgorithm;
 	int error_threshold;
 	cv::UMat display_container;
+	unsigned long long frame_count;
 
 private:
 	//Variables

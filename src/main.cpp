@@ -27,6 +27,14 @@ int main(int argc, char** argv)
     //# Introduction and Setup - poll for OpenCL devices
     //#############################################################################################################
 	nOpenCLDev = openCLdevicepoll();
+    int num_sgbm_threads = MAX_CPU_THREADS;
+    if(argc >1)
+    {
+        //Includes checks on bounds of min/max number of threads
+        num_sgbm_threads = atoi(argv[1]) > MAX_CPU_THREADS ? MAX_CPU_THREADS : atoi(argv[1]);
+        num_sgbm_threads = num_sgbm_threads < MIN_CPU_THREADS ? MIN_CPU_THREADS : num_sgbm_threads;
+        std::cout << "Using " << num_sgbm_threads << " threads." << std::endl;
+    }
 #ifdef DISPLAY
 	cv::namedWindow("InputOutput", CV_WINDOW_AUTOSIZE);
 #endif
@@ -39,10 +47,10 @@ int main(int argc, char** argv)
 
 	cv::resizeWindow("InputOutput", sm.display_container.cols, sm.display_container.rows);
 
-	std::thread sgbm_threads[MAX_CPU_THREADS];
+	std::thread sgbm_threads[num_sgbm_threads];
 	std::mutex cap_m;
 
-    for(int thread_id = 0; thread_id < MAX_CPU_THREADS; thread_id++)
+    for(int thread_id = 0; thread_id < num_sgbm_threads; thread_id++)
     {
         sgbm_threads[thread_id] = std::thread(&StereoMatch::sgbm_thread, std::addressof(sm),  std::ref(cap_m),  std::ref(dispMap_m), std::ref(end_de));
     }
@@ -50,10 +58,20 @@ int main(int argc, char** argv)
 #ifdef DISPLAY
 	//std::thread display_t = std::thread(&StereoMatch::display_thread, std::addressof(sm), std::ref(dispMap_m));
 
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto step_time = std::chrono::high_resolution_clock::now();
+
     char key = ' ';
     while(key != 'q'){
         cv::imshow("InputOutput", sm.display_container);
         key = cv::waitKey(1);
+
+        auto now_time = (std::chrono::high_resolution_clock::now() - step_time).count();
+        if(now_time > 1000000000)
+        {
+            std::cout << "Frame rate = " << (sm.frame_count*1000000000)/(std::chrono::high_resolution_clock::now() - start_time).count() << std::endl;
+            step_time = std::chrono::high_resolution_clock::now();
+        }
     }
 #else
 	while(1){
@@ -66,7 +84,7 @@ int main(int argc, char** argv)
 	end_de = true;
 	printf("MAIN: Quit signal sent\n");
 
-    for(int thread_id=0; thread_id < MAX_CPU_THREADS; thread_id++)
+    for(int thread_id=0; thread_id < num_sgbm_threads; thread_id++)
     {
         sgbm_threads[thread_id].join();
     }

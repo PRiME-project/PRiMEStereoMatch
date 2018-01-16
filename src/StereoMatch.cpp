@@ -124,6 +124,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	//setupOpenCVSGBM(lFrame.channels(), maxDis);
 	//imgDisparity16S = std::vector<cv::UMat>(num_threads, cv::UMat(lFrame.rows, lFrame.cols, CV_16S));
 	blankDispMap = UMat(rFrame.rows, rFrame.cols, CV_8UC3);
+	frame_count = 0;
 
 	//#########################################################################
     //# GIF Mode Setup
@@ -263,6 +264,7 @@ int StereoMatch::sgbm_thread(std::mutex &cap_m, std::mutex &dispMap_m, bool &end
         lFrame_thread.copyTo(leftInputImg);
         rFrame_thread.copyTo(rightInputImg);
         outDispMap.copyTo(leftDispMap);
+        frame_count++;
 
         //std::cout << "Frame written to output queues" << std::endl;
         dispMap_m.unlock();

@@ -36,7 +36,7 @@ public:
 	int MatchingAlgorithm;
 	int error_threshold;
 	cv::UMat display_container;
-	unsigned long long frame_count;
+	std::deque<double> frame_rates;
 
 private:
 	//Variables
@@ -59,10 +59,6 @@ private:
 	cv::UMat lDispMap, rDispMap, eDispMap;
 	cv::UMat errDispMap;
 
-	std::deque<cv::UMat> leftInputImg_queue, rightInputImg_queue;
-	std::deque<cv::UMat> leftDispMap_queue, rightDispMap_queue;
-	std::deque<cv::UMat> lDispMap_queue, rDispMap_queue, eDispMap_queue;
-	std::deque<cv::UMat> errDispMap_queue;
     cv::UMat gtDispMap;
     cv::UMat blankDispMap;
 
@@ -89,7 +85,6 @@ private:
 	int captureChessboards(void);
 	int setupOpenCVSGBM(cv::Ptr<StereoSGBM>& ssgbm, int channels, int ndisparities);
 	int inputArgParser(int argc, char *argv[]);
-	int updateFrameType(void);
 };
 
 #endif //STEREOMATCH_H

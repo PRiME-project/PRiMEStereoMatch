@@ -8,6 +8,14 @@
   ---------------------------------------------------------------------------*/
 #include "StereoMatch.h"
 
+
+unsigned long long get_timestamp()
+{
+	auto now = std::chrono::system_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch());
+	return duration.count();
+}
+
 //#############################################################################
 //# SM Preprocessing that we don't want to repeat
 //#############################################################################
@@ -111,8 +119,8 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 //	gtDispMap	  = UMat(display_container, Rect(lFrame.cols*2, 0, 			lFrame.cols, lFrame.rows)); //Top Far Right
 //	errDispMap	  = UMat(display_container, Rect(lFrame.cols*2, lFrame.rows,	lFrame.cols, lFrame.rows)); //Bottom Far Right
 
-	//lFrame.copyTo(leftInputImg);
-	//rFrame.copyTo(rightInputImg);
+	lFrame.copyTo(leftInputImg);
+	rFrame.copyTo(rightInputImg);
 
 	if(media_mode == DE_IMAGE){
 		gtFrameImg.copyTo(gtDispMap);
@@ -124,21 +132,20 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	//setupOpenCVSGBM(lFrame.channels(), maxDis);
 	//imgDisparity16S = std::vector<cv::UMat>(num_threads, cv::UMat(lFrame.rows, lFrame.cols, CV_16S));
 	blankDispMap = UMat(rFrame.rows, rFrame.cols, CV_8UC3);
-	frame_count = 0;
 
 	//#########################################################################
     //# GIF Mode Setup
     //#########################################################################
 //	if(imgType == CV_32F){
 		// Frame Preprocessing
-    cvtColor( lFrame, lFrame, CV_BGR2RGB );
-    cvtColor( rFrame, rFrame, CV_BGR2RGB );
-
-    lFrame.convertTo( lFrame_tmp, CV_32F, 1 / 255.0f );
-    rFrame.convertTo( rFrame_tmp, CV_32F,  1 / 255.0f );
+//    cvtColor( lFrame, lFrame, CV_BGR2RGB );
+//    cvtColor( rFrame, rFrame, CV_BGR2RGB );
+//
+//    lFrame.convertTo( lFrame_tmp, CV_32F, 1 / 255.0f );
+//    rFrame.convertTo( rFrame_tmp, CV_32F,  1 / 255.0f );
 //	}
 
-	SMDE = new DispEst(lFrame_tmp.getMat(ACCESS_READ), rFrame_tmp.getMat(ACCESS_READ), maxDis, num_threads, gotOCLDev);
+//	SMDE = new DispEst(lFrame_tmp.getMat(ACCESS_READ), rFrame_tmp.getMat(ACCESS_READ), maxDis, num_threads, gotOCLDev);
 
 	//#########################################################################
 	//# End of Preprocessing (that we don't want to repeat)
@@ -152,16 +159,10 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 StereoMatch::~StereoMatch(void)
 {
 	printf("Shutting down StereoMatch Application\n");
-	delete SMDE;
+//	delete SMDE;
 	if(media_mode == DE_VIDEO)
 		cap.release();
 	printf("Application Shut down\n");
-}
-
-float get_rt(){
-	struct timespec realtime;
-	clock_gettime(CLOCK_MONOTONIC,&realtime);
-	return (float)(realtime.tv_sec*1000000+realtime.tv_nsec/1000);
 }
 
 //#############################################################################
@@ -181,16 +182,11 @@ int StereoMatch::sgbm_thread(std::mutex &cap_m, std::mutex &dispMap_m, bool &end
 
     cv::UMat lDispMap_thread, outDispMap;
 	double minVal, maxVal;
-
-	if(media_mode == DE_IMAGE)
-    {
-        cvtColor(lFrame, lFrame_thread, CV_RGB2BGR);
-        cvtColor(rFrame, rFrame_thread, CV_RGB2BGR);
-    }
+	unsigned long long start_time, end_time;
 
     while(!end_de)
     {
-        float start_time = get_rt();
+        start_time = get_timestamp();
         //#########################################################################
         //# Frame Capture and Preprocessing (that we have to repeat)
         //#########################################################################
@@ -201,7 +197,6 @@ int StereoMatch::sgbm_thread(std::mutex &cap_m, std::mutex &dispMap_m, bool &end
 #endif // DEBUG_APP
 
             cap_m.lock();
-            std::cout << "Thread got a frame from the camera" << std::endl;
             cap >> vFrame_thread; //capture a frame from the camera
             cap_m.unlock();
 
@@ -229,6 +224,10 @@ int StereoMatch::sgbm_thread(std::mutex &cap_m, std::mutex &dispMap_m, bool &end
             rFrame_thread = rFrame_rec_thread(cropBox);
 
         }
+        else{
+			lFrame.copyTo(lFrame_thread);
+			rFrame.copyTo(rFrame_thread);
+        }
 
         //#########################################################################
         //# Start of Disparity Map Creation
@@ -250,53 +249,23 @@ int StereoMatch::sgbm_thread(std::mutex &cap_m, std::mutex &dispMap_m, bool &end
         //Load the disparity map to the display
         cvtColor(lDispMap_thread, outDispMap, CV_GRAY2RGB);
 
-        float thread_time = (get_rt() - start_time)/1000;
-        //printf("Time: %.2f ms\n", thread_time);
+		end_time = get_timestamp();
 
-
-#ifdef DISPLAY
         dispMap_m.lock();
-
-//        leftInputImg_queue.push_back(lFrame_thread);
-//        rightInputImg_queue.push_back(rFrame_thread);
-//        leftDispMap_queue.push_back(outDispMap);
-
-        lFrame_thread.copyTo(leftInputImg);
-        rFrame_thread.copyTo(rightInputImg);
-        outDispMap.copyTo(leftDispMap);
-        frame_count++;
-
-        //std::cout << "Frame written to output queues" << std::endl;
-        dispMap_m.unlock();
+#ifdef DISPLAY
+		if(media_mode == DE_VIDEO)
+		{
+			lFrame_thread.copyTo(leftInputImg);
+			rFrame_thread.copyTo(rightInputImg);
+		}
+		cv::applyColorMap(outDispMap, outDispMap, COLORMAP_JET);
+		outDispMap.copyTo(leftDispMap);
 #endif
+		frame_rates.push_back((double)1000000/(end_time - start_time));
+        dispMap_m.unlock();
     }
 	return 0;
 }
-
-int StereoMatch::display_thread(std::mutex &dispMap_m)
-{
-    while(1)
-    {
-        if(leftInputImg_queue.size())
-        {
-            dispMap_m.lock();
-
-            leftInputImg_queue.front().copyTo(leftInputImg);
-            rightInputImg_queue.front().copyTo(rightInputImg);
-            leftDispMap_queue.front().copyTo(leftDispMap);
-            leftInputImg_queue.pop_back();
-            rightInputImg_queue.pop_back();
-            leftDispMap_queue.pop_back();
-
-            //std::cout << "Frame read from output queues" << std::endl;
-            dispMap_m.unlock();
-
-            imshow("InputOutput", display_container);
-        }
-    }
-	return 0;
-}
-
 
 
 //#############################################################################

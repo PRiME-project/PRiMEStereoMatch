@@ -56,21 +56,32 @@ int main(int argc, char** argv)
     }
 
 #ifdef DISPLAY
-	//std::thread display_t = std::thread(&StereoMatch::display_thread, std::addressof(sm), std::ref(dispMap_m));
-
-    auto start_time = std::chrono::high_resolution_clock::now();
     auto step_time = std::chrono::high_resolution_clock::now();
 
     char key = ' ';
-    while(key != 'q'){
+    double frame_rate = 0;
+    while(key != 'q')
+    {
         cv::imshow("InputOutput", sm.display_container);
         key = cv::waitKey(1);
 
         auto now_time = (std::chrono::high_resolution_clock::now() - step_time).count();
         if(now_time > 1000000000)
         {
-            std::cout << "Frame rate = " << (sm.frame_count*1000000000)/(std::chrono::high_resolution_clock::now() - start_time).count() << std::endl;
-            step_time = std::chrono::high_resolution_clock::now();
+            dispMap_m.lock();
+
+            if(sm.frame_rates.size())
+            {
+				for(double ft : sm.frame_rates){
+					frame_rate += ft;
+				}
+				frame_rate = frame_rate/sm.frame_rates.size();
+				sm.frame_rates.clear();
+				std::cout << "Average frame rate: " << frame_rate << std::endl;
+				frame_rate = 0;
+            }
+			dispMap_m.unlock();
+			step_time = std::chrono::high_resolution_clock::now();
         }
     }
 #else

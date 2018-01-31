@@ -114,3 +114,33 @@ files:
 ### License
 
 This software is released under the BSD 3 Clause License. See LICENSE.txt for details.
+
+To cite this code in your work, please also include the following reference:
+
+```
+Charles Leech, Charan Kumar, Amit Acharyya, Sheng Yang, Geoff V. Merrett, and Bashir M. Al-Hashimi. 2017. Runtime Performance and Power Optimization of Parallel Disparity Estimation on Many-Core Platforms. ACM Trans. Embed. Comput. Syst. 17, 2, Article 41 (November 2017), 19 pages. DOI: https://doi.org/10.1145/3133560 
+```
+
+Bibtex:
+```
+@article{Leech:2017:RPP:3160927.3133560,
+ author = {Leech, Charles and Kumar, Charan and Acharyya, Amit and Yang, Sheng and Merrett, Geoff V. and Al-Hashimi, Bashir M.},
+ title = {Runtime Performance and Power Optimization of Parallel Disparity Estimation on Many-Core Platforms},
+ journal = {ACM Trans. Embed. Comput. Syst.},
+ issue_date = {January 2018},
+ volume = {17},
+ number = {2},
+ month = nov,
+ year = {2017},
+ issn = {1539-9087},
+ pages = {41:1--41:19},
+ articleno = {41},
+ numpages = {19},
+ url = {http://doi.acm.org/10.1145/3133560},
+ doi = {10.1145/3133560},
+ acmid = {3133560},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {Runtime management, computer vision, many-core platforms, power optimization},
+} 
+```

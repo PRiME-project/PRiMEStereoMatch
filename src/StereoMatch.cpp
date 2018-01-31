@@ -11,7 +11,7 @@
 //#############################################################################
 //# SM Preprocessing that we don't want to repeat
 //#############################################################################
-StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
+StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 	end_de(false)
 {
     printf("Disparity Estimation for Depth Analysis in Stereo Vision Applications.\n");
@@ -20,47 +20,57 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 	//#########################################################################
     //# Setup - check input arguments
     //#########################################################################
+	if(parse_cli(argc, argv))
+		exit(1);
+
+    unsigned int cam_height = 376; //  376  (was 480),  720, 1080, 1242
+	unsigned int cam_width = 1344; // 1344 (was 1280), 2560, 3840, 4416
+
 	maxDis = 64;
 	de_mode = OCL_DE;
 	//de_mode = OCV_DE;
-	media_mode = DE_IMAGE;
 	//num_threads = MIN_CPU_THREADS;
 	num_threads = MAX_CPU_THREADS;
 	gotOCLDev = gotOpenCLDev;
-	//MatchingAlgorithm = STEREO_SGBM;
-	MatchingAlgorithm = STEREO_GIF;
 	error_threshold = 4 * (256/maxDis);
-	left_img_filename = string(BASE_DIR) + string("data/teddy2.png");
-	right_img_filename = string(BASE_DIR) + string("data/teddy6.png");
-	gt_img_filename = string(BASE_DIR) + string("data/teddy2_gt.png");
 
-	left_img_filename = string(BASE_DIR) + string("data/tsukuba3.ppm");
-	right_img_filename = string(BASE_DIR) + string("data/tsukuba5.ppm");
-	gt_img_filename = string(BASE_DIR) + string("data/tsukuba3_gt.pgm");
-
-	left_img_filename = string(BASE_DIR) + string("data/teddy2.png");
-	right_img_filename = string(BASE_DIR) + string("data/teddy6.png");
-	gt_img_filename = string(BASE_DIR) + string("data/teddy2_gt.png");
-
-	//inputArgParser(argc, argv);
-
-	if(media_mode == DE_VIDEO){
+	if(media_mode == DE_VIDEO)
+	{
 		//#####################################################################
-		//# Video Loading
+		//# Video/Camera Mode
 		//#####################################################################
         cap = VideoCapture(0);
-		if (cap.isOpened()){
-			printf("Opened the VideoCapture device.\n");
-			stereoCameraSetup();
-		}
-		else{
+		if (!cap.isOpened()){
 			printf("Could not open the VideoCapture device.\n");
 			exit(1);
 		}
+		printf("Opened the VideoCapture device.\n");
+
+		if (setCameraResolution(cam_height, cam_width)){
+			printf("Could not set the camera resolution.\n");
+			exit(1);
+		}
+
+		cap >> vFrame;
+		if(vFrame.empty()){
+			printf("Could not load camera frame\n");
+			exit(1);
+		}
+
+		lFrame = vFrame(Rect(0,0, vFrame.cols/2,vFrame.rows));
+		rFrame = vFrame(Rect(vFrame.cols/2, 0, vFrame.cols/2, vFrame.rows));
+		if(lFrame.empty() || rFrame.empty())
+		{
+			printf("No data in left or right frames\n");
+			exit(1);
+		}
+
+		stereoCameraSetup();
 	}
-	else{
+	else
+	{
 		//#####################################################################
-		//# Image Loading
+		//# Image Mode
 		//#####################################################################
         std::cout << "Loading Images...\n" << std::endl;
 		lFrame = imread(left_img_filename).getUMat(ACCESS_READ);
@@ -99,13 +109,10 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 		eDispMap = UMat(lFrame.rows, lFrame.cols, CV_8UC1);
 	}
 
-#ifdef DISPLAY
 	//#########################################################################
 	//# Display Setup
 	//#########################################################################
 	//Set up display window to hold both input images and both output disparity maps
-	resizeWindow("InputOutput", lFrame.cols*3, lFrame.rows*2); //Rectified image size - not camera resolution size
-#endif
 	display_container = UMat(lFrame.rows*2, lFrame.cols*3, CV_8UC3);
 	leftInputImg  = UMat(display_container, Rect(0,             0,           lFrame.cols, lFrame.rows)); //Top Left
 	rightInputImg = UMat(display_container, Rect(lFrame.cols,   0,           lFrame.cols, lFrame.rows)); //Top Right
@@ -121,7 +128,7 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
 		gtFrameImg.copyTo(gtDispMap);
 	}
 #ifdef DISPLAY
-	imshow("InputOutput", display_container);
+	resizeWindow("InputOutput", display_container.cols, display_container.rows); //Rectified image size - not camera resolution size
 #endif
 
 	//#########################################################################
@@ -139,11 +146,11 @@ StereoMatch::StereoMatch(int argc, char *argv[], int gotOpenCLDev) :
     cvtColor( lFrame, lFrame, CV_BGR2RGB );
     cvtColor( rFrame, rFrame, CV_BGR2RGB );
 
-    lFrame.convertTo( lFrame_tmp, CV_32F, 1 / 255.0f );
-    rFrame.convertTo( rFrame_tmp, CV_32F,  1 / 255.0f );
+    lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
+    rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
 //	}
 
-	SMDE = new DispEst(lFrame_tmp.getMat(ACCESS_READ), rFrame_tmp.getMat(ACCESS_READ), maxDis, num_threads, gotOCLDev);
+	SMDE = new DispEst(lFrame.getMat(ACCESS_READ), rFrame.getMat(ACCESS_READ), maxDis, num_threads, gotOCLDev);
 
 	//#########################################################################
 	//# End of Preprocessing (that we don't want to repeat)
@@ -184,9 +191,6 @@ void StereoMatch::compute(float& de_time_ms)
 	//#########################################################################
 	if(media_mode == DE_VIDEO)
 	{
-#ifdef DEBUG_APP
-        std::cout << "media_mode == DE_VIDEO" << std::endl;
-#endif // DEBUG_APP
 		for(int drop=0;drop<30;drop++)
 			cap >> vFrame; //capture a frame from the camera
 		if(vFrame.empty())
@@ -216,8 +220,11 @@ void StereoMatch::compute(float& de_time_ms)
 		rFrame.copyTo(rightInputImg);
 	}
 #ifdef DEBUG_APP
-	else{
+	else if(media_mode == DE_IMAGE){
         std::cout << "media_mode == DE_IMAGE" << std::endl;
+	}
+	else {
+        std::cout << "Unrecognised value for media_mode: " << media_mode << std::endl;
 	}
 #endif // DEBUG_APP
 
@@ -233,7 +240,7 @@ void StereoMatch::compute(float& de_time_ms)
 			lFrame.convertTo(lFrame_tmp, CV_8U, 255);
 			rFrame.convertTo(rFrame_tmp, CV_8U, 255);
 		}
-		ssgbm->setMinDisparity(0);
+
 		ssgbm->compute(lFrame_tmp, rFrame_tmp, imgDisparity16S); //Compute the disparity map
 		minMaxLoc(imgDisparity16S, &minVal, &maxVal); //Check its extreme values
 		imgDisparity16S.convertTo(lDispMap, CV_8U, 255/(maxVal - minVal));
@@ -246,13 +253,16 @@ void StereoMatch::compute(float& de_time_ms)
 #ifdef DEBUG_APP
 		printf("MatchingAlgorithm == STEREO_GIF\n");
 #endif // DEBUG_APP
-		cvtColor(lFrame, lFrame, CV_BGR2RGB);
-		cvtColor(rFrame, rFrame, CV_BGR2RGB);
-		lFrame.convertTo(lFrame_tmp, CV_32F, 1 / 255.0f);
-		rFrame.convertTo(rFrame_tmp, CV_32F,  1 / 255.0f);
+		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_8U)
+        {
+            cvtColor(lFrame, lFrame, CV_BGR2RGB);
+            cvtColor(rFrame, rFrame, CV_BGR2RGB);
+            lFrame.convertTo(lFrame_tmp, CV_32F, 1 / 255.0f);
+            rFrame.convertTo(rFrame_tmp, CV_32F,  1 / 255.0f);
 
-		SMDE->lImg = lFrame_tmp.getMat(ACCESS_READ);
-		SMDE->rImg = rFrame_tmp.getMat(ACCESS_READ);
+            SMDE->lImg = lFrame_tmp.getMat(ACCESS_READ);
+            SMDE->rImg = rFrame_tmp.getMat(ACCESS_READ);
+		}
 		SMDE->threads = num_threads;
 
 		// ******** Disparity Estimation Code ******** //
@@ -299,13 +309,11 @@ void StereoMatch::compute(float& de_time_ms)
 
 		// ******** Show Disparity Map  ******** //
 		//cv::applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET); // *4 for conversion from disparty range (0-64) to RGB char range (0-255)
-		//lDispMap.copyTo(leftDispMap); //copy to leftDispMap display rectangle
 		cv::minMaxLoc(SMDE->lDisMap, &minVal, &maxVal);
 		SMDE->lDisMap.convertTo(lDispMap, CV_8U, 4);//255/(maxVal - minVal));
 		cv::cvtColor(lDispMap, leftDispMap, CV_GRAY2RGB);
 
 		//cv::applyColorMap( SMDE->rDisMap*4, rDispMap, COLORMAP_JET);
-		//rDispMap.copyTo(rightDispMap); //copy to rightDispMap display rectangle
 		SMDE->rDisMap.convertTo(rDispMap, CV_8U, 255/(maxVal - minVal));
 		cv::cvtColor(rDispMap, rightDispMap, CV_GRAY2RGB);
 		// ******** Show Disparity Map  ******** //
@@ -317,13 +325,17 @@ void StereoMatch::compute(float& de_time_ms)
 		printf("PP Time:\t | %8.2f ms\n",pp_time/1000);
 #endif
 	}
+
 	de_time_ms = (get_rt() - start_time)/1000;
-	printf("DE Time: %.2f ms\n", de_time_ms);
+	printf("DE Time:\t | %8.2f ms\n", de_time_ms);
+
 #ifdef DEBUG_APP
 	cv::imwrite("leftDisparityMap.png", leftDispMap.getMat(ACCESS_READ));
 	cv::imwrite("rightDisparityMap.png", rightDispMap.getMat(ACCESS_READ));
 #endif
-	if(media_mode == DE_IMAGE){
+
+	if(media_mode == DE_IMAGE)
+	{
 		//Check pixel errors against ground truth depth map here.
 		//Can only be done with images as golden reference is required.
 		float num_bad_pixels = 0;
@@ -338,10 +350,13 @@ void StereoMatch::compute(float& de_time_ms)
 			uchar* eData = (uchar*) eDispMap_Mat.ptr<uchar>( y );
 			uchar* lData = (uchar*) lDispMap_Mat.ptr<uchar>( y );
 			uchar* gtData = (uchar*) gtFrame_Mat.ptr<uchar>( y );
-			for(int x = 0; x < gtFrame.cols; x++)
+
+			for(int x = 0; x < maxDis; x++)
 			{
-				//printf("lDispMap[%d][%d] = %d\n", y, x, lData[x]);
-				//printf("gtFrame[%d][%d] = %d\n", y, x, gtData[x]);
+				eData[x] = 0;
+			}
+			for(int x = maxDis; x < gtFrame.cols; x++)
+			{
 				eData[x] = abs(lData[x] - gtData[x]);
 				avg_err += (float)eData[x];
 				if(eData[x] > error_threshold){
@@ -361,16 +376,13 @@ void StereoMatch::compute(float& de_time_ms)
 		//eDispMap.convertTo(eDispMap, CV_8U, 255/(maxVal - minVal));
 		cvtColor(eDispMap, errDispMap, CV_GRAY2RGB);
 	}
-#ifdef DISPLAY
-	imshow("InputOutput", display_container);
-#endif
 	return;
 }
 
 //#############################################################################
-//# Calibration and Paramter loading for stereo camera setup
+//# Calibration and Parameter loading for stereo camera setup
 //#############################################################################
-int StereoMatch::stereoCameraSetup(void)
+int StereoMatch::setCameraResolution(unsigned int height, unsigned int width)
 {
 	if(cap.get(CAP_PROP_FRAME_HEIGHT) != 376){
 		cap.set(CAP_PROP_FRAME_HEIGHT, 376); //  376  (was 480),  720, 1080, 1242
@@ -382,28 +394,21 @@ int StereoMatch::stereoCameraSetup(void)
 			cout << "Target Height: " << 376 << endl;
 			cout << "CAP_PROP_FRAME_HEIGHT: " << cap.get(CAP_PROP_FRAME_HEIGHT) << endl;
 			cout << "CAP_PROP_FRAME_WIDTH: " << cap.get(CAP_PROP_FRAME_WIDTH) << endl;
-			exit(1);
+			return -1;
 		}
 	}
 	cout << "CAP_PROP_FPS: " << cap.get(CAP_PROP_FPS) << endl;
 	cout << "CAP_PROP_FRAME_HEIGHT: " << cap.get(CAP_PROP_FRAME_HEIGHT) << endl;
 	cout << "CAP_PROP_FRAME_WIDTH: " << cap.get(CAP_PROP_FRAME_WIDTH) << endl;
 
-	cap >> vFrame;
-	if(vFrame.empty())
-	{
-		printf("Could not load camera frame\n");
-		exit(1);
-	}
+	return 0;
+}
 
-	lFrame = vFrame(Rect(0,0, vFrame.cols/2,vFrame.rows));
-	rFrame = vFrame(Rect(vFrame.cols/2, 0, vFrame.cols/2, vFrame.rows));
-	if(lFrame.empty() || rFrame.empty())
-	{
-		printf("No data in left or right frames\n");
-		exit(1);
-	}
-
+//#############################################################################
+//# Calibration and Parameter loading for stereo camera setup
+//#############################################################################
+int StereoMatch::stereoCameraSetup(void)
+{
 	if(recalibrate)
     {
 		resizeWindow("InputOutput", lFrame.cols*2, lFrame.rows*2); //Native camera image resolution
@@ -540,92 +545,80 @@ int StereoMatch::captureChessboards(void)
 	return 0;
 }
 
-int StereoMatch::inputArgParser(int argc, char *argv[])
+int StereoMatch::parse_cli(int argc, const char * argv[])
 {
-	if( argc < 2 ) {
-        printf("\nInput Argument Error: Please specify the Media Type as a minimum requirement:\n" );
-        printf("Usage: ./PRiMEStereoMatch VIDEO ( [RECALIBRATE | RECAL] [RECAPTURE | RECAP] )\n" );
-        printf("Usage: \t or\n");
-        printf("Usage: ./PRiMEStereoMatch IMAGE left_image_filename right_image_filename\n" );
-		exit(1);
-	}
-	printf("Matching Algorithm Type: %s.\n", MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
+    args::ArgumentParser parser("Application: Stereo Matching for Depth Estimation.","PRiME Project\n");
+    parser.LongSeparator("=");
+    args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
 
-	if(!strcmp(argv[1],"VIDEO")){
-		printf("Media Type: \t\t Video Processing from Stereo Camera.\n");
+    args::Group commands(parser, "Commands (1 must be specified):", args::Group::Validators::Xor);
+
+    args::Command arg_video(commands, "video", "Use video as the input source.", [&](args::Subparser &s_parser)
+    {
+		args::Flag arg_recalibrate(s_parser, "RECALIBRATE", "Recalibrate the camera to find ROIs.", {"RECALIBRATE"});
+		args::Flag arg_recapture(s_parser, "RECAPTURE", "Recapture chessboard image pairs for recalibration.", {"RECAPTURE"});
+
+		s_parser.Parse();
+
+        std::cout << "Input Source: Video" << std::endl;
+        std::cout << "Parsing command-specific arguments." << std::endl;
+
 		media_mode = DE_VIDEO;
 		recalibrate = false;
-		if(argc > 2){
-			if(!strcmp(argv[2],"RECALIBRATE") || !strcmp(argv[2],"RECAL")) {
-				printf("Recalibrating...\n");
-				recalibrate = true;
-			}
-		}
 		recaptureChessboards = false;
-		if(argc > 3){
-			if(!strcmp(argv[3],"RECAPTURE") || !strcmp(argv[3],"RECAP")) {
-				printf("Recapturing...\n");
+		if(arg_recalibrate){
+			recalibrate = true;
+			if(arg_recapture){
 				recaptureChessboards = true;
 			}
 		}
-	}
-	else if(!strcmp(argv[1],"IMAGE"))
-	{
-		printf("Media Type: \t\t Image Processing from Static Image.\n");
-		if( argc < 3 )
-		{
-			printf("Please specify the image filenames to use, e.g. left_img.png right_img.png\n");
-			printf("Usage: ./PRiMEStereoMatch IMAGE left_image_filename right_image_filename\n" );
-			exit(1);
-		}
-		else
-		{
-			if((strlen(argv[2]) > 100) || (strlen(argv[3]) > 100))
-			{
-				printf("Left or right image filename is too long, please shorten to fewer than 100 char and retry.\n");
-				exit(1);
+    });
 
-			}
-			if((strlen(argv[2]) < 4) || (strlen(argv[3]) < 4))
-			{
-				printf("Left or right image filename is too short, did you forget to include the file extension?\n");
-				exit(1);
+    args::Command arg_image(commands, "image", "Use images as the input source.", [&](args::Subparser &s_parser)
+    {
+		args::ValueFlag<std::string> arg_left(s_parser, "left", "Left image filename.", {'l', "left"}, args::Options::Required);
+		args::ValueFlag<std::string> arg_right(s_parser, "right", "Right image filename.", {'r', "right"}, args::Options::Required);
+		args::ValueFlag<std::string> arg_gt(s_parser, "gt", "Ground truth image filename.", {'g', "gt"}, args::Options::Required);
 
-			}
-			char *img_ext = &argv[2][strlen(argv[2])-4];
-			if(!strcmp(img_ext, ".png") || !strcmp(img_ext, ".jpg") || !strcmp(img_ext, ".ppm"))
-			{
-				left_img_filename = std::string(argv[2]);
-				std::cout << "Left Image: " << left_img_filename << std::endl;
-			}
-			else
-			{
-				printf("Left Image: Incompatible image filename extension specified. \nPlease use either .png, .ppm .jpg images\n");
-				printf("Usage: ./PRiMEStereoMatch IMAGE left_image_filename right_image_filename\n" );
-				exit(1);
-			}
+		s_parser.Parse();
 
-			img_ext = &argv[3][strlen(argv[3])-4];
-			if(!strcmp(img_ext, ".png") || !strcmp(img_ext, ".jpg") || !strcmp(img_ext, ".ppm"))
-			{
-				right_img_filename = std::string(argv[3]);
-				std::cout << "Right Image: " << right_img_filename << std::endl;
-			}
-			else
-			{
-				printf("Right Image: Incompatible image filename extension specified. \nPlease use either .png or jpg images\n");
-				printf("Usage: ./PRiMEStereoMatch IMAGE left_image_filename right_image_filename\n" );
-				exit(1);
-			}
-			media_mode = DE_IMAGE;
-		}
+        std::cout << "Input Source: Images" << std::endl;
+        std::cout << "Parsing command-specific arguments." << std::endl;
+
+		media_mode = DE_IMAGE;
+        left_img_filename = args::get(arg_left);
+        right_img_filename = args::get(arg_right);
+        gt_img_filename = args::get(arg_gt);
+    });
+
+	args::Options ReqGlobal = args::Options::Required | args::Options::Global;
+    args::ValueFlag<std::string> arg_alg_mode(parser, "alg. mode", "The stereo matching algorithm to use.", {'a', "algorithm"}, ReqGlobal);
+
+    try {
+        parser.ParseCLI(argc, argv);
+    } catch (args::Help) {
+		std::cerr << parser;
+        return -1;
+    } catch (args::ParseError e) {
+        std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+        return -1;
+    } catch (args::ValidationError e) {
+        std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+        return -1;
+    }
+
+	std::cout << "Global arguments:" << std::endl;
+    if(args::get(arg_alg_mode) == "STEREO_GIF"){
+		MatchingAlgorithm = STEREO_GIF;
+		std::cout << "Using STEREO_GIF" << std::endl;
+    } else {
+		MatchingAlgorithm = STEREO_SGBM;
+		std::cout << "Using STEREO_SGBM" << std::endl;
 	}
-	else{
-		printf("Invalid media type chosen:\n");
-		printf("Usage: ./PRiMEStereoMatch [MEDIA TYPE = VIDEO|IMAGE [image_filenames]] ([RECALIBRATE | RCAL] [RECAPTURE | RCAP])\n" );
-		exit(1);
-	}
-	return 0;
+
+    return 0;
 }
 
 //#############################################################################################

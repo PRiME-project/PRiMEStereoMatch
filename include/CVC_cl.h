@@ -22,6 +22,7 @@ public:
     Mat lGray, rGray;
 	Mat lGrdX, rGrdX;
 	int maxDis;
+	Mat *lImgRGB, *rImgRGB;
 
 	//OpenCL Variables
     cl_context* context;

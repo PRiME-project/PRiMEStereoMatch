@@ -12,16 +12,32 @@
 #include "ComFunc.h"
 #include "StereoCalib.h"
 #include "DispEst.h"
+#include "args.hxx"
 
 #define DE_VIDEO 1
 #define DE_IMAGE 2
 
-//#define DISPLAY
+#define DISPLAY
 #define DEBUG_APP
 
 class StereoMatch
 {
 public:
+	StereoMatch(int argc, const char *argv[], int gotOpenCLDev);
+	~StereoMatch(void);
+
+	void compute(float& de_time_ms);
+
+//    int imgType;
+	int de_mode;
+	int MatchingAlgorithm;
+	int error_threshold;
+	cv::UMat display_container;
+
+	//StereoSGBM Variables
+	cv::Ptr<StereoSGBM> ssgbm;
+
+private:
 	//Variables
 	bool end_de, recaptureChessboards, recalibrate;
 	int gotOCLDev, media_mode;
@@ -32,7 +48,6 @@ public:
 	std::string gt_img_filename;
 
 	//Display Variables
-	cv::UMat display_container;
 	cv::UMat leftInputImg, rightInputImg;
 	cv::UMat leftDispMap, rightDispMap;
     cv::UMat gtDispMap, errDispMap;
@@ -43,9 +58,6 @@ public:
 
 	//input values
     int maxDis;
-//    int imgType;
-	int MatchingAlgorithm;
-	int error_threshold;
 
     //stage & process time measurements
     double cvc_time, cvf_time, dispsel_time, pp_time;
@@ -63,7 +75,6 @@ public:
 	cv::UMat gtFrame, gtFrameImg;
 
 	//StereoSGBM Variables
-	cv::Ptr<StereoSGBM> ssgbm;
 	StereoCameraProperties camProps;
 	double minVal, maxVal;
 	double minVal_gt, maxVal_gt;
@@ -71,18 +82,15 @@ public:
 
 	//StereoGIF Variables
 	DispEst* SMDE;
-	int de_mode;
 	int num_threads;
 
 	//Function prototypes
+	int setCameraResolution(unsigned int height, unsigned int width);
 	int stereoCameraSetup(void);
 	int captureChessboards(void);
 	int setupOpenCVSGBM(int, int);
 	int inputArgParser(int argc, char *argv[]);
-	int updateFrameType(void);
-	void compute(float& de_time_ms);
-	StereoMatch(int argc, char *argv[], int gotOpenCLDev);
-    ~StereoMatch(void);
+	int parse_cli(int argc, const char * argv[]);
 };
 
 #endif //STEREOMATCH_H

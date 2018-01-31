@@ -27,7 +27,7 @@ CVC_cl::CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
 
     width = (cl_int)I->cols;
     height = (cl_int)I->rows;
-    channels = (cl_int)I->channels();
+//    channels = (cl_int)I->channels();
 
 //	if(imgType == CV_32F)
 //	{
@@ -92,7 +92,8 @@ CVC_cl::~CVC_cl(void)
 
 int CVC_cl::buildCV(const Mat& lImg, const Mat& rImg, cl_mem *memoryObjects)
 {
-	Mat lImgRGB[channels], rImgRGB[channels];
+	lImgRGB = new Mat[lImg.channels()];
+    rImgRGB = new Mat[rImg.channels()];
     split(lImg, lImgRGB);
     split(rImg, rImgRGB);
 

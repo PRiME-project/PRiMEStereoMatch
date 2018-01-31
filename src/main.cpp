@@ -22,7 +22,7 @@ bool end_de = false;
 int nOpenCLDev = 0;
 int sgbm_mode = StereoSGBM::MODE_HH;
 
-int main(int argc, char** argv)
+int main(int argc, const char* argv[])
 {
     //#############################################################################################################
     //# Introduction and Setup - poll for OpenCL devices
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
     //#############################################################################################################
 	end_de = true;
 	printf("MAIN: Quit signal sent\n");
-    //de_thread.join();
+    de_thread.join();
 
 	delete sm;
 	printf("MAIN: Disparity Estimation Halted\n");
@@ -80,9 +80,13 @@ void HCI(void)
     char key = ' ';
 	float de_time;
 
-    while(key != 'q'){
-		sm->compute(de_time);
-        switch(key){
+    while(key != 'q')
+    {
+#ifdef DISPLAY
+		imshow("InputOutput", sm->display_container);
+#endif
+        switch(key)
+        {
             case 'h':
             {
                 printf("|-------------------------------------------------------------------|\n");

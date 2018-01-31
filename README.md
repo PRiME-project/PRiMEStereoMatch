@@ -117,9 +117,7 @@ This software is released under the BSD 3 Clause License. See LICENSE.txt for de
 
 To cite this code in your work, please also include the following reference:
 
-```
 Charles Leech, Charan Kumar, Amit Acharyya, Sheng Yang, Geoff V. Merrett, and Bashir M. Al-Hashimi. 2017. Runtime Performance and Power Optimization of Parallel Disparity Estimation on Many-Core Platforms. ACM Trans. Embed. Comput. Syst. 17, 2, Article 41 (November 2017), 19 pages. DOI: https://doi.org/10.1145/3133560 
-```
 
 Bibtex:
 ```

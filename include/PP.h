@@ -22,7 +22,7 @@ public:
 	PP(void);
 	~PP(void);
 
-	void processDM(const Mat& lImg, const Mat& rImg, Mat& lDisMap, Mat& rDisMap,
+	void processDM(Mat& lImg, Mat& rImg, Mat& lDisMap, Mat& rDisMap,
 					Mat& lValid, Mat& rValid, const int maxDis, int threads);
 };
 

@@ -112,52 +112,25 @@ void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& dispMap)
     int hei = dispMap.rows;
     int wid = dispMap.cols;
 
+	#pragma omp parallel for
     for(int y = 0; y < hei; y++)
     {
-		uchar* dispData = ( uchar* ) dispMap.ptr<uchar>( y );
+		for(int x = 0; x < wid; x++)
+		{
+			float minCost = DBL_MAX;
+			int minDis = 0;
 
-//		if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_32F)
-//		{
-			for(int x = 0; x < wid; x++)
+			for(int d = 1; d < maxDis; d++)
 			{
-				float minCost = DBL_MAX;
-				int minDis = 0;
-
-				for(int d = 1; d < maxDis; d++)
+				float* costData = (float*)costVol[d].ptr<float>(y);
+				if(costData[x] < minCost)
 				{
-					float* costData = (float*)costVol[d].ptr<float>(y);
-					if(costData[x] < minCost)
-					{
-						minCost = costData[x];
-						minDis = d;
-					}
+					minCost = costData[x];
+					minDis = d;
 				}
-				dispData[x] = minDis;
 			}
-//		}
-//		else if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_8U)
-//		{
-//			for(int x = 0; x < wid; x++)
-//			{
-//				uchar minCost = UCHAR_MAX;
-//				int minDis = 0;
-//
-//				for(int d = 1; d < maxDis; d++)
-//				{
-//					uchar* costData = (uchar*)costVol[d].ptr<uchar>(y);
-//					if(costData[x] < minCost)
-//					{
-//						minCost = costData[x];
-//						minDis = d;
-//					}
-//				}
-//				dispData[x] = minDis;
-//			}
-//		}
-//		else{
-//			printf("DS: Error - Unrecognised data type in processing! (CVSelect)\n");
-//			exit(1);
-//		}
+			dispMap.at<uchar>(y,x) = minDis;
+		}
     }
     return;
 }

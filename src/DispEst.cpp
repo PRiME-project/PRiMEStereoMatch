@@ -329,12 +329,12 @@ void DispEst::CostFilter_GPU()
 void DispEst::DispSelect_CPU()
 {
     //printf("Left Selection...\n");
-    //selector->CVSelect(lcostVol, maxDis, lDisMap);
-    selector->CVSelect_thread(lcostVol, maxDis, lDisMap, threads);
+    selector->CVSelect(lcostVol, maxDis, lDisMap);
+    //selector->CVSelect_thread(lcostVol, maxDis, lDisMap, threads);
 
     //printf("Right Selection...\n");
-    //selector->CVSelect(rcostVol, maxDis, rDisMap);
-    selector->CVSelect_thread(rcostVol, maxDis, rDisMap, threads);
+    selector->CVSelect(rcostVol, maxDis, rDisMap);
+    //selector->CVSelect_thread(rcostVol, maxDis, rDisMap, threads);
 }
 
 void DispEst::DispSelect_GPU()

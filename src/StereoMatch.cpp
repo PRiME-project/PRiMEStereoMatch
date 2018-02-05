@@ -12,7 +12,7 @@
 //# SM Preprocessing that we don't want to repeat
 //#############################################################################
 StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
-	end_de(false)
+	end_de(false), data_set_update(false), user_dataset(false)
 {
     printf("Disparity Estimation for Depth Analysis in Stereo Vision Applications.\n");
     printf("Preprocessing for Stereo Matching.\n");
@@ -33,6 +33,7 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 	num_threads = MAX_CPU_THREADS;
 	gotOCLDev = gotOpenCLDev;
 	error_threshold = 4 * (256/maxDis);
+	mask_mode = MASK_NONOCC;
 
 	if(media_mode == DE_VIDEO)
 	{
@@ -67,13 +68,19 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 
 		stereoCameraSetup();
 	}
-	else
+	else if(media_mode == DE_IMAGE)
 	{
 		//#####################################################################
 		//# Image Mode
 		//#####################################################################
-        std::cout << "Loading Images...\n" << std::endl;
-		lFrame = imread(left_img_filename).getUMat(ACCESS_READ);
+        std::cout << "Loading Images..." << std::endl;
+		if(!user_dataset)
+		{
+			std::cout << "Loading Art as default dataset." << std::endl;
+			set_filenames("Art");
+			scale_factor = 3;
+		}
+		lFrame = cv::imread(left_img_filename, cv::IMREAD_COLOR);
 		if(lFrame.empty())
 		{
 			std::cout << "Failed to read left image \"" << left_img_filename << "\"" << std::endl;
@@ -83,8 +90,8 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 		else{
 			std::cout << "Loaded Left: " << left_img_filename << std::endl;
 		}
-		rFrame = imread(right_img_filename).getUMat(ACCESS_READ);
-		if(lFrame.empty())
+		rFrame = cv::imread(right_img_filename, cv::IMREAD_COLOR);
+		if(rFrame.empty())
 		{
 			std::cout << "Failed to read right image \"" << right_img_filename << "\"" << std::endl;
 			std::cout << "Exiting" << std::endl;
@@ -93,70 +100,53 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 		else{
 			std::cout << "Loaded Right: " << right_img_filename << std::endl;
 		}
-		gtFrameImg = imread(gt_img_filename).getUMat(ACCESS_READ);
-		if(rFrame.empty()){
+		gtFrame = cv::imread(gt_img_filename, cv::IMREAD_GRAYSCALE);
+		if(gtFrame.empty()){
 			std::cout << "Failed to read ground truth image \"" << gt_img_filename << "\"" << std::endl;
 			std::cout << "Exiting" << std::endl;
 			exit(1);
 		}else{
 			std::cout << "Loaded Ground Truth: " << gt_img_filename << std::endl;
 		}
-		//Pre-process grund truth image data
-		cvtColor(gtFrameImg, gtFrame, CV_RGB2GRAY);
-		minMaxLoc(gtFrame, &minVal_gt, &maxVal_gt);
-		gtFrame.convertTo(gtFrame, CV_8U, 255/(maxVal_gt - minVal_gt));
 		//Init error map
-		eDispMap = UMat(lFrame.rows, lFrame.cols, CV_8UC1);
+		eDispMap = Mat(lFrame.rows, lFrame.cols, CV_8UC1);
+
+		//Mask out the occluded pixels using the dataset mask
+		errMask = cv::imread(mask_occl_filename, cv::IMREAD_GRAYSCALE);
 	}
 
 	//#########################################################################
 	//# Display Setup
 	//#########################################################################
 	//Set up display window to hold both input images and both output disparity maps
-	display_container = UMat(lFrame.rows*2, lFrame.cols*3, CV_8UC3);
-	leftInputImg  = UMat(display_container, Rect(0,             0,           lFrame.cols, lFrame.rows)); //Top Left
-	rightInputImg = UMat(display_container, Rect(lFrame.cols,   0,           lFrame.cols, lFrame.rows)); //Top Right
-	leftDispMap   = UMat(display_container, Rect(0,             lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
-	rightDispMap  = UMat(display_container, Rect(lFrame.cols,   lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
-	gtDispMap	  = UMat(display_container, Rect(lFrame.cols*2, 0, 			lFrame.cols, lFrame.rows)); //Top Far Right
-	errDispMap	  = UMat(display_container, Rect(lFrame.cols*2, lFrame.rows,	lFrame.cols, lFrame.rows)); //Bottom Far Right
+	display_container = Mat(lFrame.rows*2, lFrame.cols*3, CV_8UC3);
+	leftInputImg  = Mat(display_container, Rect(0,             0,           lFrame.cols, lFrame.rows)); //Top Left
+	rightInputImg = Mat(display_container, Rect(lFrame.cols,   0,           lFrame.cols, lFrame.rows)); //Top Right
+	leftDispMap   = Mat(display_container, Rect(0,             lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
+	rightDispMap  = Mat(display_container, Rect(lFrame.cols,   lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
+	gtDispMap	  = Mat(display_container, Rect(lFrame.cols*2, 0, 			lFrame.cols, lFrame.rows)); //Top Far Right
+	errDispMap	  = Mat(display_container, Rect(lFrame.cols*2, lFrame.rows,	lFrame.cols, lFrame.rows)); //Bottom Far Right
 
 	lFrame.copyTo(leftInputImg);
 	rFrame.copyTo(rightInputImg);
-
-	if(media_mode == DE_IMAGE){
-		gtFrameImg.copyTo(gtDispMap);
-	}
-#ifdef DISPLAY
-	resizeWindow("InputOutput", display_container.cols, display_container.rows); //Rectified image size - not camera resolution size
-#endif
+	cv::cvtColor(gtFrame, gtDispMap, CV_GRAY2RGB);
 
 	//#########################################################################
     //# SGBM Mode Setup
     //#########################################################################
 	setupOpenCVSGBM(lFrame.channels(), maxDis);
-	imgDisparity16S = UMat(lFrame.rows, lFrame.cols, CV_16S);
-	blankDispMap = UMat(rFrame.rows, rFrame.cols, CV_8UC3);
+	imgDisparity16S = cv::Mat(lFrame.rows, lFrame.cols, CV_16S);
+	blankDispMap = cv::Mat(rFrame.rows, rFrame.cols, CV_8UC3);
 
 	//#########################################################################
     //# GIF Mode Setup
     //#########################################################################
-//	if(imgType == CV_32F){
-		// Frame Preprocessing
-    cvtColor( lFrame, lFrame, CV_BGR2RGB );
-    cvtColor( rFrame, rFrame, CV_BGR2RGB );
-
-    lFrame.convertTo( lFrame, CV_32F, 1 / 255.0f );
-    rFrame.convertTo( rFrame, CV_32F,  1 / 255.0f );
-//	}
-
-	SMDE = new DispEst(lFrame.getMat(ACCESS_READ), rFrame.getMat(ACCESS_READ), maxDis, num_threads, gotOCLDev);
+	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
 
 	//#########################################################################
 	//# End of Preprocessing (that we don't want to repeat)
     //#########################################################################
-	//printf("End of Preprocessing\n");
-
+	printf("End of Preprocessing\n");
     printf("StereoMatch Application Initialised\n");
 	return;
 }
@@ -191,7 +181,7 @@ void StereoMatch::compute(float& de_time_ms)
 	//#########################################################################
 	if(media_mode == DE_VIDEO)
 	{
-		for(int drop=0;drop<30;drop++)
+		for(int drop=0;drop<3;drop++)
 			cap >> vFrame; //capture a frame from the camera
 		if(vFrame.empty())
 		{
@@ -210,8 +200,8 @@ void StereoMatch::compute(float& de_time_ms)
 
 		//Applies a generic geometrical transformation to an image.
 		//http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html#remap
-		remap(lFrame, lFrame_rec, mapl[0], mapl[1], INTER_LINEAR);
-		remap(rFrame, rFrame_rec, mapr[0], mapr[1], INTER_LINEAR);
+		remap(lFrame, lFrame_rec, mapl[0], mapl[1], cv::INTER_LINEAR);
+		remap(rFrame, rFrame_rec, mapr[0], mapr[1], cv::INTER_LINEAR);
 
 		lFrame = lFrame_rec(cropBox);
 		rFrame = rFrame_rec(cropBox);
@@ -219,14 +209,72 @@ void StereoMatch::compute(float& de_time_ms)
 		lFrame.copyTo(leftInputImg);
 		rFrame.copyTo(rightInputImg);
 	}
-#ifdef DEBUG_APP
-	else if(media_mode == DE_IMAGE){
-        std::cout << "media_mode == DE_IMAGE" << std::endl;
+	else if(media_mode == DE_IMAGE)
+	{
+		if(data_set_update)
+		{
+			set_filename_m.lock();
+
+			lFrame = cv::imread(left_img_filename, cv::IMREAD_COLOR);
+			if(lFrame.empty())
+			{
+				std::cout << "Failed to read left image \"" << left_img_filename << "\"" << std::endl;
+				std::cout << "Exiting" << std::endl;
+				exit(1);
+			}
+			else{
+				std::cout << "Loaded Left: " << left_img_filename << std::endl;
+			}
+			rFrame = cv::imread(right_img_filename, cv::IMREAD_COLOR);
+			if(rFrame.empty())
+			{
+				std::cout << "Failed to read right image \"" << right_img_filename << "\"" << std::endl;
+				std::cout << "Exiting" << std::endl;
+				exit(1);
+			}
+			else{
+				std::cout << "Loaded Right: " << right_img_filename << std::endl;
+			}
+			gtFrame = cv::imread(gt_img_filename, cv::IMREAD_GRAYSCALE);
+			if(gtFrame.empty()){
+				std::cout << "Failed to read ground truth image \"" << gt_img_filename << "\"" << std::endl;
+				std::cout << "Exiting" << std::endl;
+				exit(1);
+			}else{
+				std::cout << "Loaded Ground Truth: " << gt_img_filename << std::endl;
+			}
+
+			eDispMap = cv::Mat(lFrame.rows, lFrame.cols, CV_8UC1);
+			mask_mode = mask_mode_next;
+			if(mask_mode != NO_MASKS)
+				errMask = cv::imread(mask_occl_filename, cv::IMREAD_GRAYSCALE);
+
+			imgDisparity16S = cv::Mat(lFrame.rows, lFrame.cols, CV_16S);
+			blankDispMap = cv::Mat(rFrame.rows, rFrame.cols, CV_8UC3, cv::Scalar(0, 0, 0));
+
+			display_container = cv::Mat(lFrame.rows*2, lFrame.cols*3, CV_8UC3, cv::Scalar(0, 0, 0));
+			leftInputImg  = cv::Mat(display_container, cv::Rect(0,             0,           lFrame.cols, lFrame.rows)); //Top Left
+			rightInputImg = cv::Mat(display_container, cv::Rect(lFrame.cols,   0,           lFrame.cols, lFrame.rows)); //Top Right
+			leftDispMap   = cv::Mat(display_container, cv::Rect(0,             lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
+			rightDispMap  = cv::Mat(display_container, cv::Rect(lFrame.cols,   lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
+			gtDispMap	  = cv::Mat(display_container, cv::Rect(lFrame.cols*2, 0, 			lFrame.cols, lFrame.rows)); //Top Far Right
+			errDispMap	  = cv::Mat(display_container, cv::Rect(lFrame.cols*2, lFrame.rows,	lFrame.cols, lFrame.rows)); //Bottom Far Right
+
+			lFrame.copyTo(leftInputImg);
+			rFrame.copyTo(rightInputImg);
+			cv::cvtColor(gtFrame, gtDispMap, CV_GRAY2RGB);
+
+			delete SMDE;
+			SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
+			scale_factor = scale_factor_next;
+
+			data_set_update = false;
+			set_filename_m.unlock();
+		}
 	}
 	else {
         std::cout << "Unrecognised value for media_mode: " << media_mode << std::endl;
 	}
-#endif // DEBUG_APP
 
 	//#########################################################################
 	//# Start of Disparity Map Creation
@@ -237,15 +285,16 @@ void StereoMatch::compute(float& de_time_ms)
 		printf("MatchingAlgorithm == STEREO_SGBM\n");
 #endif // DEBUG_APP
 		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_8U){
-			lFrame.convertTo(lFrame_tmp, CV_8U, 255);
-			rFrame.convertTo(rFrame_tmp, CV_8U, 255);
+			lFrame.convertTo(lFrame, CV_8U, 255);
+			rFrame.convertTo(rFrame, CV_8U, 255);
 		}
 
-		ssgbm->compute(lFrame_tmp, rFrame_tmp, imgDisparity16S); //Compute the disparity map
+		//Compute the disparity map
+		ssgbm->compute(lFrame, rFrame, imgDisparity16S);
 		minMaxLoc(imgDisparity16S, &minVal, &maxVal); //Check its extreme values
-		imgDisparity16S.convertTo(lDispMap, CV_8U, 255/(maxVal - minVal));
+
 		//Load the disparity map to the display
-		//applyColorMap( leftDispMap, leftDispMap, COLORMAP_JET);
+		imgDisparity16S.convertTo(lDispMap, CV_8U, 255/(maxVal - minVal));
 		cvtColor(lDispMap, leftDispMap, CV_GRAY2RGB);
 	}
 	else if(MatchingAlgorithm == STEREO_GIF)
@@ -253,15 +302,13 @@ void StereoMatch::compute(float& de_time_ms)
 #ifdef DEBUG_APP
 		printf("MatchingAlgorithm == STEREO_GIF\n");
 #endif // DEBUG_APP
-		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_8U)
+		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_32F)
         {
-            cvtColor(lFrame, lFrame, CV_BGR2RGB);
-            cvtColor(rFrame, rFrame, CV_BGR2RGB);
-            lFrame.convertTo(lFrame_tmp, CV_32F, 1 / 255.0f);
-            rFrame.convertTo(rFrame_tmp, CV_32F,  1 / 255.0f);
+            lFrame.convertTo(lFrame, CV_32F, 1 / 255.0f);
+            rFrame.convertTo(rFrame, CV_32F,  1 / 255.0f);
 
-            SMDE->lImg = lFrame_tmp.getMat(ACCESS_READ);
-            SMDE->rImg = rFrame_tmp.getMat(ACCESS_READ);
+            SMDE->lImg = lFrame;
+            SMDE->rImg = rFrame;
 		}
 		SMDE->threads = num_threads;
 
@@ -307,75 +354,107 @@ void StereoMatch::compute(float& de_time_ms)
 			pp_time = get_rt() - pp_time;
 		}
 
-		// ******** Show Disparity Map  ******** //
-		//cv::applyColorMap( SMDE->lDisMap*4, lDispMap, COLORMAP_JET); // *4 for conversion from disparty range (0-64) to RGB char range (0-255)
-		cv::minMaxLoc(SMDE->lDisMap, &minVal, &maxVal);
-		SMDE->lDisMap.convertTo(lDispMap, CV_8U, 4);//255/(maxVal - minVal));
+		// ******** Display Disparity Maps  ******** //
+		SMDE->lDisMap.convertTo(lDispMap, CV_8U, scale_factor); //scale factor used to compare error with ground truth
+		SMDE->rDisMap.convertTo(rDispMap, CV_8U, scale_factor);
+
 		cv::cvtColor(lDispMap, leftDispMap, CV_GRAY2RGB);
+		cv::cvtColor(lDispMap, rightDispMap, CV_GRAY2RGB);
+		// ******** Display Disparity Maps  ******** //
 
-		//cv::applyColorMap( SMDE->rDisMap*4, rDispMap, COLORMAP_JET);
-		SMDE->rDisMap.convertTo(rDispMap, CV_8U, 255/(maxVal - minVal));
-		cv::cvtColor(rDispMap, rightDispMap, CV_GRAY2RGB);
-		// ******** Show Disparity Map  ******** //
-
-#ifdef DEBUG_APP
-		printf("CVC Time:\t | %8.2f ms\n",cvc_time/1000);
-		printf("CVF Time:\t | %8.2f ms\n",cvf_time/1000);
-		printf("DispSel Time:\t | %8.2f ms\n",dispsel_time/1000);
-		printf("PP Time:\t | %8.2f ms\n",pp_time/1000);
-#endif
+#ifdef DEBUG_APP_MONITORS
+		printf("STEREO GIF Module Times:\n");
+		printf("CVC Time:\t %4.2f ms\n",cvc_time/1000);
+		printf("CVF Time:\t %4.2f ms\n",cvf_time/1000);
+		printf("DispSel Time:\t %4.2f ms\n",dispsel_time/1000);
+		printf("PP Time:\t %4.2f ms\n",pp_time/1000);
+#endif //DEBUG_APP_MONITORS
 	}
 
 	de_time_ms = (get_rt() - start_time)/1000;
-	printf("DE Time:\t | %8.2f ms\n", de_time_ms);
+	printf("DE Time:\t %4.2f ms\n", de_time_ms);
 
 #ifdef DEBUG_APP
-	cv::imwrite("leftDisparityMap.png", leftDispMap.getMat(ACCESS_READ));
-	cv::imwrite("rightDisparityMap.png", rightDispMap.getMat(ACCESS_READ));
+	cv::imwrite("leftDisparityMap.png", leftDispMap);
+	cv::imwrite("rightDisparityMap.png", rightDispMap);
 #endif
 
+	start_time = get_rt();
 	if(media_mode == DE_IMAGE)
 	{
 		//Check pixel errors against ground truth depth map here.
 		//Can only be done with images as golden reference is required.
-		float num_bad_pixels = 0;
-		float avg_err = 0;
 
-		Mat eDispMap_Mat = eDispMap.getMat(ACCESS_READ);
-		Mat lDispMap_Mat = lDispMap.getMat(ACCESS_READ);
-		Mat gtFrame_Mat = gtFrame.getMat(ACCESS_READ);
+		//Calculate error in disparity for each pixel
+		#pragma omp parallel for
+		for(int y = 0; y < gtFrame.rows; y++)
+		{
+			uchar* eData = (uchar*) eDispMap.ptr<uchar>( y );
+			uchar* lData = (uchar*) lDispMap.ptr<uchar>( y );
+			uchar* gtData = (uchar*) gtFrame.ptr<uchar>( y );
+
+			int col_start = 0;
+			if(MatchingAlgorithm == STEREO_SGBM)
+			{
+				for(int x = 0; x < maxDis; x++)
+				{
+					eData[x] = 0;
+				}
+				col_start = maxDis;
+			}
+			for(int x = col_start; x < gtFrame.cols; x++)
+			{
+				eData[x] = abs(lData[x] - gtData[x]);
+			}
+		}
+
+		if(mask_mode == MASK_DISC || mask_mode == MASK_NONOCC)
+		{
+			if(MatchingAlgorithm == STEREO_SGBM)
+				cv::cvtColor(errMask, rightDispMap, CV_GRAY2RGB);
+
+			cv::Mat eDispMap_tmp;
+			eDispMap.copyTo(eDispMap_tmp, errMask);
+			eDispMap_tmp.copyTo(eDispMap);
+		} else {
+			if(MatchingAlgorithm == STEREO_SGBM)
+				blankDispMap.copyTo(rightDispMap);
+		}
+
+		unsigned int num_bad_pixels = 0;
+		float err_sum = 0;
 
 		for(int y = 0; y < gtFrame.rows; y++)
 		{
-			uchar* eData = (uchar*) eDispMap_Mat.ptr<uchar>( y );
-			uchar* lData = (uchar*) lDispMap_Mat.ptr<uchar>( y );
-			uchar* gtData = (uchar*) gtFrame_Mat.ptr<uchar>( y );
+			uchar* eData = (uchar*) eDispMap.ptr<uchar>( y );
+			uchar* lData = (uchar*) lDispMap.ptr<uchar>( y );
+			uchar* gtData = (uchar*) gtFrame.ptr<uchar>( y );
 
-			for(int x = 0; x < maxDis; x++)
+			for(int x = 0; x < gtFrame.cols; x++)
 			{
-				eData[x] = 0;
-			}
-			for(int x = maxDis; x < gtFrame.cols; x++)
-			{
-				eData[x] = abs(lData[x] - gtData[x]);
-				avg_err += (float)eData[x];
+				err_sum += (float)eData[x];
 				if(eData[x] > error_threshold){
 					num_bad_pixels++;
 				}
-				else{
-					eData[x] = 0;
-				}
 			}
 		}
-		float num_pixels = gtFrame.cols*gtFrame.rows;
-#ifdef DEBUG_APP
-		printf("%%BP = %.2f%% \t Avg Err = %.2f\n", (float)num_bad_pixels*100/num_pixels, (float)avg_err/num_pixels);
-#endif
 
-		minMaxLoc(eDispMap, &minVal, &maxVal);
-		//eDispMap.convertTo(eDispMap, CV_8U, 255/(maxVal - minVal));
+		float num_pixels = gtFrame.cols*gtFrame.rows;
+		float avg_err = err_sum/(4*num_pixels); //Convert to per-pixel error. Convert from grayscale range to disparity range
+
+#ifdef DEBUG_APP_MONITORS
+		printf("%%BP = %.2f%% \t Avg Err = %.2f\n", num_bad_pixels*100/num_pixels, avg_err);
+#endif //DEBUG_APP_MONITORS
+
+		//Display the errors in the disparity map compared the ground truth
+		//minMaxLoc(eDispMap, &minVal, &maxVal);
+		//eDispMap.convertTo(eDispMap, CV_8U, 255/(maxVal - minVal)); //scale to fill range of char pixel values
 		cvtColor(eDispMap, errDispMap, CV_GRAY2RGB);
 	}
+
+	float err_time = (get_rt() - start_time)/1000;
+	printf("Err Calculation Time:\t | %8.2f ms\n", err_time);
+
 	return;
 }
 
@@ -411,15 +490,15 @@ int StereoMatch::stereoCameraSetup(void)
 {
 	if(recalibrate)
     {
-		resizeWindow("InputOutput", lFrame.cols*2, lFrame.rows*2); //Native camera image resolution
-		display_container = UMat(lFrame.rows*2, lFrame.cols*2, CV_8UC3);
-		leftInputImg  = UMat(display_container, Rect(0,           0,           lFrame.cols, lFrame.rows)); //Top Left
-		rightInputImg = UMat(display_container, Rect(lFrame.cols, 0,           lFrame.cols, lFrame.rows)); //Top Right
-		leftDispMap   = UMat(display_container, Rect(0,           lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
-		rightDispMap  = UMat(display_container, Rect(lFrame.cols, lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
+		display_container = Mat(lFrame.rows*2, lFrame.cols*2, CV_8UC3);
+		leftInputImg  = Mat(display_container, Rect(0,           0,           lFrame.cols, lFrame.rows)); //Top Left
+		rightInputImg = Mat(display_container, Rect(lFrame.cols, 0,           lFrame.cols, lFrame.rows)); //Top Right
+		leftDispMap   = Mat(display_container, Rect(0,           lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Left
+		rightDispMap  = Mat(display_container, Rect(lFrame.cols, lFrame.rows, lFrame.cols, lFrame.rows)); //Bottom Right
 
 		lFrame.copyTo(leftInputImg);
 		rFrame.copyTo(rightInputImg);
+
 		imshow("InputOutput", display_container);
 
 		//###########################################################################################################
@@ -548,7 +627,6 @@ int StereoMatch::captureChessboards(void)
 int StereoMatch::parse_cli(int argc, const char * argv[])
 {
     args::ArgumentParser parser("Application: Stereo Matching for Depth Estimation.","PRiME Project\n");
-    parser.LongSeparator("=");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
 
     args::Group commands(parser, "Commands (1 must be specified):", args::Group::Validators::Xor);
@@ -576,9 +654,10 @@ int StereoMatch::parse_cli(int argc, const char * argv[])
 
     args::Command arg_image(commands, "image", "Use images as the input source.", [&](args::Subparser &s_parser)
     {
-		args::ValueFlag<std::string> arg_left(s_parser, "left", "Left image filename.", {'l', "left"}, args::Options::Required);
-		args::ValueFlag<std::string> arg_right(s_parser, "right", "Right image filename.", {'r', "right"}, args::Options::Required);
-		args::ValueFlag<std::string> arg_gt(s_parser, "gt", "Ground truth image filename.", {'g', "gt"}, args::Options::Required);
+		args::Group filenames(s_parser, "Left, right and ground truth filenames must be specified if using custom images.", args::Group::Validators::AllOrNone);
+		args::ValueFlag<std::string> arg_left(filenames, "left", "Left image filename.", {'l', "left"});
+		args::ValueFlag<std::string> arg_right(filenames, "right", "Right image filename.", {'r', "right"});
+		args::ValueFlag<std::string> arg_gt(filenames, "gt", "Ground truth image filename.", {'g', "gt"});
 
 		s_parser.Parse();
 
@@ -586,9 +665,18 @@ int StereoMatch::parse_cli(int argc, const char * argv[])
         std::cout << "Parsing command-specific arguments." << std::endl;
 
 		media_mode = DE_IMAGE;
-        left_img_filename = args::get(arg_left);
-        right_img_filename = args::get(arg_right);
-        gt_img_filename = args::get(arg_gt);
+		if(arg_left)
+		{
+			std::cout << "User Dataset filenames provided." << std::endl;
+			left_img_filename = args::get(arg_left);
+			right_img_filename = args::get(arg_right);
+			gt_img_filename = args::get(arg_gt);
+			user_dataset = true;
+		}
+		else
+		{
+			set_filenames("Cones");
+		}
     });
 
 	args::Options ReqGlobal = args::Options::Required | args::Options::Global;
@@ -619,6 +707,33 @@ int StereoMatch::parse_cli(int argc, const char * argv[])
 	}
 
     return 0;
+}
+
+int StereoMatch::set_filenames(std::string dataset_name)
+{
+	std:string data_dir = "../data/";
+	set_filename_m.lock();
+	if(dataset_name.compare("Cones") == 0 || dataset_name.compare("Teddy") == 0 )
+	{
+		left_img_filename = data_dir + dataset_name + std::string("/im2.png");
+		right_img_filename = data_dir + dataset_name + std::string("/im6.png");
+		gt_img_filename = data_dir + dataset_name + std::string("/disp2.png");
+		mask_occl_filename = data_dir + dataset_name + std::string("/occl.png");
+		mask_disc_filename = data_dir + dataset_name + std::string("/occ_and_discont.png");
+		mask_mode_next = MASK_NONOCC;
+		scale_factor_next = 4;
+	}
+	else
+	{
+		left_img_filename = data_dir + dataset_name + std::string("/view1.png");
+		right_img_filename = data_dir + dataset_name + std::string("/view5.png");
+		gt_img_filename = data_dir + dataset_name + std::string("/disp1.png");
+		mask_mode_next = NO_MASKS;
+		scale_factor_next = 3;
+	}
+	data_set_update = true;
+	set_filename_m.unlock();
+	return 0;
 }
 
 //#############################################################################################

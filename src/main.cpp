@@ -79,6 +79,7 @@ void HCI(void)
 	//User interface input handler
     char key = ' ';
 	float de_time;
+	int dataset_idx = 0;
 
     while(key != 'q')
     {
@@ -97,18 +98,19 @@ void HCI(void)
                 printf("| Control Options:\n");
                 printf("|   1-8: Change thread/core number.\n");
                 printf("|   a:   Switch matching algorithm: STEREO_GIF, STEREO_SGBM\n");
+                printf("|   d:   Cycle between images datasets:\n");
+				printf("|   d:   	Art, Books, Cones, Dolls, Laundry, Moebius, Teddy.n");
                 printf("|   m:   Switch computation mode:\n");
                 printf("|   m:      STEREO_GIF:  OpenCL <-> pthreads.\n");
                 printf("|   m:      STEREO_SGBM: MODE_SGBM, MODE_HH, MODE_SGBM_3WAY\n");
-//                printf("|   t:   Switch data type: float 32 bit <-> unsigned char 8bit\n");
                 printf("|   -/=: Increase or decrease the error threshold\n");
                 printf("|-------------------------------------------------------------------|\n");
                 printf("| Current Options:\n");
                 printf("|   a:   Matching Algorithm: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
+                printf("|   d:   Dataset: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
                 printf("|   m:   Computation mode: %s\n", sm->MatchingAlgorithm ? (sm->de_mode ? "OpenCL" : "pthreads") : (
 														sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
 														sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" : "MODE_SGBM_3WAY" ));
-//                printf("|   t:   Data type: %s\n", sm->imgType ? "CV_32F" : "CV_8U");
                 printf("|   -/=: Error Threshold: %d\n", sm->error_threshold);
                 printf("|-------------------------------------------------------------------|\n");
                 break;
@@ -119,12 +121,27 @@ void HCI(void)
 				printf("| a: Matching Algorithm Changed to: %s |\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
 				break;
             }
+            case 'd':
+            {
+				if(sm->media_mode == DE_VIDEO){
+					printf("| d: Must be in image mode to use datasets.\n");
+					break;
+				}
+				if(sm->user_dataset){
+					printf("| d: User dataset has been specified.\n");
+					break;
+				}
+				dataset_idx = dataset_idx < dataset_names.size()-1 ? dataset_idx + 1 : 0;
+				printf("| d: Dataset changed to: %s\n", dataset_names[dataset_idx].c_str());
+				sm->set_filenames(dataset_names[dataset_idx]);
+				break;
+            }
             case 'm':
             {
 				if(sm->MatchingAlgorithm == STEREO_GIF){
 					if(nOpenCLDev){
 						sm->de_mode = sm->de_mode ? OCV_DE : OCL_DE;
-						printf("| m: STEREO_GIF Matching Algoritm:\n");
+						printf("| m: STEREO_GIF Matching Algorithm:\n");
 						printf("| m: Mode changed to %s |\n", sm->de_mode ? "OpenCL on the GPU" : "C++ & pthreads on the CPU");
 					}
 					else{
@@ -136,27 +153,27 @@ void HCI(void)
 								sgbm_mode == StereoSGBM::MODE_SGBM ? StereoSGBM::MODE_SGBM_3WAY :
 								StereoSGBM::MODE_HH);
 					sm->ssgbm->setMode(sgbm_mode);
-					printf("| m: STEREO_GIF Matching Algoritm:\n");
+					printf("| m: STEREO_GIF Matching Algorithm:\n");
 					printf("| m: Mode changed to %s |\n", sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
 															sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" :
 															"MODE_SGBM_3WAY");
 				}
 				break;
             }
-//            case 't':
-//            {
-//				if(sm->imgType == CV_32F){
-//					sm->imgType = CV_8U;
-//					printf("| p: STEREO_GIF algorithm data type = %s |\n", "CV_8U");
-//				} else {
-//					sm->imgType = CV_32F;
-//					printf("| p: STEREO_GIF algorithm data type = %s |\n", "CV_32F");
-//				}
-//				if(sm->MatchingAlgorithm != STEREO_GIF){
-//					printf("| p: Data type only affects the STEREO_GIF algorithm.\n");
-//				}
-//				break;
-//            }
+            case 'o':
+            {
+            	if(sm->mask_mode == NO_MASKS){
+					printf("| o: Disparity error masks not provided for the chosen dataset.\n");
+					break;
+            	}
+				sm->mask_mode = (sm->mask_mode == MASK_NONE ? MASK_NONOCC :
+								sm->mask_mode == MASK_NONOCC ? MASK_DISC :
+								MASK_NONE);
+				printf("| o: Disparity error mask set to: %s |\n", sm->mask_mode == MASK_NONE ? "None" :
+																	sm->mask_mode == MASK_NONOCC ? "Nonocc" :
+																	"Disc");
+				break;
+            }
             case '=':
             {
 				sm->error_threshold++;

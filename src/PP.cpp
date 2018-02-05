@@ -55,6 +55,7 @@ void fillInv(Mat& lDis, Mat& rDis, Mat& lValid, Mat& rValid)
 	int wid = lDis.cols;
 
     // fill left dep
+	#pragma omp parallel for
     for( int y = 0; y < hei; y ++ ) {
 		uchar* lDisData = ( uchar* ) lDis.ptr<uchar>( y );
 		uchar* lValidData = ( uchar* ) lValid.ptr<uchar>( y );
@@ -96,6 +97,7 @@ void fillInv(Mat& lDis, Mat& rDis, Mat& lValid, Mat& rValid)
         }
     }
     // fill right dep
+	#pragma omp parallel for
     for( int y = 0; y < hei; y ++ ) {
 		uchar* rDisData = ( uchar* ) ( rDis.ptr<uchar>( y ) );
 		uchar* rValidData = ( uchar* ) rValid.ptr<uchar>( y );
@@ -397,7 +399,7 @@ void wgtMedian_thread(const Mat& Img, Mat& Dis, Mat& Valid, const int maxDis, co
 	return;
 }
 
-void PP::processDM(const Mat& lImg, const Mat& rImg, Mat& lDisMap, Mat& rDisMap,
+void PP::processDM(Mat& lImg, Mat& rImg, Mat& lDisMap, Mat& rDisMap,
 					Mat& lValid, Mat& rValid, const int maxDis, int threads)
 {
 	// color image should be 3x3 median filtered
@@ -423,15 +425,9 @@ void PP::processDM(const Mat& lImg, const Mat& rImg, Mat& lDisMap, Mat& rDisMap,
 //	cvtColor(rImg, rImg_8UC3, CV_RGB2GRAY );
 //	lImg_8UC3.convertTo(lImg_8UC3, CV_8U, 255);
 //	rImg_8UC3.convertTo(rImg_8UC3, CV_8U, 255);
-//	namedWindow("ppPreview", CV_WINDOW_AUTOSIZE);
-//	resizeWindow("ppPreview", lImg_8UC3.cols, lImg_8UC3.rows);
-//	imshow("ppPreview", lImg_8UC3);
-//	waitKey(1);
 
     lDisMap = JointWMF::filter(lDisMap, lImg_8UC3, (int)MED_SZ/2);
     rDisMap = JointWMF::filter(rDisMap, rImg_8UC3, (int)MED_SZ/2);
-
-
 
 	return;
 }

@@ -20,6 +20,8 @@
 #include <ctime>
 #include <chrono>
 #include <thread>
+#include <omp.h>
+#include <mutex>
 
 //POSIX Threads
 #include <pthread.h>

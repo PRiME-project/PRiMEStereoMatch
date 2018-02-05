@@ -17,8 +17,16 @@
 #define DE_VIDEO 1
 #define DE_IMAGE 2
 
+#define NO_MASKS 0
+#define MASK_NONE 1
+#define MASK_NONOCC 2
+#define MASK_DISC 3
+
 #define DISPLAY
-#define DEBUG_APP
+//#define DEBUG_APP
+#define DEBUG_APP_MONITORS
+
+static std::vector<std::string> dataset_names = std::vector<std::string>{"Art", "Books", "Cones", "Dolls", "Laundry", "Moebius", "Teddy"};
 
 class StereoMatch
 {
@@ -26,35 +34,41 @@ public:
 	StereoMatch(int argc, const char *argv[], int gotOpenCLDev);
 	~StereoMatch(void);
 
-	void compute(float& de_time_ms);
-
-//    int imgType;
 	int de_mode;
 	int MatchingAlgorithm;
 	int error_threshold;
-	cv::UMat display_container;
-
+	int mask_mode;
+	int media_mode;
+	cv::Mat display_container;
 	//StereoSGBM Variables
 	cv::Ptr<StereoSGBM> ssgbm;
+
+	void compute(float& de_time_ms);
+	int set_filenames(std::string dataset_name);
+	bool user_dataset;
 
 private:
 	//Variables
 	bool end_de, recaptureChessboards, recalibrate;
-	int gotOCLDev, media_mode;
+	int gotOCLDev;
 	char cap_key;
 
-	std::string left_img_filename;
-	std::string right_img_filename;
-	std::string gt_img_filename;
+	std::string left_img_filename, right_img_filename;
+	std::string gt_img_filename, mask_occl_filename, mask_disc_filename;
+	std::mutex set_filename_m;
+	bool data_set_update;
+	int mask_mode_next;
+	int scale_factor, scale_factor_next;
 
 	//Display Variables
-	cv::UMat leftInputImg, rightInputImg;
-	cv::UMat leftDispMap, rightDispMap;
-    cv::UMat gtDispMap, errDispMap;
-    cv::UMat blankDispMap;
+	cv::Mat leftInputImg, rightInputImg;
+	cv::Mat leftDispMap, rightDispMap;
+    cv::Mat gtDispMap, errDispMap;
+    cv::Mat blankDispMap;
 
 	//local disparity map containers
-    cv::UMat lDispMap, rDispMap, eDispMap;
+    cv::Mat lDispMap, rDispMap, eDispMap;
+    cv::Mat errMask;
 
 	//input values
     int maxDis;
@@ -63,22 +77,20 @@ private:
     double cvc_time, cvf_time, dispsel_time, pp_time;
 
     //Frame Holders & Camera object
-	cv::UMat lFrame, rFrame, vFrame;
-    cv::UMat lFrame_tmp;
-    cv::UMat rFrame_tmp;
+	cv::Mat lFrame, rFrame, vFrame;
 
 	VideoCapture cap;
 	//Image rectification maps
-	cv::UMat mapl[2], mapr[2];
+	cv::Mat mapl[2], mapr[2];
 	cv::Rect cropBox;
-	cv::UMat lFrame_rec, rFrame_rec;
-	cv::UMat gtFrame, gtFrameImg;
+	cv::Mat lFrame_rec, rFrame_rec;
+	cv::Mat gtFrame;
 
 	//StereoSGBM Variables
 	StereoCameraProperties camProps;
 	double minVal, maxVal;
 	double minVal_gt, maxVal_gt;
-	cv::UMat imgDisparity16S;
+	cv::Mat imgDisparity16S;
 
 	//StereoGIF Variables
 	DispEst* SMDE;
@@ -89,7 +101,6 @@ private:
 	int stereoCameraSetup(void);
 	int captureChessboards(void);
 	int setupOpenCVSGBM(int, int);
-	int inputArgParser(int argc, char *argv[]);
 	int parse_cli(int argc, const char * argv[]);
 };
 

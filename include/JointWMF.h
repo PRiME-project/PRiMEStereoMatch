@@ -4,10 +4,10 @@
 /*
 *   Distribution code Version 1.1 -- 09/21/2014 by Qi Zhang Copyright 2014, The Chinese University of Hong Kong.
 *
-*   The Code is created based on the method described in the following paper 
-*   [1] "100+ Times Faster Weighted Median Filter", Qi Zhang, Li Xu, Jiaya Jia, IEEE Conference on 
+*   The Code is created based on the method described in the following paper
+*   [1] "100+ Times Faster Weighted Median Filter", Qi Zhang, Li Xu, Jiaya Jia, IEEE Conference on
 *		Computer Vision and Pattern Recognition (CVPR), 2014
-*   
+*
 *   Due to the adaption for supporting mask and different types of input, this code is
 *   slightly slower than the one claimed in the original paper. Please use
 *   our executable on our website for performance comparison.
@@ -21,7 +21,7 @@
 #define JOINT_WMF_H
 
 /***************************************************************/
-/* 
+/*
  * Standard IO library is required.
  * STL String library is required.
  *
@@ -30,13 +30,14 @@
 #include <string>
 
 /***************************************************************/
-/* 
- * OpenCV 2.4 is required. 
+/*
+ * OpenCV 2.4 is required.
  * The following code is already built on OpenCV 2.4.2.
  *
 /***************************************************************/
 #include "opencv2/core/core.hpp"
 #include <time.h>
+#include <omp.h>
 
 //Use the namespace of CV and STD
 using namespace std;
@@ -47,14 +48,14 @@ class JointWMF{
 public:
 
 	/***************************************************************/
-	/* Function: filter 
+	/* Function: filter
 	 *
 	 * Description: filter implementation of joint-histogram weighted median framework
 	 *				including clustering of feature image, adaptive quantization of input image.
-	 * 
+	 *
 	 * Input arguments:
 	 *			I: input image (any # of channels). Accept only CV_32F and CV_8U type.
-	 *	  feature: the feature image ("F" in the paper). Accept only CV_8UC1 and CV_8UC3 type (the # of channels should be 1 or 3).  
+	 *	  feature: the feature image ("F" in the paper). Accept only CV_8UC1 and CV_8UC3 type (the # of channels should be 1 or 3).
 	 *          r: radius of filtering kernel, should be a positive integer.
 	 *      sigma: filter range standard deviation for the feature image.
 	 *         nI: # of quantization level of input image. (only when the input image is CV_32F type)
@@ -67,12 +68,12 @@ public:
 	 *					cos: dot(I1,I2)/(|I1|*|I2|)
 	 *					jac: (min(r1,r2)+min(g1,g2)+min(b1,b2))/(max(r1,r2)+max(g1,g2)+max(b1,b2))
 	 *					off: unweighted
-	 *		 mask: a 0-1 mask that has the same size with I. This mask is used to ignore the effect of some pixels. If the pixel value on mask is 0, 
+	 *		 mask: a 0-1 mask that has the same size with I. This mask is used to ignore the effect of some pixels. If the pixel value on mask is 0,
 	 *			   the pixel will be ignored when maintaining the joint-histogram. This is useful for applications like optical flow occlusion handling.
 	 *
 	 * Note:
-	 *		1. When feature image clustering (when F is 3-channel) OR adaptive quantization (when I is floating point image) is 
-	 *         performed, the result is an approximation. To increase the accuracy, using a larger "nI" or "nF" will help. 
+	 *		1. When feature image clustering (when F is 3-channel) OR adaptive quantization (when I is floating point image) is
+	 *         performed, the result is an approximation. To increase the accuracy, using a larger "nI" or "nF" will help.
 	 *
 	 */
 	/***************************************************************/
@@ -87,9 +88,9 @@ public:
 
 		//declaration
 		Mat result;
-		
+
 		//Preprocess I
-		//OUTPUT OF THIS STEP: Is, iMap 
+		//OUTPUT OF THIS STEP: Is, iMap
 		//If I is floating point image, "adaptive quantization" is done in from32FTo32S.
 		//The mapping of floating value to integer value is stored in iMap (for each channel).
 		//"Is" stores each channel of "I". The channels are converted to CV_32S type after this step.
@@ -103,18 +104,17 @@ public:
 					from32FTo32S(Is[i],Is[i],nI,iMap[i]);
 				}
 				else if(I.depth()==CV_8U){
-					Is[i].convertTo(Is[i],CV_32S);	
+					Is[i].convertTo(Is[i],CV_32S);
 				}
 			}
 		}
 
-
 		//Preprocess F
-		//OUTPUT OF THIS STEP: F(new), wMap 
+		//OUTPUT OF THIS STEP: F(new), wMap
 		//If "F" is 3-channel image, "clustering feature image" is done in featureIndexing.
 		//If "F" is 1-channel image, featureIndexing only does a type-casting on "F".
 		//The output "F" is CV_32S type, containing indexes of feature values.
-		//"wMap" is a 2D array that defines the distance between each pair of feature indexes. 
+		//"wMap" is a 2D array that defines the distance between each pair of feature indexes.
 		// wMap[i][j] is the weight between feature index "i" and "j".
 		float **wMap;
 		{
@@ -128,7 +128,7 @@ public:
 					{//Do filtering
 						Is[i] = filterCore(Is[i], F, wMap, r, nF,nI,mask);
 					}
-				}	
+				}
 			}
 		}
 		float2D_release(wMap);
@@ -138,7 +138,7 @@ public:
 		{
 			for(int i=0;i<(int)Is.size();i++){
 				if(I.depth()==CV_32F){
-					from32STo32F(Is[i],Is[i],iMap[i]);	
+					from32STo32F(Is[i],Is[i],iMap[i]);
 					delete []iMap[i];
 				}
 				else if(I.depth()==CV_8U){
@@ -156,9 +156,9 @@ public:
 
 	/***************************************************************/
 	/* Function: filterCore
-	 * 
+	 *
 	 * Description: filter core implementation only containing joint-histogram weighted median framework
-	 * 
+	 *
 	 * input arguments:
 	 *			I: input image. Only accept CV_32S type.
 	 *          F: feature image. Only accept CV_32S type.
@@ -218,7 +218,7 @@ public:
 			{
 				int upY = min(rows-1,r);
 				for(int i=0;i<=upY;i++){
-				
+
 					int *IPtr = I.ptr<int>(i);
 					int *FPtr = F.ptr<int>(i);
 					uchar *maskPtr = mask.ptr<uchar>(i);
@@ -274,15 +274,15 @@ public:
 							float curWeight = 0;
 							int *nextHist = H[curMedianVal];
 							int *nextHf = Hf[curMedianVal];
-						
+
 							// Compute weight change by shift cut-point
 							int i=0;
 							do{
 								curWeight += (nextHist[i]<<1)*fPtr[i];
-								
+
 								// Update BCB and maintain the necklace table of BCB
 								updateBCB(BCB[i],BCBf,BCBb,i,-(nextHist[i]<<1));
-								
+
 								i=nextHf[i];
 							}while(i);
 
@@ -303,7 +303,7 @@ public:
 
 								// Update BCB and maintain the necklace table of BCB
 								updateBCB(BCB[i],BCBf,BCBb,i,nextHist[i]<<1);
-								
+
 								i=nextHf[i];
 							}while(i);
 							balanceWeight += curWeight;
@@ -322,13 +322,13 @@ public:
 					{
 						int rownum = y + r + 1;
 						if(rownum < rows){
-						
+
 							int *inputImgPtr = I.ptr<int>(rownum);
 							int *guideImgPtr = F.ptr<int>(rownum);
 							uchar *maskPtr = mask.ptr<uchar>(rownum);
 
 							for(int j=downX;j<=upX;j++){
-							
+
 								if(!maskPtr[j])continue;
 
 								fval = inputImgPtr[j];
@@ -358,13 +358,13 @@ public:
 					{
 						int rownum = y - r;
 						if(rownum >= 0){
-						
+
 							int *inputImgPtr = I.ptr<int>(rownum);
 							int *guideImgPtr = F.ptr<int>(rownum);
 							uchar *maskPtr = mask.ptr<uchar>(rownum);
 
 							for(int j=downX;j<=upX;j++){
-							
+
 								if(!maskPtr[j])continue;
 
 								fval = inputImgPtr[j];
@@ -409,14 +409,20 @@ public:
 
 private:
 
+	static float get_rt(){
+		struct timespec realtime;
+		clock_gettime(CLOCK_MONOTONIC,&realtime);
+		return (float)(realtime.tv_sec*1000000+realtime.tv_nsec/1000);
+	}
+
 	/***************************************************************/
 	/* Function: updateBCB
 	 * Description: maintain the necklace table of BCB
 	/***************************************************************/
 	static inline void updateBCB(int &num,int *f,int *b,int i,int v){
-	
+
 		static int p1,p2;
-	
+
 		if(i){
 			if(!num){ // cell is becoming non-empty
 				p2=f[0];
@@ -464,6 +470,7 @@ private:
 	static int** int2D(int dim1, int dim2){
 		int **ret = new int*[dim1];
 		ret[0] = new int[dim1*dim2];
+
 		for(int i=1;i<dim1;i++)ret[i] = ret[i-1]+dim2;
 
 		return ret;
@@ -480,7 +487,7 @@ private:
 
 	/***************************************************************/
 	/* Function: featureIndexing
-	 * Description: convert uchar feature image "F" to CV_32SC1 type. 
+	 * Description: convert uchar feature image "F" to CV_32SC1 type.
 	 *				If F is 3-channel, perform k-means clustering
 	 *				If F is 1-channel, only perform type-casting
 	/***************************************************************/
@@ -534,7 +541,7 @@ private:
 			}
 		}
 		/* For 3 channel feature image (uchar)*/
-		else if(F.channels() == 3){ 
+		else if(F.channels() == 3){
 
 			const int shift = 2; // 256(8-bit)->64(6-bit)
 			const int LOW_NUM = 256>>shift;
@@ -622,7 +629,7 @@ private:
 					float a2 = centers.ptr<float>(i)[2];
 					length[i] = sqrt(a0*a0+a1*a1+a2*a2);
 				}
-			
+
 
 				for(int i=0;i<nF;i++){
 					for(int j=i;j<nF;j++){
@@ -655,7 +662,7 @@ private:
 	/***************************************************************/
 	/* Function: from32FTo32S
 	 * Description: adaptive quantization for changing a floating-point 1D image to integer image.
-	 *				The adaptive quantization strategy is based on binary search, which searches an 
+	 *				The adaptive quantization strategy is based on binary search, which searches an
 	 *				upper bound of quantization error.
 	 *				The function also return a mapping between quantized value (32F) and quantized index (32S).
 	 *				The mapping is used to convert integer image back to floating-point image after filtering.
@@ -671,9 +678,10 @@ private:
 		typedef pair<float,int> pairFI;
 
 		pairFI *data = (pairFI *)malloc(alls*sizeof(pairFI));
-		
+
 		// Sort all pixels of the image by ascending order of pixel value
 		{
+			#pragma omp parallel for
 			for(int i=0;i<alls;i++){
 				data[i].second = i;
 				data[i].first = imgPtr[i];
@@ -709,7 +717,7 @@ private:
 			if(suc)r=m;
 			else l=m;
 		}
-	
+
 		Mat retImg(img.size(),CV_32SC1);
 		int *retImgPtr = retImg.ptr<int>();
 
@@ -748,6 +756,7 @@ private:
 		int *imgPtr = img.ptr<int>();
 
 		// convert 32S index to 32F real value
+		#pragma omp parallel for
 		for(int i=0;i<alls;i++){
 			retImgPtr[i] = mapping[imgPtr[i]];
 		}

@@ -56,7 +56,7 @@ private:
 	std::string left_img_filename, right_img_filename;
 	std::string gt_img_filename, mask_occl_filename, mask_disc_filename;
 	std::mutex set_filename_m;
-	bool data_set_update;
+	bool data_set_update, ground_truth_data;
 	int mask_mode_next;
 	int scale_factor, scale_factor_next;
 

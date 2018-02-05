@@ -12,7 +12,7 @@
 //# SM Preprocessing that we don't want to repeat
 //#############################################################################
 StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
-	end_de(false), data_set_update(false), user_dataset(false)
+	end_de(false), data_set_update(false), user_dataset(false), ground_truth_data(false)
 {
     printf("Disparity Estimation for Depth Analysis in Stereo Vision Applications.\n");
     printf("Preprocessing for Stereo Matching.\n");
@@ -32,8 +32,8 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 	//num_threads = MIN_CPU_THREADS;
 	num_threads = MAX_CPU_THREADS;
 	gotOCLDev = gotOpenCLDev;
-	error_threshold = 4 * (256/maxDis);
 	mask_mode = MASK_NONOCC;
+	error_threshold = 4;
 
 	if(media_mode == DE_VIDEO)
 	{
@@ -79,6 +79,7 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 			std::cout << "Loading Art as default dataset." << std::endl;
 			set_filenames("Art");
 			scale_factor = 3;
+			error_threshold *= scale_factor;
 		}
 		lFrame = cv::imread(left_img_filename, cv::IMREAD_COLOR);
 		if(lFrame.empty())
@@ -100,13 +101,16 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 		else{
 			std::cout << "Loaded Right: " << right_img_filename << std::endl;
 		}
-		gtFrame = cv::imread(gt_img_filename, cv::IMREAD_GRAYSCALE);
-		if(gtFrame.empty()){
-			std::cout << "Failed to read ground truth image \"" << gt_img_filename << "\"" << std::endl;
-			std::cout << "Exiting" << std::endl;
-			exit(1);
-		}else{
-			std::cout << "Loaded Ground Truth: " << gt_img_filename << std::endl;
+		if(ground_truth_data)
+		{
+			gtFrame = cv::imread(gt_img_filename, cv::IMREAD_GRAYSCALE);
+			if(gtFrame.empty()){
+				std::cout << "Failed to read ground truth image \"" << gt_img_filename << "\"" << std::endl;
+				std::cout << "Exiting" << std::endl;
+				exit(1);
+			}else{
+				std::cout << "Loaded Ground Truth: " << gt_img_filename << std::endl;
+			}
 		}
 		//Init error map
 		eDispMap = Mat(lFrame.rows, lFrame.cols, CV_8UC1);
@@ -263,6 +267,9 @@ void StereoMatch::compute(float& de_time_ms)
 
 			delete SMDE;
 			SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
+
+
+			error_threshold = (error_threshold/scale_factor)*scale_factor_next;
 			scale_factor = scale_factor_next;
 
 			data_set_update = false;
@@ -639,12 +646,12 @@ int StereoMatch::captureChessboards(void)
 
 int StereoMatch::parse_cli(int argc, const char * argv[])
 {
-    args::ArgumentParser parser("Application: Stereo Matching for Depth Estimation.","PRiME Project\n");
-    args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+    args::ArgumentParser parser("Application: Stereo Matching for Depth Estimation.","PRiME Project.\n");
+    args::HelpFlag help(parser, "help", "Displays this help menu", {'h', "help"});
 
-    args::Group commands(parser, "Commands (1 must be specified):", args::Group::Validators::Xor);
+    //args::Group group_cmds(parser, "Commands (1 must be specified):", args::Group::Validators::Xor);
 
-    args::Command arg_video(commands, "video", "Use video as the input source.", [&](args::Subparser &s_parser)
+    args::Command cmd_video(parser, "video", "Use video as the input source.", [&](args::Subparser &s_parser)
     {
 		args::Flag arg_recalibrate(s_parser, "RECALIBRATE", "Recalibrate the camera to find ROIs.", {"RECALIBRATE"});
 		args::Flag arg_recapture(s_parser, "RECAPTURE", "Recapture chessboard image pairs for recalibration.", {"RECAPTURE"});
@@ -665,9 +672,10 @@ int StereoMatch::parse_cli(int argc, const char * argv[])
 		}
     });
 
-    args::Command arg_image(commands, "image", "Use images as the input source.", [&](args::Subparser &s_parser)
+    args::Command cmd_image(parser, "image", "Use images as the input source.", [&](args::Subparser &s_parser)
     {
-		args::Group filenames(s_parser, "Left, right and ground truth filenames must be specified if using custom images.", args::Group::Validators::AllOrNone);
+		//TODO: Fix this to correctly perform group validation on filenames - errors currently handled during imread in StereoMatch constructor
+		args::Group filenames(s_parser, "Left and right filenames must be specified if using custom images.", args::Group::Validators::AllOrNone);
 		args::ValueFlag<std::string> arg_left(filenames, "left", "Left image filename.", {'l', "left"});
 		args::ValueFlag<std::string> arg_right(filenames, "right", "Right image filename.", {'r', "right"});
 		args::ValueFlag<std::string> arg_gt(filenames, "gt", "Ground truth image filename.", {'g', "gt"});
@@ -683,13 +691,18 @@ int StereoMatch::parse_cli(int argc, const char * argv[])
 			std::cout << "User Dataset filenames provided." << std::endl;
 			left_img_filename = args::get(arg_left);
 			right_img_filename = args::get(arg_right);
-			gt_img_filename = args::get(arg_gt);
+			if(arg_gt)
+			{
+				gt_img_filename = args::get(arg_gt);
+				ground_truth_data = true;
+			}
 			user_dataset = true;
 		}
 		else
 		{
 			set_filenames("Cones");
 		}
+        std::cout << "Image command arguments parsed." << std::endl;
     });
 
 	args::Options ReqGlobal = args::Options::Required | args::Options::Global;

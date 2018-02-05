@@ -110,9 +110,6 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 		}
 		//Init error map
 		eDispMap = Mat(lFrame.rows, lFrame.cols, CV_8UC1);
-
-		//Mask out the occluded pixels using the dataset mask
-		errMask = cv::imread(mask_occl_filename, cv::IMREAD_GRAYSCALE);
 	}
 
 	//#########################################################################
@@ -129,7 +126,7 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 
 	lFrame.copyTo(leftInputImg);
 	rFrame.copyTo(rightInputImg);
-	cv::cvtColor(gtFrame, gtDispMap, CV_GRAY2RGB);
+	cv::cvtColor(gtFrame, gtDispMap, cv::COLOR_GRAY2RGB);
 
 	//#########################################################################
     //# SGBM Mode Setup
@@ -262,7 +259,7 @@ void StereoMatch::compute(float& de_time_ms)
 
 			lFrame.copyTo(leftInputImg);
 			rFrame.copyTo(rightInputImg);
-			cv::cvtColor(gtFrame, gtDispMap, CV_GRAY2RGB);
+			cv::cvtColor(gtFrame, gtDispMap, cv::COLOR_GRAY2RGB);
 
 			delete SMDE;
 			SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
@@ -295,7 +292,7 @@ void StereoMatch::compute(float& de_time_ms)
 
 		//Load the disparity map to the display
 		imgDisparity16S.convertTo(lDispMap, CV_8U, 255/(maxVal - minVal));
-		cvtColor(lDispMap, leftDispMap, CV_GRAY2RGB);
+		cvtColor(lDispMap, leftDispMap, cv::COLOR_GRAY2RGB);
 	}
 	else if(MatchingAlgorithm == STEREO_GIF)
 	{
@@ -358,8 +355,8 @@ void StereoMatch::compute(float& de_time_ms)
 		SMDE->lDisMap.convertTo(lDispMap, CV_8U, scale_factor); //scale factor used to compare error with ground truth
 		SMDE->rDisMap.convertTo(rDispMap, CV_8U, scale_factor);
 
-		cv::cvtColor(lDispMap, leftDispMap, CV_GRAY2RGB);
-		cv::cvtColor(lDispMap, rightDispMap, CV_GRAY2RGB);
+		cv::cvtColor(lDispMap, leftDispMap, cv::COLOR_GRAY2RGB);
+		cv::cvtColor(lDispMap, rightDispMap, cv::COLOR_GRAY2RGB);
 		// ******** Display Disparity Maps  ******** //
 
 #ifdef DEBUG_APP_MONITORS
@@ -408,15 +405,31 @@ void StereoMatch::compute(float& de_time_ms)
 			}
 		}
 
-		if(mask_mode == MASK_DISC || mask_mode == MASK_NONOCC)
+		if(mask_mode == MASK_DISC)
 		{
+			errMask = cv::imread(mask_disc_filename, cv::IMREAD_GRAYSCALE);
+			cv::threshold(errMask, errMask, 254, 255, cv::THRESH_TOZERO);
+
 			if(MatchingAlgorithm == STEREO_SGBM)
-				cv::cvtColor(errMask, rightDispMap, CV_GRAY2RGB);
+				cv::cvtColor(errMask, rightDispMap, cv::COLOR_GRAY2RGB);
 
 			cv::Mat eDispMap_tmp;
 			eDispMap.copyTo(eDispMap_tmp, errMask);
 			eDispMap_tmp.copyTo(eDispMap);
-		} else {
+		}
+		else if(mask_mode == MASK_NONOCC)
+		{
+			errMask = cv::imread(mask_occl_filename, cv::IMREAD_GRAYSCALE);
+
+			if(MatchingAlgorithm == STEREO_SGBM)
+				cv::cvtColor(errMask, rightDispMap, cv::COLOR_GRAY2RGB);
+
+			cv::Mat eDispMap_tmp;
+			eDispMap.copyTo(eDispMap_tmp, errMask);
+			eDispMap_tmp.copyTo(eDispMap);
+		}
+		else
+		{
 			if(MatchingAlgorithm == STEREO_SGBM)
 				blankDispMap.copyTo(rightDispMap);
 		}
@@ -449,7 +462,7 @@ void StereoMatch::compute(float& de_time_ms)
 		//Display the errors in the disparity map compared the ground truth
 		//minMaxLoc(eDispMap, &minVal, &maxVal);
 		//eDispMap.convertTo(eDispMap, CV_8U, 255/(maxVal - minVal)); //scale to fill range of char pixel values
-		cvtColor(eDispMap, errDispMap, CV_GRAY2RGB);
+		cvtColor(eDispMap, errDispMap, cv::COLOR_GRAY2RGB);
 	}
 
 	float err_time = (get_rt() - start_time)/1000;

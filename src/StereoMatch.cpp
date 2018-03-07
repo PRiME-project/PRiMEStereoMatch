@@ -706,7 +706,7 @@ int StereoMatch::parse_cli(int argc, const char * argv[])
     });
 
 	args::Options ReqGlobal = args::Options::Required | args::Options::Global;
-    args::ValueFlag<std::string> arg_alg_mode(parser, "alg. mode", "The stereo matching algorithm to use.", {'a', "algorithm"}, ReqGlobal);
+    args::ValueFlag<std::string> arg_alg_mode(parser, "mode", "The stereo matching algorithm to use. Valid options: {STEREO_SGBM, STEREO_GIF}.", {'a', "alg"}, ReqGlobal);
 
     try {
         parser.ParseCLI(argc, argv);

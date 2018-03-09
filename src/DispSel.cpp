@@ -4,13 +4,14 @@
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
    Copyright (c) 2016 Charlie Leech, University of Southampton.
-   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "DispSel.h"
 
 DispSel::DispSel(void)
 {
-    //printf("Winner-Takes-All Disparity Selection\n" );
+#ifdef DEBUG_APP
+		std::cout <<  "Winner-Takes-All Disparity Selection." << std::endl;
+#endif // DEBUG_APP
 }
 DispSel::~DispSel(void) {}
 
@@ -28,48 +29,22 @@ void *DS_X(void *thread_arg)
 	int wid = dispMap->cols;
 	uchar* dispData = (uchar*) dispMap->ptr<uchar>(y);
 
-//	if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_32F)
-//	{
-		for(int x = 0; x < wid; x++)
-		{
-			float minCost = DBL_MAX;
-			int minDis = 0;
+	for(int x = 0; x < wid; ++x)
+	{
+		float minCost = DBL_MAX;
+		int minDis = 0;
 
-			for(int d = 1; d < maxDis; d++)
+		for(int d = 1; d < maxDis; ++d)
+		{
+			float* costData = (float*)costVol[d].ptr<float>(y);
+			if(costData[x] < minCost)
 			{
-				float* costData = (float*)costVol[d].ptr<float>(y);
-				if(costData[x] < minCost)
-				{
-					minCost = costData[x];
-					minDis = d;
-				}
+				minCost = costData[x];
+				minDis = d;
 			}
-			dispData[x] = minDis;
 		}
-//	}
-//	else if((costVol->type() & CV_MAT_DEPTH_MASK) == CV_8U)
-//	{
-//		for(int x = 0; x < wid; x++)
-//		{
-//			uchar minCost = UCHAR_MAX;
-//			int minDis = 0;
-//
-//			for(int d = 1; d < maxDis; d++)
-//			{
-//				uchar* costData = (uchar*)costVol[d].ptr<uchar>(y);
-//				if(costData[x] < minCost)
-//				{
-//					minCost = costData[x];
-//					minDis = d;
-//				}
-//			}
-//			dispData[x] = minDis;
-//		}
-//	}
-//    else{
-//		printf("DS: Error - Unrecognised data type in processing! (DS_X)\n");
-//		exit(1);
-//    }
+		dispData[x] = minDis;
+	}
 	return (void*)0;
 }
 
@@ -85,23 +60,21 @@ void DispSel::CVSelect_thread(Mat* costVol, const int maxDis, Mat& dispMap, int 
     pthread_t DS_X_threads[hei];
     DS_X_TD DS_X_TD_Array[hei];
 
-    for(int level = 0; level <= hei/threads; level ++)
+    for(int level = 0; level <= hei/threads; ++level)
 	{
         //Handle remainder if threads is not power of 2.
 	    int block_size = (level < hei/threads) ? threads : (hei%threads);
 
-	    for(int iter=0; iter < block_size; iter++)
+	    for(int iter=0; iter < block_size; ++iter)
 	    {
 	        int d = level*threads + iter;
             DS_X_TD_Array[d] = {costVol, &dispMap, d, maxDis};
             pthread_create(&DS_X_threads[d], &attr, DS_X, (void *)&DS_X_TD_Array[d]);
-            //printf("Selecting Disparity @ y = %d\n", d);
 	    }
-        for(int iter=0; iter < block_size; iter++)
+        for(int iter=0; iter < block_size; ++iter)
 	    {
 	        int d = level*threads + iter;
             pthread_join(DS_X_threads[d], &status);
-            //printf("Joining Disparity Selection @ y = %d\n", d);
         }
 	}
 	return;
@@ -113,14 +86,14 @@ void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& dispMap)
     int wid = dispMap.cols;
 
 	#pragma omp parallel for
-    for(int y = 0; y < hei; y++)
+    for(int y = 0; y < hei; ++y)
     {
-		for(int x = 0; x < wid; x++)
+		for(int x = 0; x < wid; ++x)
 		{
 			float minCost = DBL_MAX;
 			int minDis = 0;
 
-			for(int d = 1; d < maxDis; d++)
+			for(int d = 1; d < maxDis; ++d)
 			{
 				float* costData = (float*)costVol[d].ptr<float>(y);
 				if(costData[x] < minCost)

@@ -4,50 +4,46 @@
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
    Copyright (c) 2016 Charlie Leech, University of Southampton.
-   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "DispEst.h"
 
 DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
     : lImg(l), rImg(r), maxDis(d), threads(t), useOCL(ocl)
 {
+#ifdef DEBUG_APP
+    std::cout << "Disparity Estimation for Depth Analysis in Stereo Vision Applications." << std::endl;
+#endif // DEBUG_APP
+
     hei = lImg.rows;
     wid = lImg.cols;
 
     //Global Image Type Checking
 	if(lImg.type() == rImg.type())
 	{
-		//int imgType = (lImg.type() & CV_MAT_DEPTH_MASK);
-//		printf("Data type = %d, CV_32F = %d, CV_8U = %d\n", (lImg.type() & CV_MAT_DEPTH_MASK), CV_32F, CV_8U);
-	}
-	else
-	{
+#ifdef DEBUG_APP
+		printf("Data type = %d, CV_32F = %d, CV_8U = %d\n", (lImg.type() & CV_MAT_DEPTH_MASK), CV_32F, CV_8U);
+#endif // DEBUG_APP
+	} else {
 		printf("DE: Error - Left & Right images are of different types.\n");
 		exit(1);
 	}
-//	if(imgType != CV_32F && imgType != CV_8U)
-//	{
-//		printf("DE: Error - Unsupported Image type provided, supported types include:\n");
-//		printf("DE:       - CV_32F:\n");
-//		printf("DE:       - CV_8U:\n");
-//		exit(1);
-//	}
 
-
+//	lcostVol_cvc = Mat::zeros(hei, wid*maxDis, CV_32FC1);
+//	rcostVol_cvc = Mat::zeros(hei, wid*maxDis, CV_32FC1);
     lcostVol = new Mat[maxDis];
     rcostVol = new Mat[maxDis];
-    for (int i = 0; i < maxDis; i++)
+    for (int i = 0; i < maxDis; ++i)
     {
 		lcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
 		rcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
     }
 
-    lImg_rgb = new Mat[3];
-    rImg_rgb = new Mat[3];
-    mean_lImg = new Mat[3];
-    mean_rImg = new Mat[3];
-    var_lImg = new Mat[6];
-    var_rImg = new Mat[6];
+//    lImg_rgb = new Mat[3];
+//    rImg_rgb = new Mat[3];
+//    mean_lImg = new Mat[3];
+//    mean_rImg = new Mat[3];
+//    var_lImg = new Mat[6];
+//    var_rImg = new Mat[6];
 
 	lDisMap = Mat::zeros(hei, wid, CV_8UC1);
 	rDisMap = Mat::zeros(hei, wid, CV_8UC1);
@@ -135,7 +131,7 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 		if (!createMemoryObjectsSuccess)
 		{
 			cleanUpOpenCL(context, commandQueue, NULL, NULL, memoryObjects, numberOfMemoryObjects);
-			cerr << "Failed to create OpenCL buffers. " << __FILE__ << ":"<< __LINE__ << endl;
+			std::cerr << "Failed to create OpenCL buffers. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		}
 
 		printf("Setting up OpenCL function constructors\n");
@@ -162,7 +158,7 @@ DispEst::~DispEst(void)
 		delete filter_cl;
 		delete selector_cl;
 
-		for(int m = 0; m < (int)numberOfMemoryObjects; m++)
+		for(int m = 0; m < (int)numberOfMemoryObjects; ++m)
 			clReleaseMemObject(memoryObjects[m]);
     }
 }
@@ -171,7 +167,7 @@ void DispEst::printCV(void)
 {
 	char filename[20];
 
-	for (int i = 0; i < maxDis; i++)
+	for (int i = 0; i < maxDis; ++i)
 	{
 		sprintf(filename, "CV/lCV%d.png", i);
 		imwrite(filename, lcostVol[i]*1024*8);
@@ -186,12 +182,23 @@ void DispEst::printCV(void)
 //#############################################################################################################
 void DispEst::CostConst()
 {
+	float start_time;
+	constructor->preprocess(lImg, lGrdX);
+	constructor->preprocess(rImg, rGrdX);
+
+	start_time = get_rt();
     // Build Cost Volume
-    for( int d = 0; d < maxDis; d ++ )
+	#pragma omp parallel for
+    for( int d = 0; d < maxDis; ++d)
     {
         constructor->buildCV_left(lImg, rImg, lGrdX, rGrdX, d, lcostVol[d]);
+    }
+	#pragma omp parallel for
+    for( int d = 0; d < maxDis; ++d)
+    {
         constructor->buildCV_right(rImg, lImg, rGrdX, lGrdX, d, rcostVol[d]);
     }
+	std::cout << "Time (ms) = " << (get_rt() - start_time)/1000 << std::endl;
 }
 
 void DispEst::CostConst_CPU()
@@ -207,35 +214,35 @@ void DispEst::CostConst_CPU()
 	constructor->preprocess(lImg, lGrdX);
 	constructor->preprocess(rImg, rGrdX);
 
-    for(int level = 0; level <= maxDis/threads; level ++)
+    for(int level = 0; level <= maxDis/threads; ++level)
 	{
 	    //Handle remainder if threads is not power of 2.
 	    int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
 
-	    for(int iter=0; iter < block_size; iter++)
+	    for(int iter=0; iter < block_size; ++iter)
 	    {
 	        int d = level*threads + iter;
             buildCV_TD_Array[d] = {&lImg, &rImg, &lGrdX, &rGrdX, d, &lcostVol[d]};
             pthread_create(&BCV_threads[d], &attr, CVC::buildCV_left_thread, (void *)&buildCV_TD_Array[d]);
 	    }
-        for(int iter=0; iter < block_size; iter++)
+        for(int iter=0; iter < block_size; ++iter)
 	    {
 	        int d = level*threads + iter;
             pthread_join(BCV_threads[d], &status);
         }
 	}
-	for(int level = 0; level <= maxDis/threads; level ++)
+	for(int level = 0; level <= maxDis/threads; ++level)
 	{
         //Handle remainder if threads is not power of 2.
 	    int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
 
-	    for(int iter=0; iter < block_size; iter++)
+	    for(int iter=0; iter < block_size; ++iter)
 	    {
 	        int d = level*threads + iter;
             buildCV_TD_Array[d] = {&rImg, &lImg, &rGrdX, &lGrdX, d, &rcostVol[d]};
             pthread_create(&BCV_threads[d], &attr, CVC::buildCV_right_thread, (void *)&buildCV_TD_Array[d]);
 	    }
-        for(int iter=0; iter < block_size; iter++)
+        for(int iter=0; iter < block_size; ++iter)
 	    {
 	        int d = level*threads + iter;
             pthread_join(BCV_threads[d], &status);
@@ -251,71 +258,23 @@ void DispEst::CostConst_GPU()
 //#############################################################################################################
 //# Cost Volume Filtering
 //#############################################################################################################
-void DispEst::CostFilter()
+void DispEst::CostFilter_FGF()
 {
-	filter->preprocess(lImg, lImg_rgb, mean_lImg, var_lImg);
-	filter->preprocess(rImg, rImg_rgb, mean_rImg, var_rImg);
+    FastGuidedFilter *fgf_left = new FastGuidedFilter(lImg, GIF_R_WIN, GIF_EPS_32F, SUBSAMPLE_RATE);
+    FastGuidedFilter *fgf_right = new FastGuidedFilter(rImg, GIF_R_WIN, GIF_EPS_32F, SUBSAMPLE_RATE);
 
-    for(int d = 0; d < maxDis; d++)
-	{
-        filter->filterCV(lImg_rgb, mean_lImg, var_lImg, lcostVol[d]);
-        filter->filterCV(rImg_rgb, mean_rImg, var_rImg, rcostVol[d]);
+	#pragma omp parallel for
+    for(int d = 0; d < maxDis; ++d){
+        fgf_left->filter(lcostVol[d]);
+    }
+
+	#pragma omp parallel for
+    for(int d = 0; d < maxDis; ++d){
+        fgf_right->filter(rcostVol[d]);
     }
 }
 
-void DispEst::CostFilter_CPU()
-{
-    //Set up threads and thread attributes
-    void *status;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    pthread_t FCV_threads[maxDis];
-    filterCV_TD filterCV_TD_Array[maxDis];
-
-	filter->preprocess(lImg, lImg_rgb, mean_lImg, var_lImg);
-	filter->preprocess(rImg, rImg_rgb, mean_rImg, var_rImg);
-
-    for(int level = 0; level <= maxDis/threads; level ++)
-	{
-        //Handle remainder if threads is not power of 2.
-	    int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
-
-	    for(int iter=0; iter < block_size; iter++)
-	    {
-	        int d = level*threads + iter;
-            filterCV_TD_Array[d] = {lImg_rgb, mean_lImg, var_lImg, &lcostVol[d]};
-            pthread_create(&FCV_threads[d], &attr, CVF::filterCV_thread, (void *)&filterCV_TD_Array[d]);
-//            printf("Filtering Left CV @ Disparity %d\n", d);
-	    }
-        for(int iter=0; iter < block_size; iter++)
-	    {
-	        int d = level*threads + iter;
-            pthread_join(FCV_threads[d], &status);
-            //printf("Joining Left CV @ Disparity %d\n", d);
-        }
-	}
-	for(int level = 0; level <= maxDis/threads; level ++)
-	{
-	    //Handle remainder if threads is not power of 2.
-	    int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
-
-	    for(int iter=0; iter < block_size; iter++)
-	    {
-	        int d = level*threads + iter;
-            filterCV_TD_Array[d] = {rImg_rgb, mean_rImg, var_rImg, &rcostVol[d]};
-            pthread_create(&FCV_threads[d], &attr, CVF::filterCV_thread, (void *)&filterCV_TD_Array[d]);
-            //printf("Filtering Right CV @ Disparity %d\n", d);
-	    }
-        for(int iter=0; iter < block_size; iter++)
-	    {
-	        int d = level*threads + iter;
-            pthread_join(FCV_threads[d], &status);
-            //printf("Joining Right CV @ Disparity %d\n", d);
-        }
-	}
-}
-
+//TODO: Port FGF code to GPU
 void DispEst::CostFilter_GPU()
 {
     //printf("OpenCL Cost Filtering Underway...\n");
@@ -325,6 +284,7 @@ void DispEst::CostFilter_GPU()
     filter_cl->filterCV(&memoryObjects[CV_RCV]);
     //printf("Filtering Complete\n");
 }
+
 
 void DispEst::DispSelect_CPU()
 {

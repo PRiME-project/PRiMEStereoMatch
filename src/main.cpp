@@ -13,11 +13,10 @@
 #include <thread>
 
 //Functions in main
-void getDepthMap(void);
-void HCI(void);
+void getDepthMap(StereoMatch *sm);
+void HCI(StereoMatch *sm);
 
 //Global variables
-StereoMatch *sm;
 bool end_de = false;
 int nOpenCLDev = 0;
 int sgbm_mode = StereoSGBM::MODE_HH;
@@ -35,16 +34,16 @@ int main(int argc, const char* argv[])
     //# Start Application Processes
     //#############################################################################################################
 	printf("Starting Stereo Matching Application.\n");
-	sm = new StereoMatch(argc, argv, nOpenCLDev);
+	StereoMatch *sm = new StereoMatch(argc, argv, 0);
 	//printf("MAIN: Press h for help text.\n\n");
 
 	std::thread de_thread;
 	//de_thread = std::thread(&StereoMatch::compute, sm, std::ref(de_time));
-    de_thread = std::thread(&getDepthMap);
+    de_thread = std::thread(&getDepthMap, sm);
 
 #ifdef DISPLAY
 	//User interface function
-	HCI();
+	HCI(sm);
 #else
 	while(1){
 		std::this_thread::sleep_for (std::chrono::duration<int, std::milli>(1000));
@@ -62,7 +61,7 @@ int main(int argc, const char* argv[])
     return 0;
 }
 
-void getDepthMap(void)
+void getDepthMap(StereoMatch *sm)
 {
 	int ret = 0;
 	float de_time;
@@ -74,7 +73,7 @@ void getDepthMap(void)
 }
 
 
-void HCI(void)
+void HCI(StereoMatch *sm)
 {
 	//User interface input handler
     char key = ' ';
@@ -133,7 +132,7 @@ void HCI(void)
 				}
 				dataset_idx = dataset_idx < dataset_names.size()-1 ? dataset_idx + 1 : 0;
 				printf("| d: Dataset changed to: %s\n", dataset_names[dataset_idx].c_str());
-				sm->set_filenames(dataset_names[dataset_idx]);
+				sm->update_dataset(dataset_names[dataset_idx]);
 				break;
             }
             case 'm':

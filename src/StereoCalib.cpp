@@ -32,7 +32,7 @@
 
 int print_help()
 {
-    cout <<
+    std::cout <<
             " Given a list of chessboard images, the number of corners (nx, ny)\n"
             " on the chessboards, and a flag: useCalibrated for \n"
             "   calibrated (0) or\n"
@@ -40,17 +40,17 @@ int print_help()
             "     (1: use cvStereoCalibrate(), 2: compute fundamental\n"
             "         matrix separately) stereo. \n"
             " Calibrate the cameras and display the\n"
-            " rectified results along with the computed disparity images.   \n" << endl;
-    cout << "Usage:\n ./stereo_calib -w board_width -h board_height [-nr /*dot not view results*/] <image list XML/YML file>\n" << endl;
+            " rectified results along with the computed disparity images.   \n" << std::endl;
+    std::cout << "Usage:\n ./stereo_calib -w board_width -h board_height [-nr /*dot not view results*/] <image list XML/YML file>\n" << std::endl;
     return 0;
 }
 
 
-void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraProperties& props, bool useCalibrated=true, bool showRectified=true)
+void StereoCalib(const std::vector<std::string>& imagelist, Size boardSize, StereoCameraProperties& props, bool useCalibrated=true, bool showRectified=true)
 {
     if( imagelist.size() % 2 != 0 )
     {
-        cout << "Error: the image list contains odd (non-even) number of elements\n";
+        std::cout << "Error: the image list contains odd (non-even) number of elements" << std::endl;
         return;
     }
 
@@ -59,21 +59,21 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
     const float squareSize = 1.f;  // Set this to your actual square size
     // ARRAY AND VECTOR STORAGE:
 
-    vector<vector<Point2f> > imagePoints[2];
-    vector<vector<Point3f> > objectPoints;
+    std::vector<std::vector<Point2f> > imagePoints[2];
+    std::vector<std::vector<Point3f> > objectPoints;
     Size imageSize;
 
     int i, j, k, nimages = (int)imagelist.size()/2;
 
     imagePoints[0].resize(nimages);
     imagePoints[1].resize(nimages);
-    vector<string> goodImageList;
+    std::vector<std::string> goodImageList;
 
     for( i = j = 0; i < nimages; i++ )
     {
         for( k = 0; k < 2; k++ )
         {
-            string filename = string(BASE_DIR) + string("data/") + string(imagelist[i*2+k]);
+            std::string filename = std::string(BASE_DIR) + std::string("data/") + std::string(imagelist[i*2+k]);
             Mat img = imread(filename, 0);
             if(img.empty())
                 break;
@@ -81,11 +81,11 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
                 imageSize = img.size();
             else if( img.size() != imageSize )
             {
-                cout << "The image " << filename << " has the size different from the first image size. Skipping the pair\n";
+                std::cout << "The image " << filename << " has the size different from the first image size. Skipping the pair" << std::endl;
                 break;
             }
             bool found = false;
-            vector<Point2f>& corners = imagePoints[k][j];
+            std::vector<cv::Point2f>& corners = imagePoints[k][j];
             for( int scale = 1; scale <= maxScale; scale++ )
             {
                 Mat timg;
@@ -107,12 +107,12 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
             }
             if( displayCorners )
             {
-                Mat cimg, cimg1;
-                cvtColor(img, cimg, COLOR_GRAY2BGR);
-                drawChessboardCorners(cimg, boardSize, corners, found);
+                cv::Mat cimg, cimg1;
+                cv::cvtColor(img, cimg, COLOR_GRAY2BGR);
+                cv::drawChessboardCorners(cimg, boardSize, corners, found);
                 double sf = 640./MAX(img.rows, img.cols);
                 resize(cimg, cimg1, Size(), sf, sf);
-                imshow("InputOutput", cimg1);
+                cv::imshow("InputOutput", cimg1);
                 char c = (char)waitKey(250);
                 if( c == 27 || c == 'q' || c == 'Q' ) //Allow ESC to quit
                     exit(-1);
@@ -132,12 +132,12 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
             j++;
         }
     }
-    cout << j << " pairs have been successfully detected.\n";
+    std::cout << j << " pairs have been successfully detected.\n" << std::endl;
     nimages = j;
 
     if( nimages < 2 )
     {
-        cout << "Error: too few pairs to run the calibration\n";
+        std::cout << "Error: too few pairs to run the calibration\n" << std::endl;
         exit(1);
     }
 
@@ -152,7 +152,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
                 objectPoints[i].push_back(Point3f(k*squareSize, j*squareSize, 0));
     }
 
-    cout << "Running stereo calibration ...\n";
+    std::cout << "Running stereo calibration ..." << std::endl;
 
     Mat cameraMatrix[2], distCoeffs[2];
     cameraMatrix[0] = Mat::eye(3, 3, CV_64F);
@@ -169,7 +169,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
                     CALIB_RATIONAL_MODEL +
                     CALIB_FIX_K3 + CALIB_FIX_K4 + CALIB_FIX_K5,
                     TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 100, 1e-5) );
-    cout << "done with RMS error = " << rms << endl;
+    std::cout << "done with RMS error = " << rms << std::endl;
 
 // CALIBRATION QUALITY CHECK
 // because the output fundamental matrix implicitly
@@ -178,7 +178,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
 // epipolar geometry constraint: m2^t*F*m1=0
     double err = 0;
     int npoints = 0;
-    vector<Vec3f> lines[2];
+    std::vector<Vec3f> lines[2];
     for( i = 0; i < nimages; i++ )
     {
         int npt = (int)imagePoints[0][i].size();
@@ -199,7 +199,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
         }
         npoints += npt;
     }
-    cout << "average reprojection err = " <<  err/npoints << endl;
+    std::cout << "average reprojection err = " <<  err/npoints << std::endl;
 
     // save intrinsic parameters
     FileStorage fs(FILE_INTRINSICS, FileStorage::WRITE);
@@ -210,7 +210,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
         fs.release();
     }
     else{
-        cout << "Error: can not save the intrinsic parameters " << endl;
+        std::cout << "Error: can not save the intrinsic parameters " << std::endl;
 	}
 
 	props.cameraMatrix[0] = cameraMatrix[0];
@@ -233,12 +233,12 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
         fs.release();
     }
     else{
-        cout << "Error: can not save the extrinsic parameters" << endl;
+        std::cout << "Error: can not save the extrinsic parameters" << std::endl;
 	}
 
-    cout << "Valid ROI:" << endl;
-    cout << "Left: " <<  validRoi[0] << endl;
-    cout << "VRight: " << validRoi[1] << endl;
+    std::cout << "Valid ROI:" << std::endl;
+    std::cout << "Left: " <<  validRoi[0] << std::endl;
+    std::cout << "VRight: " << validRoi[1] << std::endl;
 
 	props.R = R;
 	props.T = T;
@@ -271,7 +271,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
  // compute the rectification transformation directly
  // from the fundamental matrix
     {
-        vector<Point2f> allimgpt[2];
+        std::vector<Point2f> allimgpt[2];
         for( k = 0; k < 2; k++ )
         {
             for( i = 0; i < nimages; i++ )
@@ -313,7 +313,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
     {
         for( k = 0; k < 2; k++ )
         {
-            string filename = string(BASE_DIR) + string("data/") + string(goodImageList[i*2+k]);
+            std::string filename = std::string(BASE_DIR) + std::string("data/") + std::string(goodImageList[i*2+k]);
             Mat img = imread(filename, 0), rimg, cimg;
             remap(img, rimg, rmap[k][0], rmap[k][1], INTER_LINEAR);
             cvtColor(rimg, cimg, COLOR_GRAY2BGR);
@@ -346,7 +346,7 @@ void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraPr
     //destroyWindow("rectified");
 }
 
-bool readStringList( const string& filename, vector<string>& l )
+bool readStringList( const std::string& filename, std::vector<std::string>& l )
 {
     l.resize(0);
     FileStorage fs(filename, FileStorage::READ);
@@ -357,11 +357,11 @@ bool readStringList( const string& filename, vector<string>& l )
         return false;
     FileNodeIterator it = n.begin(), it_end = n.end();
     for( ; it != it_end; ++it )
-        l.push_back((string)*it);
+        l.push_back((std::string)*it);
     return true;
 }
 
-int calibrateCamera(int boardWidth, int boardHeight, StereoCameraProperties& props,	string imagelistfn)
+int calibrateCamera(int boardWidth, int boardHeight, StereoCameraProperties& props,	std::string imagelistfn)
 {
     Size boardSize;
     boardSize.width = boardWidth;
@@ -371,11 +371,11 @@ int calibrateCamera(int boardWidth, int boardHeight, StereoCameraProperties& pro
 
 	//imagelistfn = "data/stereo_calib.xml";
 
-    vector<string> imagelist;
+    std::vector<std::string> imagelist;
     bool ok = readStringList(imagelistfn, imagelist);
     if(!ok || imagelist.empty())
     {
-        cout << "can not open " << imagelistfn << " or the string list is empty" << endl;
+        std::cout << "can not open " << imagelistfn << " or the string list is empty" << std::endl;
         return print_help();
     }
 

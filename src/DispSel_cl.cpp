@@ -20,7 +20,7 @@ DispSel_cl::DispSel_cl(cl_context* context, cl_command_queue* commandQueue, cl_d
     if (!createProgram(*context, device, FILE_DS_PROG, &program))
     {
         cleanUpOpenCL(NULL, NULL, NULL, kernel, NULL, 0);
-        cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
 //	if(imgType == CV_32F)
@@ -40,7 +40,7 @@ DispSel_cl::DispSel_cl(cl_context* context, cl_command_queue* commandQueue, cl_d
     if (!checkSuccess(errorNumber))
     {
         cleanUpOpenCL(NULL, NULL, NULL, kernel, NULL, 0);
-        cerr << "Failed to create OpenCL kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to create OpenCL kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
     else{
 		printf("DispSel_cl: OpenCL kernels created.\n");
@@ -69,9 +69,9 @@ DispSel_cl::~DispSel_cl(void)
 int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
 {
 
-	namedWindow("dispPreview", CV_WINDOW_AUTOSIZE);
-	imshow("dispPreview", ldispMap);
-	waitKey(0);
+	cv::namedWindow("dispPreview", CV_WINDOW_AUTOSIZE);
+	cv::imshow("dispPreview", ldispMap);
+	cv::waitKey(0);
 
 	int arg_num = 0;
     /* Setup the kernel arguments. */
@@ -86,7 +86,7 @@ int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
     if (!setKernelArgumentsSuccess)
     {
         cleanUpOpenCL(NULL, NULL, NULL, kernel, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("DS_cl: Running DispSel Kernels\n");
@@ -94,7 +94,7 @@ int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
     if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel, 2, NULL, globalWorksize, NULL, 0, NULL, &event)))
     {
         cleanUpOpenCL(NULL, NULL, NULL, kernel, NULL, 0);
-        cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -102,7 +102,7 @@ int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
     if (!checkSuccess(clFinish(*commandQueue)))
     {
         cleanUpOpenCL(NULL, NULL, NULL, kernel, NULL, 0);
-        cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -112,11 +112,11 @@ int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 	imshow("dispPreview", ldispMap);
-	waitKey(0);
+	cv::waitKey(0);
 
 	/* Map the output memory objects to host side pointers. */
 	bool EnqueueMapBufferSuccess = true;
@@ -127,14 +127,14 @@ int DispSel_cl::CVSelect(cl_mem *memoryObjects, Mat& ldispMap, Mat& rdispMap)
 	if (!EnqueueMapBufferSuccess)
 	{
 	   cleanUpOpenCL(*context, *commandQueue, program, kernel, NULL, 0);
-	   cerr << "Mapping memory objects failed " << __FILE__ << ":"<< __LINE__ << endl;
+	   std::cerr << "Mapping memory objects failed " << __FILE__ << ":"<< __LINE__ << std::endl;
 	}
 
 	memcpy(ldispMap.data, clbuffer_lDispMap, bufferSize_2D_8UC1);
 	memcpy(rdispMap.data, clbuffer_rDispMap, bufferSize_2D_8UC1);
 
 	imshow("dispPreview", ldispMap);
-	waitKey(0);
+	cv::waitKey(0);
 
 //    return 0;
 }

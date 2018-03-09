@@ -4,7 +4,6 @@
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
    Copyright (c) 2016 Charlie Leech, University of Southampton.
-   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 #include "CVC.h"
@@ -15,7 +14,7 @@
 #include "DispSel_cl.h"
 #include "PP.h"
 #include "oclUtil.h"
-
+#include "fastguidedfilter.h"
 //
 // Overarching Disparity Estimation Class
 //
@@ -31,21 +30,22 @@ public:
     int maxDis;
     int threads;
     bool useOCL;
-//    int imgType;
 
 	//CVC
     Mat lGrdX;
     Mat rGrdX;
 	//CVC & CVF
+//    Mat lcostVol_cvc;
+//    Mat rcostVol_cvc;
     Mat* lcostVol;
     Mat* rcostVol;
     //CVF
-    Mat* lImg_rgb;
-    Mat* rImg_rgb;
-    Mat* mean_lImg;
-    Mat* mean_rImg;
-    Mat* var_lImg;
-    Mat* var_rImg;
+//    Mat* lImg_rgb;
+//    Mat* rImg_rgb;
+//    Mat* mean_lImg;
+//    Mat* mean_rImg;
+//    Mat* var_lImg;
+//    Mat* var_rImg;
     //DispSel
     Mat lDisMap;
     Mat rDisMap;
@@ -74,7 +74,7 @@ public:
     cl_int width, height, channels;
 	size_t bufferSize_2D_8UC1; //DispMap,
 	size_t bufferSize_2D; //Img, Gray, GrdX,
-	size_t bufferSize_3D; //costVol,
+	size_t bufferSize_3D; //costVol
 
     DispEst(Mat l, Mat r, const int d, const int t, bool ocl);
     ~DispEst(void);
@@ -88,6 +88,8 @@ public:
     void CostFilter();
     void CostFilter_CPU();
     void CostFilter_GPU();
+    void CostFilter_FGF();
+
 
     void DispSelect_CPU();
     void DispSelect_GPU();

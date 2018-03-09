@@ -58,8 +58,8 @@ struct StereoCameraProperties{
 
 int print_help();
 
-void StereoCalib(const vector<string>& imagelist, Size boardSize, StereoCameraProperties& props, bool useCalibrated, bool showRectified);
+void StereoCalib(const std::vector<std::string>& imagelist, Size boardSize, StereoCameraProperties& props, bool useCalibrated, bool showRectified);
 
-bool readStringList( const string& filename, vector<string>& l );
+bool readStringList( const std::string& filename, std::vector<std::string>& l );
 
-int calibrateCamera(int boardWidth, int boardHeight, StereoCameraProperties& props,	string imagelistfn);
+int calibrateCamera(int boardWidth, int boardHeight, StereoCameraProperties& props,	std::string imagelistfn);

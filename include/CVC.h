@@ -4,14 +4,14 @@
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
    Copyright (c) 2016 Charlie Leech, University of Southampton.
-   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 
 // CVPR 11
 #define BORDER_THRES 0.011764
-#define BORDER_CONSTANT_32F 1.0
-#define BORDER_CONSTANT_8U  UCHAR_MAX
+#define BC_32F 1.0
+#define BC_32UI  UINT_MAX
+#define BC_8U  UCHAR_MAX
 
 //#define TAU_1 0.7
 //#define TAU_2 0.2
@@ -21,6 +21,7 @@
 #define TAU_2_16U 524
 
 #define ALPHA_32F 0.9f
+#define ALPHA_32UI (unsigned int)(0.9f*UINT_MAX)
 #define ALPHA_16U 0.9
 
 //
@@ -42,4 +43,11 @@ public:
 };
 
 //CVC thread data struct
-struct buildCV_TD{Mat* lImg; Mat* rImg; Mat* lGrdX; Mat* rGrdX; int d; Mat* costVol;};
+struct buildCV_TD{
+	Mat* lImg;
+	Mat* rImg;
+	Mat* lGrdX;
+	Mat* rGrdX;
+	int d;
+	Mat* costVol;
+};

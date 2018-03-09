@@ -22,7 +22,7 @@ CVC_cl::CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
     if (!createProgram(*context, device, FILE_CVC_PROG, &program))
     {
         cleanUpOpenCL(NULL, NULL, program, NULL, NULL, 0);
-        cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     width = (cl_int)I->cols;
@@ -74,7 +74,7 @@ CVC_cl::CVC_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
     if (!checkSuccess(errorNumber))
     {
         cleanUpOpenCL(NULL, NULL, NULL, NULL, NULL, 0);
-        cerr << "Failed to create OpenCL kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to create OpenCL kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		exit(1);
     }
     else{
@@ -152,7 +152,7 @@ int CVC_cl::buildCV(const Mat& lImg, const Mat& rImg, cl_mem *memoryObjects)
 	if (!EnqueueMapBufferSuccess)
 	{
 	   cleanUpOpenCL(NULL, NULL, program, NULL, NULL, 0);
-	   cerr << "Mapping memory objects failed " << __FILE__ << ":"<< __LINE__ << endl;
+	   std::cerr << "Mapping memory objects failed " << __FILE__ << ":"<< __LINE__ << std::endl;
 	}
 
     //printf("CVC_cl: Copying data to OpenCL memory space\n");
@@ -177,7 +177,7 @@ int CVC_cl::buildCV(const Mat& lImg, const Mat& rImg, cl_mem *memoryObjects)
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(NULL, NULL, NULL, NULL, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("CVC_cl: Running CVC Kernels\n");
@@ -185,7 +185,7 @@ int CVC_cl::buildCV(const Mat& lImg, const Mat& rImg, cl_mem *memoryObjects)
     if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel, 3, NULL, globalWorksize, NULL, 0, NULL, &event)))
     {
         cleanUpOpenCL(NULL, NULL, NULL, NULL, NULL, 0);
-        cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -193,7 +193,7 @@ int CVC_cl::buildCV(const Mat& lImg, const Mat& rImg, cl_mem *memoryObjects)
     if (!checkSuccess(clFinish(*commandQueue)))
     {
         cleanUpOpenCL(NULL, NULL, NULL, NULL, NULL, 0);
-        cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -203,7 +203,7 @@ int CVC_cl::buildCV(const Mat& lImg, const Mat& rImg, cl_mem *memoryObjects)
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, NULL, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 

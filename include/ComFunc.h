@@ -4,7 +4,6 @@
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
    Copyright (c) 2016 Charlie Leech, University of Southampton.
-   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include <iostream>
 #include <fstream>
@@ -47,9 +46,10 @@
 #define OCV_DE 0
 #define OCL_DE 1
 
-#define GIF_R_WIN 9
+#define GIF_R_WIN 8
 #define GIF_EPS_32F 0.0001f
 #define GIF_EPS_8UC 1
+#define SUBSAMPLE_RATE 16
 
 #define MAX_CPU_THREADS 8
 #define MIN_CPU_THREADS 1
@@ -60,11 +60,16 @@
 #define OCL_STATS 0
 
 using namespace cv;
-using namespace std;
 
 #ifndef COMFUNC_H
 #define COMFUNC_H
 
 enum buff_id {CVC_LIMGR, CVC_LIMGG, CVC_LIMGB, CVC_RIMGR, CVC_RIMGG, CVC_RIMGB, CVC_LGRDX, CVC_RGRDX, CV_LCV, CV_RCV, DS_LDM, DS_RDM};
+
+static float get_rt(){
+	struct timespec realtime;
+	clock_gettime(CLOCK_MONOTONIC,&realtime);
+	return (float)(realtime.tv_sec*1000000+realtime.tv_nsec/1000);
+}
 
 #endif // COMFUNC_H

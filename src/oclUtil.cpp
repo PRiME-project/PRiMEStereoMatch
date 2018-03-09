@@ -19,7 +19,7 @@ int openCLdevicepoll(void)
 {
     printf("\nOpenCL Platform Information:\n");
 
-    char* value;
+    char* value = nullptr;
     size_t valueSize;
     cl_uint platformCount;
     cl_platform_id* platforms;

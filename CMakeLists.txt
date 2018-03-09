@@ -2,6 +2,10 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "DO NOT BUILD in-tree.")
 endif()
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 cmake_minimum_required (VERSION 3.2)
 project (PRiMEStereoMatch)
 
@@ -10,6 +14,7 @@ file(GLOB SOURCES "src/*.cpp")
 
 add_executable(PRiMEStereoMatch ${SOURCES})
 set_property(TARGET PRiMEStereoMatch PROPERTY CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 #pthread libraries
 set(THREADS_PREFER_PTHREAD_FLAG ON)

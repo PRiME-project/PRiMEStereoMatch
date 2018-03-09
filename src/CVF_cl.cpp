@@ -6,15 +6,8 @@
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
    Copyright (c) 2016 Charlie Leech, University of Southampton.
-   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "CVF_cl.h"
-
-float get_rt_cvf_cl(){
-	struct timespec realtime;
-	clock_gettime(CLOCK_MONOTONIC,&realtime);
-	return (float)(realtime.tv_sec*1000000+realtime.tv_nsec/1000);
-}
 
 CVF_cl::CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id device, Mat* I, const int d) :
 				context(context), commandQueue(commandQueue), maxDis(d)
@@ -26,7 +19,7 @@ CVF_cl::CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
     if (!createProgram(*context, device, FILE_CVF_PROG, &program))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_split, NULL, 0);
-        cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to create OpenCL program." << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
 //	if(imgType == CV_32F)
@@ -63,7 +56,7 @@ CVF_cl::CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
     if (!checkSuccess(errorNumber))
     {
         cleanUpOpenCL(*context, *commandQueue, program, NULL, NULL, 0);
-        cerr << "Failed to create OpenCL kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed to create OpenCL kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		exit(1);
     }
     else{
@@ -165,7 +158,7 @@ CVF_cl::CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
 
 	if (!createMemoryObjectsSuccess)
 	{
-		cerr << "Failed to create OpenCL buffers. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed to create OpenCL buffers. " << __FILE__ << ":"<< __LINE__ << std::endl;
 	}
     printf("Allocated OpenCL Buffers\n");
 }
@@ -309,7 +302,7 @@ int CVF_cl::elementwiseMulDD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out)
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_mmdd, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("CVF_cl: Running MMDD Kernels\n");
@@ -317,7 +310,7 @@ int CVF_cl::elementwiseMulDD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out)
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_mmdd, 3, NULL, globalWorksize_3D, NULL, 0, NULL, &event)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_mmdd, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -325,7 +318,7 @@ int CVF_cl::elementwiseMulDD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out)
 	if (!checkSuccess(clFinish(*commandQueue)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_mmdd, NULL, 0);
-		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -334,7 +327,7 @@ int CVF_cl::elementwiseMulDD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out)
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_mmdd, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -354,7 +347,7 @@ int CVF_cl::elementwiseMulSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, s
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_mmsd, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("CVF_cl: Running MMSD Kernels\n");
@@ -362,7 +355,7 @@ int CVF_cl::elementwiseMulSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, s
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_mmsd, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_mmsd, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -370,7 +363,7 @@ int CVF_cl::elementwiseMulSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, s
 	if (!checkSuccess(clFinish(*commandQueue)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_mmsd, NULL, 0);
-		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -379,7 +372,7 @@ int CVF_cl::elementwiseMulSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, s
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_mmsd, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -399,7 +392,7 @@ int CVF_cl::elementwiseDivSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, s
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_mdsd, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("CVF_cl: Running MDSD Kernels\n");
@@ -407,7 +400,7 @@ int CVF_cl::elementwiseDivSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, s
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_mdsd, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_mdsd, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -415,7 +408,7 @@ int CVF_cl::elementwiseDivSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, s
 	if (!checkSuccess(clFinish(*commandQueue)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_mdsd, NULL, 0);
-		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -424,7 +417,7 @@ int CVF_cl::elementwiseDivSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, s
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_mdsd, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -445,7 +438,7 @@ int CVF_cl::split(cl_mem *cl_I, cl_mem *cl_Ir, cl_mem *cl_Ig, cl_mem *cl_Ib)
 	if (!setKernelArgumentsSuccess)
 	{
 	   cleanUpOpenCL(*context, *commandQueue, program, kernel_split, NULL, 0);
-		cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
 	}
 
 
@@ -454,7 +447,7 @@ int CVF_cl::split(cl_mem *cl_I, cl_mem *cl_Ir, cl_mem *cl_Ig, cl_mem *cl_Ib)
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_split, 2, NULL, globalWorksize_split, NULL, 0, NULL, &event)))
 	{
 	   cleanUpOpenCL(*context, *commandQueue, program, kernel_split, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -462,7 +455,7 @@ int CVF_cl::split(cl_mem *cl_I, cl_mem *cl_Ir, cl_mem *cl_Ig, cl_mem *cl_Ib)
 	if (!checkSuccess(clFinish(*commandQueue)))
 	{
 	   cleanUpOpenCL(*context, *commandQueue, program, kernel_split, NULL, 0);
-		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -471,7 +464,7 @@ int CVF_cl::split(cl_mem *cl_I, cl_mem *cl_Ir, cl_mem *cl_Ig, cl_mem *cl_Ib)
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_split, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -491,7 +484,7 @@ int CVF_cl::sub(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *global
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_sub, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("CVF_cl: Running Sub Kernels\n");
@@ -499,7 +492,7 @@ int CVF_cl::sub(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *global
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_sub, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_sub, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -507,7 +500,7 @@ int CVF_cl::sub(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *global
 	if (!checkSuccess(clFinish(*commandQueue)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_sub, NULL, 0);
-		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -516,7 +509,7 @@ int CVF_cl::sub(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *global
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_sub, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -536,7 +529,7 @@ int CVF_cl::add(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *global
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_add, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("CVF_cl: Running Add Kernels\n");
@@ -544,7 +537,7 @@ int CVF_cl::add(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *global
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_add, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_add, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -552,7 +545,7 @@ int CVF_cl::add(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *global
 	if (!checkSuccess(clFinish(*commandQueue)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_add, NULL, 0);
-		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -561,7 +554,7 @@ int CVF_cl::add(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *global
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_add, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -594,7 +587,7 @@ int CVF_cl::central_filter(cl_mem *mean_I_in, cl_mem *mean_cv_io, cl_mem *var_I_
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_centf, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("CVF_cl: Running central filter Kernels\n");
@@ -602,7 +595,7 @@ int CVF_cl::central_filter(cl_mem *mean_I_in, cl_mem *mean_cv_io, cl_mem *var_I_
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_centf, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_centf, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -610,7 +603,7 @@ int CVF_cl::central_filter(cl_mem *mean_I_in, cl_mem *mean_cv_io, cl_mem *var_I_
 	if (!checkSuccess(clFinish(*commandQueue)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_centf, NULL, 0);
-		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -619,7 +612,7 @@ int CVF_cl::central_filter(cl_mem *mean_I_in, cl_mem *mean_cv_io, cl_mem *var_I_
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_centf, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -651,7 +644,7 @@ int CVF_cl::preproc_maths(cl_mem *mean_I_in, cl_mem *mean_Ixx_in, cl_mem *var_I_
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_var, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("CVF_cl: Running variance maths Kernels\n");
@@ -659,7 +652,7 @@ int CVF_cl::preproc_maths(cl_mem *mean_I_in, cl_mem *mean_Ixx_in, cl_mem *var_I_
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_var, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_var, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -667,7 +660,7 @@ int CVF_cl::preproc_maths(cl_mem *mean_I_in, cl_mem *mean_Ixx_in, cl_mem *var_I_
 	if (!checkSuccess(clFinish(*commandQueue)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_var, NULL, 0);
-		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -676,7 +669,7 @@ int CVF_cl::preproc_maths(cl_mem *mean_I_in, cl_mem *mean_Ixx_in, cl_mem *var_I_
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_var, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -695,7 +688,7 @@ int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_out, size_t *globalworksize)
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("CVF_cl: Running boxfilter Kernels\n");
@@ -703,7 +696,7 @@ int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_out, size_t *globalworksize)
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_bf, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -711,7 +704,7 @@ int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_out, size_t *globalworksize)
 	if (!checkSuccess(clFinish(*commandQueue)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
-		cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -720,7 +713,7 @@ int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_out, size_t *globalworksize)
     if (!checkSuccess(clReleaseEvent(event)))
     {
         cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
-        cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
         return 1;
     }
 
@@ -744,7 +737,7 @@ int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_tmp, cl_mem *cl_out, size_t *glo
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_bfc_rows, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
 	arg_num = 0;
@@ -759,7 +752,7 @@ int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_tmp, cl_mem *cl_out, size_t *glo
     if (!setKernelArgumentsSuccess)
     {
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_bfc_rows, NULL, 0);
-        cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << endl;
+        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
     }
 
     if(OCL_STATS) printf("CVF_cl: Running boxfilter row Kernels\n");
@@ -767,7 +760,7 @@ int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_tmp, cl_mem *cl_out, size_t *glo
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_bfc_rows, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_bfc_rows, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
 
@@ -778,7 +771,7 @@ int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_tmp, cl_mem *cl_out, size_t *glo
 	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_bfc_cols, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
 	{
 		cleanUpOpenCL(*context, *commandQueue, program, kernel_bfc_cols, NULL, 0);
-		cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << endl;
+		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		return 1;
 	}
     return 0;

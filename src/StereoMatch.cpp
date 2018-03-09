@@ -658,7 +658,7 @@ int StereoMatch::update_dataset(std::string dataset_name)
 
 int StereoMatch::update_display(void)
 {
-	if(media_mode == DE_IMAGE)
+	if((media_mode == DE_IMAGE) && ground_truth_data)
 	{
 		display_container = cv::Mat(lFrame.rows*2, lFrame.cols*3, CV_8UC3, cv::Scalar(0, 0, 0));
 		gtDispMap	  = cv::Mat(display_container, cv::Rect(lFrame.cols*2, 0, 			lFrame.cols, lFrame.rows)); //Top Far Right

@@ -34,7 +34,7 @@ int main(int argc, const char* argv[])
     //# Start Application Processes
     //#############################################################################################################
 	printf("Starting Stereo Matching Application.\n");
-	StereoMatch *sm = new StereoMatch(argc, argv, 0);
+	StereoMatch *sm = new StereoMatch(argc, argv, nOpenCLDev);
 	//printf("MAIN: Press h for help text.\n\n");
 
 	std::thread de_thread;

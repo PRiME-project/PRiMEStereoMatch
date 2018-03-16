@@ -275,95 +275,40 @@ void StereoMatch::compute(float& de_time_ms)
 
 	if(media_mode == DE_IMAGE && ground_truth_data)
 	{
-		//start_time = get_rt();
-
 		//Check pixel errors against ground truth depth map here.
 		//Can only be done with images as golden reference is required.
-
-		//Calculate error in disparity for each pixel
-		#pragma omp parallel for
-		for(int y = 0; y < gtFrame.rows; y++)
-		{
-			uchar* eData = (uchar*) eDispMap.ptr<uchar>( y );
-			uchar* lData = (uchar*) lDispMap.ptr<uchar>( y );
-			uchar* gtData = (uchar*) gtFrame.ptr<uchar>( y );
-
-			int col_start = 0;
-			if(MatchingAlgorithm == STEREO_SGBM)
-			{
-				for(int x = 0; x < maxDis; x++)
-				{
-					eData[x] = 0;
-				}
-				col_start = maxDis;
-			}
-			for(int x = col_start; x < gtFrame.cols; x++)
-			{
-				eData[x] = abs(lData[x] - gtData[x]);
-			}
-		}
+		cv::absdiff(lDispMap, gtFrame, eDispMap);
+		eDispMap(cv::Rect(0,0,maxDis+1,eDispMap.rows)).setTo(cv::Scalar(0));
+		cv::threshold(eDispMap, eDispMap, error_threshold*(CHAR_MAX/maxDis), 255, cv::THRESH_TOZERO);
 
 		if(mask_mode == MASK_DISC)
 		{
 			errMask = cv::imread(mask_disc_filename, cv::IMREAD_GRAYSCALE);
-			cv::threshold(errMask, errMask, 254, 255, cv::THRESH_TOZERO);
-
+			cv::threshold(errMask, errMask, 254, 255, cv::THRESH_TOZERO); //set any grey to black
 			if(MatchingAlgorithm == STEREO_SGBM)
 				cv::cvtColor(errMask, rightDispMap, cv::COLOR_GRAY2RGB);
-
-			cv::Mat eDispMap_tmp;
-			eDispMap.copyTo(eDispMap_tmp, errMask);
-			eDispMap_tmp.copyTo(eDispMap);
+			eDispMap = eDispMap.mul(errMask, 1/255.f);
 		}
 		else if(mask_mode == MASK_NONOCC)
 		{
 			errMask = cv::imread(mask_occl_filename, cv::IMREAD_GRAYSCALE);
-
 			if(MatchingAlgorithm == STEREO_SGBM)
 				cv::cvtColor(errMask, rightDispMap, cv::COLOR_GRAY2RGB);
-
-			cv::Mat eDispMap_tmp;
-			eDispMap.copyTo(eDispMap_tmp, errMask);
-			eDispMap_tmp.copyTo(eDispMap);
+			eDispMap = eDispMap.mul(errMask, 1/255.f);
 		}
 		else
 		{
 			if(MatchingAlgorithm == STEREO_SGBM)
 				blankDispMap.copyTo(rightDispMap);
 		}
+		cvtColor(eDispMap, errDispMap, cv::COLOR_GRAY2RGB);
 
-		unsigned int num_bad_pixels = 0;
-		float err_sum = 0;
-
-		for(int y = 0; y < gtFrame.rows; y++)
-		{
-			uchar* eData = (uchar*) eDispMap.ptr<uchar>( y );
-			uchar* lData = (uchar*) lDispMap.ptr<uchar>( y );
-			uchar* gtData = (uchar*) gtFrame.ptr<uchar>( y );
-
-			for(int x = 0; x < gtFrame.cols; x++)
-			{
-				err_sum += (float)eData[x];
-				if(eData[x] > error_threshold){
-					num_bad_pixels++;
-				}
-			}
-		}
-
+		float avg_err = cv::mean(eDispMap)[0]/(CHAR_MAX/maxDis);
+		unsigned int num_bad_pixels = (unsigned int)cv::countNonZero(eDispMap);
 		float num_pixels = gtFrame.cols*gtFrame.rows;
-		float avg_err = err_sum/(4*num_pixels); //Convert to per-pixel error. Convert from grayscale range to disparity range
-
 #ifdef DEBUG_APP_MONITORS
 		printf("%%BP = %.2f%% \t Avg Err = %.2f\n", num_bad_pixels*100/num_pixels, avg_err);
 #endif //DEBUG_APP_MONITORS
-
-		//Display the errors in the disparity map compared the ground truth
-		//minMaxLoc(eDispMap, &minVal, &maxVal);
-		//eDispMap.convertTo(eDispMap, CV_8U, 255/(maxVal - minVal)); //scale to fill range of char pixel values
-		cvtColor(eDispMap, errDispMap, cv::COLOR_GRAY2RGB);
-
-		//float err_time = (get_rt() - start_time)/1000;
-		//printf("Err Calculation Time:\t | %8.2f ms\n", err_time);
 	}
 
 	if(media_mode == DE_IMAGE){
@@ -762,7 +707,7 @@ int StereoMatch::parse_cli(int argc, const char * argv[])
 			user_dataset = true;
 		}
 		else{
-			curr_dataset = dataset_names[0];
+			curr_dataset = dataset_names[2];
 			ground_truth_data = true;
 		}
         std::cout << "Image command arguments parsed." << std::endl;

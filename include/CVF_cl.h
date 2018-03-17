@@ -52,7 +52,7 @@ private:
 
 	cl_mem tmp_3DA_r, tmp_3DA_g, tmp_3DA_b;
 	cl_mem tmp_3DB_r, tmp_3DB_g, tmp_3DB_b;
-	//cl_mem bf2Dtmp, bf3Dtmp;
+	cl_mem bf2Dtmp, bf3Dtmp;
 
 	int elementwiseMulSD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *globalworksize);
 	int elementwiseMulDD(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out);
@@ -62,6 +62,6 @@ private:
     int add(cl_mem *cl_in_a, cl_mem *cl_in_b, cl_mem *cl_out, size_t *globalworksize);
 	int central_filter(cl_mem *mean_I_in, cl_mem *mean_cv_io, cl_mem *var_I_in, cl_mem *cov_Ip_in,  cl_mem *a_in, size_t *globalworksize);
 	int preproc_maths(cl_mem *mean_I_in, cl_mem *mean_Ixx_in, cl_mem *var_I_out, size_t *globalworksize);
-    int boxfilter(cl_mem *cl_in, cl_mem *cl_out, size_t *globalworksize);
+//    int boxfilter(cl_mem *cl_in, cl_mem *cl_out, size_t *globalworksize);
 	int boxfilter(cl_mem *cl_in, cl_mem *cl_tmp, cl_mem *cl_out, size_t *globalworksize);
 };

@@ -10,11 +10,11 @@
 class DispSel
 {
 public:
-	DispSel(void);
-	~DispSel(void);
+	DispSel();
+	~DispSel();
 
-	void CVSelect(Mat* costVol, const int maxDis, Mat& dispMap);
-	void CVSelect_thread(Mat* costVol, const int maxDis, Mat& dispMap, int threads);
+	int CVSelect(cv::Mat* costVol, const unsigned int maxDis, cv::Mat& dispMap);
+	int CVSelect_thread(cv::Mat* costVol, const unsigned int maxDis, cv::Mat& dispMap, int threads);
 };
 
-struct DS_X_TD{Mat* costVol; Mat* dispMap; int y; int maxDis;};
+struct DS_X_TD{Mat* costVol; cv::Mat* dispMap; int y; unsigned int maxDis;};

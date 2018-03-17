@@ -47,9 +47,7 @@
 #define OCL_DE 1
 
 #define GIF_R_WIN 8
-#define GIF_EPS_32F 0.0001f
-#define GIF_EPS_8UC 1
-#define SUBSAMPLE_RATE 16
+#define GIF_EPS 0.0001f
 
 #define MAX_CPU_THREADS 8
 #define MIN_CPU_THREADS 1

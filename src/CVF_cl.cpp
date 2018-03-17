@@ -33,6 +33,8 @@ CVF_cl::CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
 		kernel_centf = clCreateKernel(program, "cent_filter_32F", &errorNumber);
 		kernel_var = clCreateKernel(program, "var_math_32F", &errorNumber);
 		kernel_bf = clCreateKernel(program, "BoxFilter_32F", &errorNumber);
+		kernel_bfc_rows = clCreateKernel(program, "BoxRows_32F", &errorNumber);
+		kernel_bfc_cols = clCreateKernel(program, "BoxCols_32F", &errorNumber);
 //		printf("CVF_cl: Float (_32F) OpenCL kernel versions created in context.\n");
 //	}
 //	else if(imgType == CV_8U)
@@ -151,10 +153,10 @@ CVF_cl::CVF_cl(cl_context* context, cl_command_queue* commandQueue, cl_device_id
 	tmp_3DB_b = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D, NULL, &errorNumber);
 	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
 
-//	bf2Dtmp = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D, NULL, &errorNumber);
-//	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
-//	bf3Dtmp = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D, NULL, &errorNumber);
-//	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+	bf2Dtmp = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_2D, NULL, &errorNumber);
+	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
+	bf3Dtmp = clCreateBuffer(*context, CL_MEM_READ_WRITE, bufferSize_3D, NULL, &errorNumber);
+	createMemoryObjectsSuccess &= checkSuccess(errorNumber);
 
 	if (!createMemoryObjectsSuccess)
 	{
@@ -184,8 +186,8 @@ CVF_cl::~CVF_cl(void)
 	clReleaseMemObject(tmp_3DB_r);
 	clReleaseMemObject(tmp_3DB_g);
 	clReleaseMemObject(tmp_3DB_b);
-//	clReleaseMemObject(bf2Dtmp);
-//	clReleaseMemObject(bf3Dtmp);
+	clReleaseMemObject(bf2Dtmp);
+	clReleaseMemObject(bf3Dtmp);
 }
 
 int CVF_cl::preprocess(cl_mem* ImgR, cl_mem* ImgG, cl_mem* ImgB)
@@ -195,18 +197,13 @@ int CVF_cl::preprocess(cl_mem* ImgR, cl_mem* ImgG, cl_mem* ImgB)
     Ib = ImgB;
 
     //mean_I
-//	if(imgType == CV_32F)
-//	{
-		boxfilter(Ir, &mean_I[0], globalWorksize_bf_2D);
-		boxfilter(Ig, &mean_I[1], globalWorksize_bf_2D);
-		boxfilter(Ib, &mean_I[2], globalWorksize_bf_2D);
-//	}
-//	else if(imgType == CV_8U)
-//	{
-//		boxfilter(Ir, &bf2Dtmp, &mean_I[0], globalWorksize_bfc_2D);
-//		boxfilter(Ig, &bf2Dtmp, &mean_I[1], globalWorksize_bfc_2D);
-//		boxfilter(Ib, &bf2Dtmp, &mean_I[2], globalWorksize_bfc_2D);
-//	}
+//	boxfilter(Ir, &mean_I[0], globalWorksize_bf_2D);
+//	boxfilter(Ig, &mean_I[1], globalWorksize_bf_2D);
+//	boxfilter(Ib, &mean_I[2], globalWorksize_bf_2D);
+
+	boxfilter(Ir, &bf2Dtmp, &mean_I[0], globalWorksize_bfc_2D);
+	boxfilter(Ig, &bf2Dtmp, &mean_I[1], globalWorksize_bfc_2D);
+	boxfilter(Ib, &bf2Dtmp, &mean_I[2], globalWorksize_bfc_2D);
 
 	elementwiseMulSD(Ir, Ir, &Ixx[0], globalWorksize_2D);
 	elementwiseMulSD(Ir, Ig, &Ixx[1], globalWorksize_2D);
@@ -217,10 +214,8 @@ int CVF_cl::preprocess(cl_mem* ImgR, cl_mem* ImgG, cl_mem* ImgB)
 
 	for(int i = 0; i < 6; i++)
 	{
-//		if(imgType == CV_32F)
-			boxfilter(&Ixx[i], &mean_Ixx[i], globalWorksize_bf_2D);
-//		else if(imgType == CV_8U)
-//			boxfilter(&Ixx[i], &bf2Dtmp, &mean_Ixx[i], globalWorksize_bfc_2D);
+//			boxfilter(&Ixx[i], &mean_Ixx[i], globalWorksize_bf_2D);
+			boxfilter(&Ixx[i], &bf2Dtmp, &mean_Ixx[i], globalWorksize_bfc_2D);
 	}
 
 	preproc_maths(mean_I, mean_Ixx, var_I, globalWorksize_2D);
@@ -230,24 +225,23 @@ int CVF_cl::preprocess(cl_mem* ImgR, cl_mem* ImgG, cl_mem* ImgB)
 
 int CVF_cl::filterCV(cl_mem* cl_costVol)
 {
-//	if(imgType == CV_32F)
-		boxfilter(cl_costVol, &mean_cv, globalWorksize_bf_3D);
-//	else if(imgType == CV_8U)
-//		boxfilter(cl_costVol, &bf3Dtmp, &mean_cv, globalWorksize_bfc_3D);
+//		boxfilter(cl_costVol, &mean_cv, globalWorksize_bf_3D);
+		boxfilter(cl_costVol, &bf3Dtmp, &mean_cv, globalWorksize_bfc_3D);
 
 	elementwiseMulDD(Ir, cl_costVol, &tmp_3DA_r); //Icv_r
 	elementwiseMulDD(Ig, cl_costVol, &tmp_3DA_g); //Icv_g
 	elementwiseMulDD(Ib, cl_costVol, &tmp_3DA_b); //Icv_b
 
-//	if(imgType == CV_32F){
-		boxfilter(&tmp_3DA_r, &tmp_3DB_r, globalWorksize_bf_3D); //mean_Icv_r
-		boxfilter(&tmp_3DA_g, &tmp_3DB_g, globalWorksize_bf_3D); //mean_Icv_g
-		boxfilter(&tmp_3DA_b, &tmp_3DB_b, globalWorksize_bf_3D); //mean_Icv_b
-//	} else if(imgType == CV_8U){
-//		boxfilter(&tmp_3DA_r, &bf3Dtmp, &tmp_3DB_r, globalWorksize_bfc_3D); //mean_Icv_r
-//		boxfilter(&tmp_3DA_g, &bf3Dtmp, &tmp_3DB_g, globalWorksize_bfc_3D); //mean_Icv_g
-//		boxfilter(&tmp_3DA_b, &bf3Dtmp, &tmp_3DB_b, globalWorksize_bfc_3D); //mean_Icv_b
-//	}
+	std::cout << "Here" << std::endl;
+//	boxfilter(&tmp_3DA_r, &tmp_3DB_r, globalWorksize_bf_3D); //mean_Icv_r
+//	boxfilter(&tmp_3DA_g, &tmp_3DB_g, globalWorksize_bf_3D); //mean_Icv_g
+//	boxfilter(&tmp_3DA_b, &tmp_3DB_b, globalWorksize_bf_3D); //mean_Icv_b
+	boxfilter(&tmp_3DA_r, &bf3Dtmp, &tmp_3DB_r, globalWorksize_bfc_3D); //mean_Icv_r
+	std::cout << "Here" << std::endl;
+	boxfilter(&tmp_3DA_g, &bf3Dtmp, &tmp_3DB_g, globalWorksize_bfc_3D); //mean_Icv_g
+	std::cout << "Here" << std::endl;
+	boxfilter(&tmp_3DA_b, &bf3Dtmp, &tmp_3DB_b, globalWorksize_bfc_3D); //mean_Icv_b
+	std::cout << "Here" << std::endl;
 
 	elementwiseMulDD(&mean_I[0], &mean_cv, &tmp_3DA_r); //mean_Ir_cv
 	elementwiseMulDD(&mean_I[1], &mean_cv, &tmp_3DA_g); //mean_Ig_cv
@@ -267,17 +261,14 @@ int CVF_cl::filterCV(cl_mem* cl_costVol)
 
 	central_filter(mean_I, &mean_cv, var_I, cov_Ip, a, globalWorksize_3D);
 
-//	if(imgType == CV_32F){
-		boxfilter(&a[0], &tmp_3DA_r, globalWorksize_bf_3D);
-		boxfilter(&a[1], &tmp_3DA_g, globalWorksize_bf_3D);
-		boxfilter(&a[2], &tmp_3DA_b, globalWorksize_bf_3D);
-		boxfilter(&mean_cv, cl_costVol, globalWorksize_bf_3D);
-//	} else if(imgType == CV_8U){
-//		boxfilter(&a[0], &bf3Dtmp, &tmp_3DA_r, globalWorksize_bfc_3D);
-//		boxfilter(&a[1], &bf3Dtmp, &tmp_3DA_g, globalWorksize_bfc_3D);
-//		boxfilter(&a[2], &bf3Dtmp, &tmp_3DA_b, globalWorksize_bfc_3D);
-//		boxfilter(&mean_cv, &bf3Dtmp, cl_costVol, globalWorksize_bfc_3D);
-//	}
+//	boxfilter(&a[0], &tmp_3DA_r, globalWorksize_bf_3D);
+//	boxfilter(&a[1], &tmp_3DA_g, globalWorksize_bf_3D);
+//	boxfilter(&a[2], &tmp_3DA_b, globalWorksize_bf_3D);
+//	boxfilter(&mean_cv, cl_costVol, globalWorksize_bf_3D);
+	boxfilter(&a[0], &bf3Dtmp, &tmp_3DA_r, globalWorksize_bfc_3D);
+	boxfilter(&a[1], &bf3Dtmp, &tmp_3DA_g, globalWorksize_bfc_3D);
+	boxfilter(&a[2], &bf3Dtmp, &tmp_3DA_b, globalWorksize_bfc_3D);
+	boxfilter(&mean_cv, &bf3Dtmp, cl_costVol, globalWorksize_bfc_3D);
 
 	elementwiseMulDD(Ir, &tmp_3DA_r, &tmp_3DA_r);
 	elementwiseMulDD(Ig, &tmp_3DA_g, &tmp_3DA_g);
@@ -676,49 +667,49 @@ int CVF_cl::preproc_maths(cl_mem *mean_I_in, cl_mem *mean_Ixx_in, cl_mem *var_I_
     return 0;
 }
 
-int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_out, size_t *globalworksize)
-{
-	int arg_num = 0;
-    /* Setup the kernel arguments. */
-    bool setKernelArgumentsSuccess = true;
-    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_bf, arg_num++, sizeof(cl_mem), cl_in));
-    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_bf, arg_num++, sizeof(cl_int), &width));
-    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_bf, arg_num++, sizeof(cl_int), &height));
-    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_bf, arg_num++, sizeof(cl_mem), cl_out));
-    if (!setKernelArgumentsSuccess)
-    {
-		cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
-        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
-    }
-
-    if(OCL_STATS) printf("CVF_cl: Running boxfilter Kernels\n");
-	/* Enqueue the kernel */
-	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_bf, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
-	{
-		cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
-		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
-		return 1;
-	}
-
-	/* Wait for completion */
-	if (!checkSuccess(clFinish(*commandQueue)))
-	{
-		cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
-		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
-		return 1;
-	}
-
-	if(OCL_STATS) printProfilingInfo(event);
-    /* Release the event object. */
-    if (!checkSuccess(clReleaseEvent(event)))
-    {
-        cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
-        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
-        return 1;
-    }
-
-    return 0;
-}
+//int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_out, size_t *globalworksize)
+//{
+//	int arg_num = 0;
+//    /* Setup the kernel arguments. */
+//    bool setKernelArgumentsSuccess = true;
+//    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_bf, arg_num++, sizeof(cl_mem), cl_in));
+//    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_bf, arg_num++, sizeof(cl_int), &width));
+//    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_bf, arg_num++, sizeof(cl_int), &height));
+//    setKernelArgumentsSuccess &= checkSuccess(clSetKernelArg(kernel_bf, arg_num++, sizeof(cl_mem), cl_out));
+//    if (!setKernelArgumentsSuccess)
+//    {
+//		cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
+//        std::cerr << "Failed setting OpenCL kernel arguments. " << __FILE__ << ":"<< __LINE__ << std::endl;
+//    }
+//
+//    if(OCL_STATS) printf("CVF_cl: Running boxfilter Kernels\n");
+//	/* Enqueue the kernel */
+//	if (!checkSuccess(clEnqueueNDRangeKernel(*commandQueue, kernel_bf, 3, NULL, globalworksize, NULL, 0, NULL, &event)))
+//	{
+//		cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
+//		std::cerr << "Failed enqueuing the kernel. " << __FILE__ << ":"<< __LINE__ << std::endl;
+//		return 1;
+//	}
+//
+//	/* Wait for completion */
+//	if (!checkSuccess(clFinish(*commandQueue)))
+//	{
+//		cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
+//		std::cerr << "Failed waiting for kernel execution to finish. " << __FILE__ << ":"<< __LINE__ << std::endl;
+//		return 1;
+//	}
+//
+//	if(OCL_STATS) printProfilingInfo(event);
+//    /* Release the event object. */
+//    if (!checkSuccess(clReleaseEvent(event)))
+//    {
+//        cleanUpOpenCL(*context, *commandQueue, program, kernel_bf, NULL, 0);
+//        std::cerr << "Failed releasing the event object. " << __FILE__ << ":"<< __LINE__ << std::endl;
+//        return 1;
+//    }
+//
+//    return 0;
+//}
 
 int CVF_cl::boxfilter(cl_mem *cl_in, cl_mem *cl_tmp, cl_mem *cl_out, size_t *globalworksize)
 {

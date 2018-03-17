@@ -402,14 +402,11 @@ void wgtMedian_thread(const Mat& Img, Mat& Dis, Mat& Valid, const int maxDis, co
 void PP::processDM(Mat& lImg, Mat& rImg, Mat& lDisMap, Mat& rDisMap,
 					Mat& lValid, Mat& rValid, const int maxDis, int threads)
 {
+//	lrCheck(lDisMap, rDisMap, lValid, rValid);
+//	fillInv(lDisMap, rDisMap, lValid, rValid);
+
 	// color image should be 3x3 median filtered
 	// according to weightedMedianMatlab.m from CVPR11
-
-	lrCheck(lDisMap, rDisMap, lValid, rValid);
-	//printf("LR Check Done\n");
-	fillInv(lDisMap, rDisMap, lValid, rValid);
-	//printf("Fill Inv Done\n");
-
 	//wgtMedian( lImg, rImg, lDisMap, rDisMap, lValid, rValid, maxDis);
 
 //	wgtMedian_thread(lImg, lDisMap, lValid, maxDis, threads);
@@ -420,11 +417,6 @@ void PP::processDM(Mat& lImg, Mat& rImg, Mat& lDisMap, Mat& rDisMap,
 	//use colour feature images:
 	lImg.convertTo(lImg_8UC3, CV_8UC3, 255);
 	rImg.convertTo(rImg_8UC3, CV_8UC3, 255);
-	//use greyscale feature images:
-//	cvtColor(lImg, lImg_8UC3, CV_RGB2GRAY );
-//	cvtColor(rImg, rImg_8UC3, CV_RGB2GRAY );
-//	lImg_8UC3.convertTo(lImg_8UC3, CV_8U, 255);
-//	rImg_8UC3.convertTo(rImg_8UC3, CV_8U, 255);
 
     lDisMap = JointWMF::filter(lDisMap, lImg_8UC3, (int)MED_SZ/2);
     rDisMap = JointWMF::filter(rDisMap, rImg_8UC3, (int)MED_SZ/2);

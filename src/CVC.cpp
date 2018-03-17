@@ -38,11 +38,11 @@ float myCostGrd(float* lC, float* lG)
     return ALPHA_32F * clrDiff + (1 - ALPHA_32F) * grdDiff;
 }
 
-void CVC::preprocess(const Mat& Img, Mat& GrdX)
+int CVC::preprocess(const Mat& Img, Mat& GrdX)
 {
 	cv::cvtColor(Img, GrdX, CV_RGB2GRAY);
 	cv::Sobel(GrdX, GrdX, CV_32F, 1, 0, 1);
-	return;
+	return 0;
 }
 
 void *CVC::buildCV_left_thread(void *thread_arg)
@@ -119,7 +119,7 @@ void *CVC::buildCV_right_thread(void *thread_arg)
     return (void*)0;
 }
 
-void CVC::buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol)
+int CVC::buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol)
 {
 	int wid = lImg.cols;
 	int hei = lImg.rows;
@@ -145,9 +145,10 @@ void CVC::buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const
 			cost[x] = myCostGrd(lC, lG);
 		}
 	}
+	return 0;
 }
 
-void CVC::buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol)
+int CVC::buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol)
 {
 	int wid = lImg.cols;
 	int border = wid - d;
@@ -174,4 +175,5 @@ void CVC::buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, cons
 			cost[x] = myCostGrd(lC, lG);
 		}
 	}
+	return 0;
 }

@@ -603,8 +603,8 @@ __kernel void cent_filter_8U(__global const uchar* mean_Ir,
 
 // Row summation filter kernel with rescaling
 //*****************************************************************
-__kernel void BoxRows_8U(__global const uchar* ucSource,
-						__global uchar* ucDest,
+__kernel void BoxRows_32F(__global const float* fSource,
+						__global float* fDest,
                         unsigned int uiWidth,
 						unsigned int uiHeight,
 						int iRadius,
@@ -613,8 +613,8 @@ __kernel void BoxRows_8U(__global const uchar* ucSource,
     // Row to process (note:  1 dimensional workgroup and ND range used for row kernel)
     size_t globalPosY = get_global_id(0);
     size_t globalPosD = get_global_id(2);
-    //const int offset = ((d * height) + y) * width;
-    size_t offset = mul24(mul24(globalPosD, uiHeight) + globalPosY, uiWidth);
+    size_t offset = ((globalPosD * uiHeight) + globalPosY) * uiWidth;
+    //size_t offset = mul24(mul24(globalPosD, uiHeight) + globalPosY, uiWidth);
 
     // accumulator
     float sum = 0;
@@ -622,26 +622,23 @@ __kernel void BoxRows_8U(__global const uchar* ucSource,
     // Do the left boundary
     for(int x = -iRadius; x <= iRadius; x++)
     {
-        sum += (float)ucSource[offset + x];
+        sum += fSource[offset + x];
     }
-    ucDest[offset] = (uchar)(sum * fScale);
+    fDest[offset] = sum * fScale;
 
     // Do the rest of the image
     for(uint x = 1; x < uiWidth; x++) 
     {
-        sum += (float)ucSource[offset + x + iRadius];
-        sum -= (float)ucSource[offset + x - iRadius - 1];
-
-        // Write out to GMEM
-        ucDest[offset + x] = (uchar)(sum * fScale);
-    }
-    
+        sum += fSource[offset + x + iRadius];
+        sum -= fSource[offset + x - iRadius - 1];
+        fDest[offset + x] = sum * fScale;
+    }  
 }
 
 // Column kernel using coalesced global memory reads
 //*****************************************************************
-__kernel void BoxCols_8U(__global uchar* ucInputImage, 
-						__global uchar* ucOutputImage, 
+__kernel void BoxCols_32F(__global float* fInputImage, 
+						__global float* fOutputImage, 
 						unsigned int uiWidth, 
 						unsigned int uiHeight, 
 						int iRadius, 
@@ -650,39 +647,37 @@ __kernel void BoxCols_8U(__global uchar* ucInputImage,
 	size_t globalPosX = get_global_id(0);
 	size_t globalPosD = get_global_id(2);
     size_t offset = mul24(mul24(globalPosD, uiHeight), uiWidth) + globalPosX;
-    ucInputImage = &ucInputImage[offset];
-    ucOutputImage = &ucOutputImage[offset];
+    fInputImage = &fInputImage[offset];
+    fOutputImage = &fOutputImage[offset];
 
     // do left edge
     float fSum;
-    fSum = (float)ucInputImage[0] * (float)(iRadius);
+    fSum = fInputImage[0] * (float)(iRadius);
     for (int y = 0; y < iRadius + 1; y++) 
     {
-        fSum += (float)ucInputImage[y * uiWidth];
+        fSum += fInputImage[y * uiWidth];
     }
-    ucOutputImage[0] = (uchar)(fSum * fScale);
+    fOutputImage[0] = fSum * fScale;
     for(int y = 1; y < iRadius + 1; y++) 
     {
-        fSum += (float)ucInputImage[(y + iRadius) * uiWidth];
-        fSum -= (float)ucInputImage[0];
-        ucOutputImage[y * uiWidth] = (uchar)(fSum * fScale);
+        fSum += fInputImage[(y + iRadius) * uiWidth];
+        fSum -= fInputImage[0];
+        fOutputImage[y * uiWidth] = fSum * fScale;
     }
     
     // main loop
     for(int y = iRadius + 1; y < uiHeight - iRadius; y++) 
     {
-        fSum += (float)ucInputImage[(y + iRadius) * uiWidth];
-        fSum -= (float)ucInputImage[((y - iRadius) * uiWidth) - uiWidth];
-        ucOutputImage[y * uiWidth] = (uchar)(fSum * fScale);
+        fSum += fInputImage[(y + iRadius) * uiWidth];
+        fSum -= fInputImage[((y - iRadius) * uiWidth) - uiWidth];
+        fOutputImage[y * uiWidth] = fSum * fScale;
     }
 
     // do right edge
     for (int y = uiHeight - iRadius; y < uiHeight; y++) 
     {
-        fSum += (float)ucInputImage[(uiHeight - 1) * uiWidth];
-        fSum -= (float)ucInputImage[((y - iRadius) * uiWidth) - uiWidth];
-        ucOutputImage[y * uiWidth] = (uchar)(fSum * fScale);
+        fSum += fInputImage[(uiHeight - 1) * uiWidth];
+        fSum -= fInputImage[((y - iRadius) * uiWidth) - uiWidth];
+        fOutputImage[y * uiWidth] = fSum * fScale;
     }
 }
-
-

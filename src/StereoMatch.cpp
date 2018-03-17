@@ -72,7 +72,9 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 		}
 
 		stereoCameraSetup();
+#ifdef DISPLAY
 		update_display();
+#endif // DISPLAY
 		SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
 	}
 	else if(media_mode == DE_IMAGE)
@@ -194,9 +196,9 @@ void StereoMatch::compute(float& de_time_ms)
             rFrame.convertTo(rFrame, CV_32F,  1 / 255.0f);
 
 		}
-		SMDE->lImg = lFrame;
-		SMDE->rImg = rFrame;
-		SMDE->threads = num_threads;
+		SMDE->setInputImages(lFrame, rFrame);
+		SMDE->setThreads(num_threads);
+		SMDE->setSubsampleRate(subsample_rate);
 
 		// ******** Disparity Estimation Code ******** //
 #ifdef DEBUG_APP
@@ -206,15 +208,11 @@ void StereoMatch::compute(float& de_time_ms)
 		if(de_mode == OCV_DE || !gotOCLDev)
 		{
 			cvc_time = get_rt();
-			//SMDE->CostConst_CPU();
 			SMDE->CostConst();
 			cvc_time = get_rt() - cvc_time;
 
 			cvf_time = get_rt();
-
-			//SMDE->CostFilter_CPU();
 			SMDE->CostFilter_FGF();
-
 			cvf_time = get_rt()- cvf_time;
 
 			dispsel_time = get_rt();
@@ -243,6 +241,9 @@ void StereoMatch::compute(float& de_time_ms)
 			SMDE->PostProcess_GPU();
 			pp_time = get_rt() - pp_time;
 		}
+#ifdef DEBUG_APP
+		std::cout <<  "Disparity Estimation Complete." << std::endl;
+#endif // DEBUG_APP
 
 		// ******** Display Disparity Maps  ******** //
 		SMDE->lDisMap.convertTo(lDispMap, CV_8U, scale_factor); //scale factor used to compare error with ground truth
@@ -252,10 +253,10 @@ void StereoMatch::compute(float& de_time_ms)
 		cv::cvtColor(lDispMap, rightDispMap, cv::COLOR_GRAY2RGB);
 		// ******** Display Disparity Maps  ******** //
 
-		cvc_time_avg = (cvc_time_avg*frame_count + cvc_time)/(frame_count + 1);
-		printf("Avg CVC Time:\t %4.2f  CVC Time: %4.2f ms\n",cvc_time_avg/1000, cvc_time/1000);
 #ifdef DEBUG_APP_MONITORS
+		cvc_time_avg = (cvc_time_avg*frame_count + cvc_time)/(frame_count + 1);
 		printf("STEREO GIF Module Times:\n");
+		printf("CVC Time:\t %4.2f ms   Avg Time:\t %4.2f\n", cvc_time/1000, cvc_time_avg/1000);
 		printf("CVF Time:\t %4.2f ms\n",cvf_time/1000);
 		printf("DispSel Time:\t %4.2f ms\n",dispsel_time/1000);
 		printf("PP Time:\t %4.2f ms\n",pp_time/1000);
@@ -392,6 +393,10 @@ int StereoMatch::stereoCameraSetup(void)
 {
 	if(recalibrate)
     {
+#ifndef DISPLAY
+		printf("Display window required for calibration. Please recompile with #define DISPLAY\n");
+		return -1;
+#endif // DISPLAY
 		update_display();
 		imshow("InputOutput", display_container);
 
@@ -588,9 +593,9 @@ int StereoMatch::update_dataset(std::string dataset_name)
 
 	imgDisparity16S = cv::Mat(lFrame.rows, lFrame.cols, CV_16S);
 	blankDispMap = cv::Mat(rFrame.rows, rFrame.cols, CV_8UC3, cv::Scalar(0, 0, 0));
-
+#ifdef DISPLAY
 	update_display();
-
+#endif // DISPLAY
 	delete SMDE;
 	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
 

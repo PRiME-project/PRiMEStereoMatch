@@ -16,29 +16,60 @@
 #include "oclUtil.h"
 #include "fastguidedfilter.h"
 //
-// Overarching Disparity Estimation Class
+// Top-level Disparity Estimation Class
 //
 class DispEst
 {
 public:
+    DispEst(cv::Mat l, cv::Mat r, const int d, int t, bool ocl);
+    ~DispEst(void);
 
-    Mat lImg;
-    Mat rImg;
+    //DispSel
+    cv::Mat lDisMap;
+    cv::Mat rDisMap;
+
+    //Public Methods
+	int setInputImages(cv::Mat l, cv::Mat r);
+	int setThreads(unsigned int newThreads);
+	void setSubsampleRate(unsigned int newRate) {subsample_rate = newRate;};
+	int printCV(void);
+
+    int CostConst();
+    int CostConst_CPU();
+    int CostConst_GPU();
+
+    int CostFilter();
+    int CostFilter_CPU();
+    int CostFilter_GPU();
+    int CostFilter_FGF();
+
+
+    int DispSelect_CPU();
+    int DispSelect_GPU();
+
+    int PostProcess_CPU();
+    int PostProcess_GPU();
+
+private:
+    //Private Variable
+    cv::Mat lImg;
+    cv::Mat rImg;
 
     int hei;
     int wid;
     int maxDis;
     int threads;
     bool useOCL;
+    unsigned int subsample_rate = 4;
 
 	//CVC
-    Mat lGrdX;
-    Mat rGrdX;
+    cv::Mat lGrdX;
+    cv::Mat rGrdX;
 	//CVC & CVF
 //    Mat lcostVol_cvc;
 //    Mat rcostVol_cvc;
-    Mat* lcostVol;
-    Mat* rcostVol;
+    cv::Mat* lcostVol;
+    cv::Mat* rcostVol;
     //CVF
 //    Mat* lImg_rgb;
 //    Mat* rImg_rgb;
@@ -46,12 +77,9 @@ public:
 //    Mat* mean_rImg;
 //    Mat* var_lImg;
 //    Mat* var_rImg;
-    //DispSel
-    Mat lDisMap;
-    Mat rDisMap;
     //PP
-    Mat lValid;
-    Mat rValid;
+    cv::Mat lValid;
+    cv::Mat rValid;
 
     CVC* constructor;
     CVF* filter;
@@ -76,24 +104,6 @@ public:
 	size_t bufferSize_2D; //Img, Gray, GrdX,
 	size_t bufferSize_3D; //costVol
 
-    DispEst(Mat l, Mat r, const int d, const int t, bool ocl);
-    ~DispEst(void);
-
-	void printCV(void);
-
-    void CostConst();
-    void CostConst_CPU();
-    void CostConst_GPU();
-
-    void CostFilter();
-    void CostFilter_CPU();
-    void CostFilter_GPU();
-    void CostFilter_FGF();
-
-
-    void DispSelect_CPU();
-    void DispSelect_GPU();
-
-    void PostProcess_CPU();
-    void PostProcess_GPU();
+    //Private Methods
+    //None
 };

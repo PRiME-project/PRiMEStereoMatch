@@ -33,13 +33,13 @@ public:
     CVC(void);
     ~CVC(void);
 
-	void preprocess(const Mat& Img, Mat& GrdX);
+	int preprocess(const Mat& Img, Mat& GrdX);
 
 	static void *buildCV_left_thread(void *thread_arg);
 	static void *buildCV_right_thread(void *thread_arg);
 
-	void buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol);
-	void buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol);
+	int buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol);
+	int buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol);
 };
 
 //CVC thread data struct

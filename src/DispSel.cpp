@@ -7,27 +7,27 @@
   ---------------------------------------------------------------------------*/
 #include "DispSel.h"
 
-DispSel::DispSel(void)
+DispSel::DispSel()
 {
 #ifdef DEBUG_APP
 		std::cout <<  "Winner-Takes-All Disparity Selection." << std::endl;
 #endif // DEBUG_APP
 }
-DispSel::~DispSel(void) {}
+DispSel::~DispSel() {}
 
 void *DS_X(void *thread_arg)
 {
 	struct DS_X_TD *t_data;
 	t_data = (struct DS_X_TD *) thread_arg;
     //Matricies
-	Mat* costVol = t_data->costVol;
-	Mat* dispMap = t_data->dispMap;
+	cv::Mat* costVol = t_data->costVol;
+	cv::Mat* dispMap = t_data->dispMap;
     //Variables
 	int y = t_data->y;
 	int maxDis = t_data->maxDis;
 
 	int wid = dispMap->cols;
-	uchar* dispData = (uchar*) dispMap->ptr<uchar>(y);
+	unsigned char* dispData = (unsigned char*) dispMap->ptr<unsigned char>(y);
 
 	for(int x = 0; x < wid; ++x)
 	{
@@ -48,9 +48,9 @@ void *DS_X(void *thread_arg)
 	return (void*)0;
 }
 
-void DispSel::CVSelect_thread(Mat* costVol, const int maxDis, Mat& dispMap, int threads)
+int DispSel::CVSelect_thread(cv::Mat* costVol, const unsigned int maxDis, cv::Mat& dispMap, int threads)
 {
-    int hei = dispMap.rows;
+    unsigned int hei = dispMap.rows;
 
 	//Set up threads for x-loop
     void* status;
@@ -77,23 +77,23 @@ void DispSel::CVSelect_thread(Mat* costVol, const int maxDis, Mat& dispMap, int 
             pthread_join(DS_X_threads[d], &status);
         }
 	}
-	return;
+	return 0;
 }
 
-void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& dispMap)
+int DispSel::CVSelect(cv::Mat* costVol, const unsigned int maxDis, cv::Mat& dispMap)
 {
-    int hei = dispMap.rows;
-    int wid = dispMap.cols;
+    unsigned int hei = dispMap.rows;
+    unsigned int wid = dispMap.cols;
 
 	#pragma omp parallel for
-    for(int y = 0; y < hei; ++y)
+    for(unsigned int y = 0; y < hei; ++y)
     {
-		for(int x = 0; x < wid; ++x)
+		for(unsigned int x = 0; x < wid; ++x)
 		{
 			float minCost = DBL_MAX;
 			int minDis = 0;
 
-			for(int d = 1; d < maxDis; ++d)
+			for(unsigned int d = 1; d < maxDis; ++d)
 			{
 				float* costData = (float*)costVol[d].ptr<float>(y);
 				if(costData[x] < minCost)
@@ -102,8 +102,8 @@ void DispSel::CVSelect(Mat* costVol, const int maxDis, Mat& dispMap)
 					minDis = d;
 				}
 			}
-			dispMap.at<uchar>(y,x) = minDis;
+			dispMap.at<unsigned char>(y,x) = minDis;
 		}
     }
-    return;
+    return 0;
 }

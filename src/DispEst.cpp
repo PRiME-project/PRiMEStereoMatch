@@ -7,7 +7,7 @@
   ---------------------------------------------------------------------------*/
 #include "DispEst.h"
 
-DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
+DispEst::DispEst(cv::Mat l, cv::Mat r, const int d, int t, bool ocl)
     : lImg(l), rImg(r), maxDis(d), threads(t), useOCL(ocl)
 {
 #ifdef DEBUG_APP
@@ -28,14 +28,12 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 		exit(1);
 	}
 
-//	lcostVol_cvc = Mat::zeros(hei, wid*maxDis, CV_32FC1);
-//	rcostVol_cvc = Mat::zeros(hei, wid*maxDis, CV_32FC1);
-    lcostVol = new Mat[maxDis];
-    rcostVol = new Mat[maxDis];
+    lcostVol = new cv::Mat[maxDis];
+    rcostVol = new cv::Mat[maxDis];
     for (int i = 0; i < maxDis; ++i)
     {
-		lcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
-		rcostVol[i] = Mat::zeros(hei, wid, CV_32FC1);
+		lcostVol[i] = cv::Mat::zeros(hei, wid, CV_32FC1);
+		rcostVol[i] = cv::Mat::zeros(hei, wid, CV_32FC1);
     }
 
 //    lImg_rgb = new Mat[3];
@@ -45,10 +43,10 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 //    var_lImg = new Mat[6];
 //    var_rImg = new Mat[6];
 
-	lDisMap = Mat::zeros(hei, wid, CV_8UC1);
-	rDisMap = Mat::zeros(hei, wid, CV_8UC1);
-	lValid = Mat::zeros(hei, wid, CV_8UC1);
-	rValid = Mat::zeros(hei, wid, CV_8UC1);
+	lDisMap = cv::Mat::zeros(hei, wid, CV_8UC1);
+	rDisMap = cv::Mat::zeros(hei, wid, CV_8UC1);
+	lValid = cv::Mat::zeros(hei, wid, CV_8UC1);
+	rValid = cv::Mat::zeros(hei, wid, CV_8UC1);
 
 	printf("Setting up pthreads function constructors\n");
     constructor = new CVC();
@@ -72,12 +70,12 @@ DispEst::DispEst(Mat l, Mat r, const int d, const int t, bool ocl)
 		//if (!createSubDeviceContext(&context, numComputeUnits)) //Device Fission is not supported on Xeon Phi
 		{
 			cleanUpOpenCL(context, commandQueue, NULL, NULL, memoryObjects, numberOfMemoryObjects);
-			cerr << "Failed to create an OpenCL context. " << __FILE__ << ":"<< __LINE__ << endl;
+			std::cerr << "Failed to create an OpenCL context. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		}
 		if (!createCommandQueue(context, &commandQueue, &device))
 		{
 			cleanUpOpenCL(context, commandQueue, NULL, NULL, memoryObjects, numberOfMemoryObjects);
-			cerr << "Failed to create the OpenCL command queue. " << __FILE__ << ":"<< __LINE__ << endl;
+			std::cerr << "Failed to create the OpenCL command queue. " << __FILE__ << ":"<< __LINE__ << std::endl;
 		}
 
 		width = (cl_int)wid;
@@ -163,30 +161,50 @@ DispEst::~DispEst(void)
     }
 }
 
-void DispEst::printCV(void)
+int DispEst::setInputImages(cv::Mat leftImg, cv::Mat rightImg)
+{
+	assert(leftImg.type() == rightImg.type());
+	lImg = leftImg;
+	rImg = rightImg;
+	return 0;
+}
+
+int DispEst::setThreads(unsigned int newThreads)
+{
+	if(newThreads > MAX_CPU_THREADS)
+		return -1;
+
+	threads = newThreads;
+	return 0;
+}
+
+int DispEst::printCV(void)
 {
 	char filename[20];
+	int ret_val = 0;
 
 	for (int i = 0; i < maxDis; ++i)
 	{
-		sprintf(filename, "CV/lCV%d.png", i);
+		if(ret_val = sprintf(filename, "CV/lCV%d.png", i)) return ret_val;
 		imwrite(filename, lcostVol[i]*1024*8);
-		sprintf(filename, "CV/rCV%d.png", i);
+		if(ret_val = sprintf(filename, "CV/rCV%d.png", i)) return ret_val;
 		imwrite(filename, rcostVol[i]*1024*8);
 	}
-	return;
+	return 0;
 }
 
 //#############################################################################################################
 //# Cost Volume Construction
 //#############################################################################################################
-void DispEst::CostConst()
+int DispEst::CostConst()
 {
-	float start_time;
-	constructor->preprocess(lImg, lGrdX);
-	constructor->preprocess(rImg, rGrdX);
+	int ret_val = 0;
 
-	start_time = get_rt();
+	if(ret_val = constructor->preprocess(lImg, lGrdX))
+		return ret_val;
+	if(ret_val = constructor->preprocess(rImg, rGrdX))
+		return ret_val;
+
     // Build Cost Volume
 	#pragma omp parallel for
     for( int d = 0; d < maxDis; ++d)
@@ -198,10 +216,10 @@ void DispEst::CostConst()
     {
         constructor->buildCV_right(rImg, lImg, rGrdX, lGrdX, d, rcostVol[d]);
     }
-	std::cout << "Time (ms) = " << (get_rt() - start_time)/1000 << std::endl;
+    return 0;
 }
 
-void DispEst::CostConst_CPU()
+int DispEst::CostConst_CPU()
 {
     //Set up threads and thread attributes
     void *status;
@@ -248,34 +266,37 @@ void DispEst::CostConst_CPU()
             pthread_join(BCV_threads[d], &status);
         }
 	}
+	return 0;
 }
 
-void DispEst::CostConst_GPU()
+int DispEst::CostConst_GPU()
 {
 	constructor_cl->buildCV(lImg, rImg, memoryObjects);
+	return 0;
 }
 
 //#############################################################################################################
 //# Cost Volume Filtering
 //#############################################################################################################
-void DispEst::CostFilter_FGF()
+int DispEst::CostFilter_FGF()
 {
-    FastGuidedFilter *fgf_left = new FastGuidedFilter(lImg, GIF_R_WIN, GIF_EPS_32F, SUBSAMPLE_RATE);
-    FastGuidedFilter *fgf_right = new FastGuidedFilter(rImg, GIF_R_WIN, GIF_EPS_32F, SUBSAMPLE_RATE);
+    FastGuidedFilter fgf_left(lImg, GIF_R_WIN, GIF_EPS, subsample_rate);
+    FastGuidedFilter fgf_right(rImg, GIF_R_WIN, GIF_EPS, subsample_rate);
 
 	#pragma omp parallel for
     for(int d = 0; d < maxDis; ++d){
-        fgf_left->filter(lcostVol[d]);
+        lcostVol[d] = fgf_left.filter(lcostVol[d]);
     }
 
 	#pragma omp parallel for
     for(int d = 0; d < maxDis; ++d){
-        fgf_right->filter(rcostVol[d]);
+        rcostVol[d] = fgf_right.filter(rcostVol[d]);
     }
+	return 0;
 }
 
 //TODO: Port FGF code to GPU
-void DispEst::CostFilter_GPU()
+int DispEst::CostFilter_GPU()
 {
     //printf("OpenCL Cost Filtering Underway...\n");
     filter_cl->preprocess(&memoryObjects[CVC_LIMGR], &memoryObjects[CVC_LIMGG], &memoryObjects[CVC_LIMGB]);
@@ -283,10 +304,11 @@ void DispEst::CostFilter_GPU()
     filter_cl->preprocess(&memoryObjects[CVC_RIMGR], &memoryObjects[CVC_RIMGG], &memoryObjects[CVC_RIMGB]);
     filter_cl->filterCV(&memoryObjects[CV_RCV]);
     //printf("Filtering Complete\n");
+	return 0;
 }
 
 
-void DispEst::DispSelect_CPU()
+int DispEst::DispSelect_CPU()
 {
     //printf("Left Selection...\n");
     selector->CVSelect(lcostVol, maxDis, lDisMap);
@@ -295,24 +317,28 @@ void DispEst::DispSelect_CPU()
     //printf("Right Selection...\n");
     selector->CVSelect(rcostVol, maxDis, rDisMap);
     //selector->CVSelect_thread(rcostVol, maxDis, rDisMap, threads);
+	return 0;
 }
 
-void DispEst::DispSelect_GPU()
+int DispEst::DispSelect_GPU()
 {
 	//printf("Left & Right Selection...\n");
 	selector_cl->CVSelect(memoryObjects, lDisMap, rDisMap);
+	return 0;
 }
 
-void DispEst::PostProcess_CPU()
+int DispEst::PostProcess_CPU()
 {
     //printf("Post Processing Underway...\n");
     postProcessor->processDM(lImg, rImg, lDisMap, rDisMap, lValid, rValid, maxDis, threads);
     //printf("Post Processing Complete\n");
+	return 0;
 }
 
-void DispEst::PostProcess_GPU()
+int DispEst::PostProcess_GPU()
 {
     //printf("Post Processing Underway...\n");
     postProcessor->processDM(lImg, rImg, lDisMap, rDisMap, lValid, rValid, maxDis, threads);
     //printf("Post Processing Complete\n");
+	return 0;
 }

@@ -173,6 +173,14 @@ void HCI(StereoMatch *sm)
 																	"Disc");
 				break;
             }
+            case 's':
+            {
+				sm->subsample_rate *= 2;
+				if(sm->subsample_rate > 8)
+					sm->subsample_rate = 2;
+				printf("| =: Subsample rate changed to %d.\n", sm->subsample_rate);
+				break;
+			}
             case '=':
             {
 				sm->error_threshold++;

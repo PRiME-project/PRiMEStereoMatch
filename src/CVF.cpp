@@ -11,18 +11,18 @@
   ---------------------------------------------------------------------------*/
 #include "CVF.h"
 
-CVF::CVF(void)
+CVF::CVF()
 {
 #ifdef DEBUG_APP
 		std::cout <<  "Guided Image Filtering method for Cost Computation." << std::endl;
 #endif // DEBUG_APP
 }
-CVF::~CVF(void){}
+CVF::~CVF(){}
 
-void CVF::filterCV(const Mat* Img_rgb, const Mat* mean_Img, const Mat* var_Img, Mat& costVol)
+int CVF::filterCV(const Mat* Img_rgb, const Mat* mean_Img, const Mat* var_Img, Mat& costVol)
 {
     costVol = GuidedFilter_cv(Img_rgb, mean_Img, var_Img, costVol);
-    return;
+    return 0;
 }
 
 void *CVF::filterCV_thread(void *thread_arg)
@@ -117,15 +117,15 @@ Mat GuidedFilter_cv(const Mat* rgb, const Mat* mean_I, const Mat* var_I, const M
 			float c0 = cData[ 0 ][ x ];
 			float c1 = cData[ 1 ][ x ];
 			float c2 = cData[ 2 ][ x ];
-			float a11 = vData[ 0 ][ x ] + GIF_EPS_32F;
+			float a11 = vData[ 0 ][ x ] + GIF_EPS;
 			float a12 = vData[ 1 ][ x ];
 			float a13 = vData[ 2 ][ x ];
 			float a21 = vData[ 1 ][ x ];
-			float a22 = vData[ 3 ][ x ] + GIF_EPS_32F;
+			float a22 = vData[ 3 ][ x ] + GIF_EPS;
 			float a23 = vData[ 4 ][ x ];
 			float a31 = vData[ 2 ][ x ];
 			float a32 = vData[ 4 ][ x ];
-			float a33 = vData[ 5 ][ x ] + GIF_EPS_32F;
+			float a33 = vData[ 5 ][ x ] + GIF_EPS;
 			float DET = a11 * ( a33 * a22 - a32 * a23 ) -
 				a21 * ( a33 * a12 - a32 * a13 ) +
 				a31 * ( a23 * a12 - a22 * a13 );

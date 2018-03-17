@@ -52,6 +52,8 @@ public:
 	//StereoSGBM Variables
 	cv::Ptr<StereoSGBM> ssgbm;
 
+	//Stereo GIF Variables
+	unsigned int subsample_rate = 4;;
 private:
 	//Variables
 	bool end_de, recaptureChessboards, recalibrate;

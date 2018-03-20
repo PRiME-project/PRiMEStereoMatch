@@ -65,11 +65,11 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 	* -a (--alg=) - Set the default matching algorithm to run. It has options {STEREO_GIF, STEREO_SGBM}. This can also be toggled during executions.
 
 * For example, to run using a stereo camera, specify:
-	* `./PRiMEStereoMatch video -a STEREO_GIF`
+	* `./PRiMEStereoMatch video`
 * To run with calibration and capture beforehand, specify:
-	* `./PRiMEStereoMatch video --recal --recap -a STEREO_SGBM`
+	* `./PRiMEStereoMatch video --recal --recap`
 * Image disparity estimation is achieved using:
-	* `./PRiMEStereoMatch image -l left_img.png -r right_img.png -a STEREO_GIF`
+	* `./PRiMEStereoMatch image -l left_img.png -r right_img.png`
 
 * The first time the application is deployed using a stereo camera, the --recal and --recap flags must be set in order to capture chessboard image to calculate the intrinsic and extrinsic parameters.
 * This process only needs to be repeated if the relative orientations of the left and right cameras are changed or a different resolution is specified.

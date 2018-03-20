@@ -103,9 +103,15 @@ files:
 
 ### Code
 
- [CrossScaleStereo](https://github.com/rookiepig/CrossScaleStereo) - The basis for some C++ functions (GNU Public License)
+Some components of the application are based on source code from the following locations:
+
+ [rookiepig/CrossScaleStereo](https://github.com/rookiepig/CrossScaleStereo) - The basis for some C++ functions (GNU Public License)
+
+ [atilimcetin/guided-filter](https://github.com/atilimcetin/guided-filter) - CPU-based GIF implementation using the Fast Guided Filter (MIT License)
 
 ### Literature
+
+The algorithm in this work is based in parts on those presented in the following publications:  
 
 <a name="Hosni2011CVPR">[Hosni2011CVPR]</a>: C. Rhemann, A. Hosni, M. Bleyer, C. Rother, and M. Gelautz. Fast cost-volume filtering for visual correspondence and beyond. In CVPR, 2011
 
@@ -115,7 +121,7 @@ files:
 
 <a name="He2012">[He2012]</a>: K. He, J. Sun and X. Tang, Guided Image Filtering, Pattern Analysis and Machine Intelligence, IEEE Transactions on, pp. 1397-1409, 02 October 2012. 
 
-### License
+## License
 
 This software is released under the BSD 3 Clause License. See LICENSE.txt for details.
 

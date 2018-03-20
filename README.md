@@ -1,5 +1,9 @@
 # PRiMEStereoMatch
 
+Please use this citation in your publication if you use this work ([bibtex here](https://github.com/PRiME-project/PRiMEStereoMatch#license)):  
+
+Charles Leech, Charan Kumar, Amit Acharyya, Sheng Yang, Geoff V. Merrett, and Bashir M. Al-Hashimi. 2017. Runtime Performance and Power Optimization of Parallel Disparity Estimation on Many-Core Platforms. ACM Transactions on Embedded Computing Systems (TECS) Volume 17 Issue 2, Article 41 (November 2017), 19 pages. DOI: https://doi.org/10.1145/3133560  
+
 <p align="center">
 <img src="docs/de_examples.png" alt="Examples Image Pairs" width=80%>
 </p>
@@ -117,14 +121,14 @@ This software is released under the BSD 3 Clause License. See LICENSE.txt for de
 
 To cite this code in your work, please also include the following reference:
 
-Charles Leech, Charan Kumar, Amit Acharyya, Sheng Yang, Geoff V. Merrett, and Bashir M. Al-Hashimi. 2017. Runtime Performance and Power Optimization of Parallel Disparity Estimation on Many-Core Platforms. ACM Trans. Embed. Comput. Syst. 17, 2, Article 41 (November 2017), 19 pages. DOI: https://doi.org/10.1145/3133560 
+Charles Leech, Charan Kumar, Amit Acharyya, Sheng Yang, Geoff V. Merrett, and Bashir M. Al-Hashimi. 2017. Runtime Performance and Power Optimization of Parallel Disparity Estimation on Many-Core Platforms. ACM Transactions on Embedded Computing Systems (TECS) Volume 17 Issue 2, Article 41 (November 2017), 19 pages. DOI: https://doi.org/10.1145/3133560 
 
 Bibtex:
 ```
 @article{Leech:2017:RPP:3160927.3133560,
  author = {Leech, Charles and Kumar, Charan and Acharyya, Amit and Yang, Sheng and Merrett, Geoff V. and Al-Hashimi, Bashir M.},
  title = {Runtime Performance and Power Optimization of Parallel Disparity Estimation on Many-Core Platforms},
- journal = {ACM Trans. Embed. Comput. Syst.},
+ journal = {ACM Transactions on Embedded Computing Systems (TECS)},
  issue_date = {January 2018},
  volume = {17},
  number = {2},

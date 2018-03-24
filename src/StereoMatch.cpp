@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------
-   StereoMatch.cpp - Stereo Matching Application Code/Class
+   StereoMatch.cpp - Stereo Matching Application Class
   ---------------------------------------------------------------------------
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
@@ -115,7 +115,7 @@ StereoMatch::~StereoMatch(void)
 //#############################################################################
 //# Complete GIF stereo matching process
 //#############################################################################
-void StereoMatch::compute(float& de_time_ms)
+int StereoMatch::compute(float& de_time_ms)
 {
 #ifdef DEBUG_APP
 	std::cout << "Computing Depth Map" << std::endl;
@@ -132,7 +132,7 @@ void StereoMatch::compute(float& de_time_ms)
 		if(vFrame.empty())
 		{
 			printf("Could not load camera frame\n");
-			return;
+			return -1;
 		}
 
 		lFrame = vFrame(Rect(0,0, vFrame.cols/2,vFrame.rows)); //split the frame into left
@@ -141,7 +141,7 @@ void StereoMatch::compute(float& de_time_ms)
 		if(lFrame.empty() || rFrame.empty())
 		{
 			printf("No data in left or right frames\n");
-			return;
+			return -1;
 		}
 
 		//Applies a generic geometrical transformation to an image.
@@ -194,7 +194,6 @@ void StereoMatch::compute(float& de_time_ms)
         {
             lFrame.convertTo(lFrame, CV_32F, 1 / 255.0f);
             rFrame.convertTo(rFrame, CV_32F,  1 / 255.0f);
-
 		}
 		SMDE->setInputImages(lFrame, rFrame);
 		SMDE->setThreads(num_threads);
@@ -268,7 +267,6 @@ void StereoMatch::compute(float& de_time_ms)
 	printf("DE Time:\t %4.2f ms\n", de_time_ms);
 #endif //DEBUG_APP_MONITORS
 
-	cv::imwrite("leftDisparityMap.png", leftDispMap);
 #ifdef DEBUG_APP
 	cv::imwrite("leftDisparityMap.png", leftDispMap);
 	cv::imwrite("rightDisparityMap.png", rightDispMap);
@@ -315,7 +313,11 @@ void StereoMatch::compute(float& de_time_ms)
 	if(media_mode == DE_IMAGE){
 		input_data_m.unlock();
 	}
-	return;
+
+#ifdef DISPLAY
+	imshow("InputOutput", display_container);
+#endif
+	return 0;
 }
 
 //#############################################################################
@@ -627,6 +629,7 @@ int StereoMatch::update_display(void)
 	lFrame.copyTo(leftInputImg);
 	rFrame.copyTo(rightInputImg);
 	cv::cvtColor(gtFrame, gtDispMap, cv::COLOR_GRAY2RGB);
+	imshow("InputOutput", display_container);
 	return 0;
 }
 
@@ -739,10 +742,10 @@ int StereoMatch::parse_cli(int argc, const char * argv[])
 	std::cout << "Global arguments:" << std::endl;
     if(args::get(arg_alg_mode) == "STEREO_GIF"){
 		MatchingAlgorithm = STEREO_GIF;
-		std::cout << "Using STEREO_GIF" << std::endl;
+		std::cout << "\t Matching Algorithm: STEREO_GIF" << std::endl;
     } else {
 		MatchingAlgorithm = STEREO_SGBM;
-		std::cout << "Using STEREO_SGBM" << std::endl;
+		std::cout << "\t Matching Algorithm: STEREO_SGBM" << std::endl;
 	}
 
     return 0;

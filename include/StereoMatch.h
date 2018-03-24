@@ -22,7 +22,7 @@
 #define MASK_DISC 3
 
 #define DISPLAY
-#define DEBUG_APP
+//#define DEBUG_APP
 #define DEBUG_APP_MONITORS
 
 static std::vector<std::string> dataset_names = std::vector<std::string>{"Art", "Books", "Cones", "Dolls", "Laundry", "Moebius", "Teddy"};
@@ -45,7 +45,7 @@ public:
 	int media_mode;
 	cv::Mat display_container;
 
-	void compute(float& de_time_ms);
+	int compute(float& de_time);
 	int update_dataset(std::string dataset_name);
 	bool user_dataset;
 

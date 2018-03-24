@@ -4,13 +4,13 @@
    Author: Charles Leech
    Email: cl19g10 [at] ecs.soton.ac.uk
    Copyright (c) 2016 Charlie Leech, University of Southampton.
-   All rights reserved.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
 #include "oclUtil.h"
 #include "StereoMatch.h"
 #include <chrono>
 #include <thread>
+#include <opencv2/highgui.hpp>
 
 //Functions in main
 void getDepthMap(StereoMatch *sm);
@@ -67,11 +67,15 @@ void getDepthMap(StereoMatch *sm)
 	float de_time;
 
 	while(!(end_de || ret)){
-		sm->compute(de_time);
+		ret = sm->compute(de_time);
 	}
 	return;
 }
 
+static void on_trackbar_err(int value, void* ptr)
+{
+	printf("HCI: Error threshold set to %d.\n", value);
+}
 
 void HCI(StereoMatch *sm)
 {
@@ -80,11 +84,17 @@ void HCI(StereoMatch *sm)
 	float de_time;
 	int dataset_idx = 0;
 
-    while(key != 'q')
-    {
 #ifdef DISPLAY
 		imshow("InputOutput", sm->display_container);
+
+		if(sm->media_mode == DE_IMAGE){
+			cv::createTrackbar("Error Threshold", "InputOutput", &sm->error_threshold, 64, on_trackbar_err);
+			on_trackbar_err(sm->error_threshold, (void*)4);
+		}
 #endif
+
+    while(key != 'q')
+    {
         switch(key)
         {
             case 'h':
@@ -179,22 +189,6 @@ void HCI(StereoMatch *sm)
 				if(sm->subsample_rate > 8)
 					sm->subsample_rate = 2;
 				printf("| =: Subsample rate changed to %d.\n", sm->subsample_rate);
-				break;
-			}
-            case '=':
-            {
-				sm->error_threshold++;
-				printf("| =: Error threshold increased to %d.\n", sm->error_threshold);
-				break;
-			}
-            case '-':
-            {
-				if(sm->error_threshold > 0){
-					sm->error_threshold--;
-				printf("| -: Error threshold decreased to %d.\n", sm->error_threshold);
-				}
-				else
-					printf("| -: Cannot decrease error threshold below 0.\n");
 				break;
 			}
         }

@@ -7,11 +7,28 @@
   ---------------------------------------------------------------------------*/
 #include "StereoMatch.h"
 
+unsigned long long get_timestamp()
+{
+	auto now = std::chrono::system_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch());
+	return duration.count();
+}
+
 //#############################################################################
 //# SM Preprocessing that we don't want to repeat
 //#############################################################################
 StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
-	end_de(false), user_dataset(false), ground_truth_data(false)
+	gotOCLDev(false),
+	end_de(false),
+	de_mode(OCL_DE), //OCV_DE
+	SMDE(nullptr),
+	maxDis(64),
+	media_mode(DE_IMAGE),
+	user_dataset(false),
+	ground_truth_data(false),
+	mask_mode(MASK_NONOCC),
+	sgbm_mode(cv::StereoSGBM::MODE_HH),
+	num_threads(get_nprocs()-1) //MIN_CPU_THREADS
 {
 #ifdef DEBUG_APP
     std::cout << "Stereo Matching for Depth Estimation." << std::endl;
@@ -21,22 +38,14 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 	//#########################################################################
     //# Setup - check input arguments
     //#########################################################################
-	if(parse_cli(argc, argv))
+	if(parseCLI(argc, argv))
 		exit(1);
 
-    unsigned int cam_height = 376; //  376  (was 480),  720, 1080, 1242
+	unsigned int cam_height = 376; //  376  (was 480),  720, 1080, 1242
 	unsigned int cam_width = 1344; // 1344 (was 1280), 2560, 3840, 4416
 
-	maxDis = 64;
-	de_mode = OCL_DE;
-	//de_mode = OCV_DE;
-	//num_threads = MIN_CPU_THREADS;
-	num_threads = MAX_CPU_THREADS;
-	gotOCLDev = gotOpenCLDev;
-	mask_mode = MASK_NONOCC;
 	error_threshold = 4;
 	scale_factor = 3;
-
 	cvc_time_avg = 0;
 	frame_count = 0;
 
@@ -57,7 +66,9 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 			exit(1);
 		}
 
-		cap >> vFrame;
+		cap_m.lock();
+		cap >> vFrame; //capture a frame from the camera
+		cap_m.unlock();
 		if(vFrame.empty()){
 			printf("Could not load camera frame\n");
 			exit(1);
@@ -73,7 +84,7 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 
 		stereoCameraSetup();
 #ifdef DISPLAY
-		update_display();
+		updateDisplay();
 #endif // DISPLAY
 		SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
 	}
@@ -84,17 +95,21 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 		//#####################################################################
 
 		std::cout << "Loading " << curr_dataset << " as the default dataset." << std::endl;
-		if(update_dataset(curr_dataset))
+		if(updateDataset(curr_dataset))
 			exit(1);
 	}
 
 	//#########################################################################
     //# SGBM Mode Setup
     //#########################################################################
-	setupOpenCVSGBM(lFrame.channels(), maxDis);
-	imgDisparity16S = cv::Mat(lFrame.rows, lFrame.cols, CV_16S);
-	blankDispMap = cv::Mat(rFrame.rows, rFrame.cols, CV_8UC3);
+//	setupOpenCVSGBM(ssgbm, lFrame.channels(), maxDis);
+//	imgDisparity16S = cv::Mat(lFrame.rows, lFrame.cols, CV_16S);
+//	blankDispMap = cv::Mat(rFrame.rows, rFrame.cols, CV_8UC3);
 
+    for(int thread_id = 0; thread_id < num_threads; ++thread_id)
+    {
+		sgbm_threads.push_back(std::thread(&StereoMatch::sgbm_thread, this, thread_id));
+    }
 	//#########################################################################
 	//# End of Preprocessing (that we don't want to repeat)
     //#########################################################################
@@ -106,29 +121,36 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 StereoMatch::~StereoMatch(void)
 {
 	printf("Shutting down StereoMatch Application\n");
-	delete SMDE;
+	end_de = true;
+	for(auto &thr : sgbm_threads){
+        thr.join();
+    }
+
+	if(SMDE != nullptr) delete SMDE;
 	if(media_mode == DE_VIDEO)
 		cap.release();
 	printf("Application Shut down\n");
 }
 
 //#############################################################################
-//# Complete GIF stereo matching process
+//# GIF stereo matching process
 //#############################################################################
-int StereoMatch::compute(float& de_time_ms)
+int StereoMatch::computeStereoGIF(float& de_time_ms)
 {
 #ifdef DEBUG_APP
-	std::cout << "Computing Depth Map" << std::endl;
+	std::cout << "Computing Depth Map using GIF" << std::endl;
 #endif // DEBUG_APP
 
+	input_data_m.lock();
 	float start_time = get_rt();
 	//#########################################################################
 	//# Frame Capture and Preprocessing (that we have to repeat)
 	//#########################################################################
 	if(media_mode == DE_VIDEO)
 	{
-		for(int drop=0;drop<3;drop++)
-			cap >> vFrame; //capture a frame from the camera
+		cap_m.lock();
+		cap >> vFrame; //capture a frame from the camera
+		cap_m.unlock();
 		if(vFrame.empty())
 		{
 			printf("Could not load camera frame\n");
@@ -155,113 +177,85 @@ int StereoMatch::compute(float& de_time_ms)
 		lFrame.copyTo(leftInputImg);
 		rFrame.copyTo(rightInputImg);
 	}
-	else if(media_mode == DE_IMAGE)
+
+	if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_32F)
 	{
-		input_data_m.lock();
+		lFrame.convertTo(lFrame, CV_32F, 1 / 255.0f);
+		rFrame.convertTo(rFrame, CV_32F,  1 / 255.0f);
 	}
-	else {
-        std::cout << "Unrecognised value for media_mode: " << media_mode << std::endl;
-	}
+	SMDE->setInputImages(lFrame, rFrame);
+	SMDE->setThreads(num_threads);
+	SMDE->setSubsampleRate(subsample_rate);
 
 	//#########################################################################
 	//# Start of Disparity Map Creation
 	//#########################################################################
-	if(MatchingAlgorithm == STEREO_SGBM)
-	{
 #ifdef DEBUG_APP
-		printf("MatchingAlgorithm == STEREO_SGBM\n");
+	std::cout <<  "Disparity Estimation Started..." << std::endl;
 #endif // DEBUG_APP
-		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_8U){
-			lFrame.convertTo(lFrame, CV_8U, 255);
-			rFrame.convertTo(rFrame, CV_8U, 255);
-		}
 
-		//Compute the disparity map
-		ssgbm->compute(lFrame, rFrame, imgDisparity16S);
-		minMaxLoc(imgDisparity16S, &minVal, &maxVal); //Check its extreme values
+	if(de_mode == OCV_DE || !gotOCLDev)
+	{
+		cvc_time = get_rt();
+		SMDE->CostConst();
+		cvc_time = get_rt() - cvc_time;
 
-		//Load the disparity map to the display
-		imgDisparity16S.convertTo(lDispMap, CV_8U, 255/(maxVal - minVal));
-		lDispMap = (lDispMap/4) * scale_factor;
-		cvtColor(lDispMap, leftDispMap, cv::COLOR_GRAY2RGB);
+		cvf_time = get_rt();
+		SMDE->CostFilter_FGF();
+		cvf_time = get_rt()- cvf_time;
+
+		dispsel_time = get_rt();
+		SMDE->DispSelect_CPU();
+		dispsel_time = get_rt() - dispsel_time;
+
+		pp_time = get_rt();
+		SMDE->PostProcess_CPU();
+		pp_time = get_rt() - pp_time;
 	}
-	else if(MatchingAlgorithm == STEREO_GIF)
+	else
 	{
+		cvc_time = get_rt();
+		SMDE->CostConst_GPU();
+		cvc_time = get_rt() - cvc_time;
+
+		cvf_time = get_rt();
+		SMDE->CostFilter_GPU();
+		cvf_time = get_rt()- cvf_time;
+
+		dispsel_time = get_rt();
+		SMDE->DispSelect_GPU();
+		dispsel_time = get_rt() - dispsel_time;
+
+		pp_time = get_rt();
+		SMDE->PostProcess_GPU();
+		pp_time = get_rt() - pp_time;
+	}
 #ifdef DEBUG_APP
-		printf("MatchingAlgorithm == STEREO_GIF\n");
+	std::cout <<  "Disparity Estimation Complete." << std::endl;
 #endif // DEBUG_APP
-		if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_32F)
-        {
-            lFrame.convertTo(lFrame, CV_32F, 1 / 255.0f);
-            rFrame.convertTo(rFrame, CV_32F,  1 / 255.0f);
-		}
-		SMDE->setInputImages(lFrame, rFrame);
-		SMDE->setThreads(num_threads);
-		SMDE->setSubsampleRate(subsample_rate);
+	input_data_m.unlock();
 
-		// ******** Disparity Estimation Code ******** //
-#ifdef DEBUG_APP
-		std::cout <<  "Disparity Estimation Started..." << std::endl;
-#endif // DEBUG_APP
+	// Display Disparity Maps
+	dispMap_m.lock();
+	SMDE->lDisMap.convertTo(lDispMap, CV_8U, scale_factor); //scale factor used to compare error with ground truth
+	SMDE->rDisMap.convertTo(rDispMap, CV_8U, scale_factor);
 
-		if(de_mode == OCV_DE || !gotOCLDev)
-		{
-			cvc_time = get_rt();
-			SMDE->CostConst();
-			cvc_time = get_rt() - cvc_time;
-
-			cvf_time = get_rt();
-			SMDE->CostFilter_FGF();
-			cvf_time = get_rt()- cvf_time;
-
-			dispsel_time = get_rt();
-			SMDE->DispSelect_CPU();
-			dispsel_time = get_rt() - dispsel_time;
-
-			pp_time = get_rt();
-			SMDE->PostProcess_CPU();
-			pp_time = get_rt() - pp_time;
-		}
-		else
-		{
-			cvc_time = get_rt();
-			SMDE->CostConst_GPU();
-			cvc_time = get_rt() - cvc_time;
-
-			cvf_time = get_rt();
-			SMDE->CostFilter_GPU();
-			cvf_time = get_rt()- cvf_time;
-
-			dispsel_time = get_rt();
-			SMDE->DispSelect_GPU();
-			dispsel_time = get_rt() - dispsel_time;
-
-			pp_time = get_rt();
-			SMDE->PostProcess_GPU();
-			pp_time = get_rt() - pp_time;
-		}
-#ifdef DEBUG_APP
-		std::cout <<  "Disparity Estimation Complete." << std::endl;
-#endif // DEBUG_APP
-
-		// ******** Display Disparity Maps  ******** //
-		SMDE->lDisMap.convertTo(lDispMap, CV_8U, scale_factor); //scale factor used to compare error with ground truth
-		SMDE->rDisMap.convertTo(rDispMap, CV_8U, scale_factor);
-
-		cv::cvtColor(lDispMap, leftDispMap, cv::COLOR_GRAY2RGB);
-		cv::cvtColor(lDispMap, rightDispMap, cv::COLOR_GRAY2RGB);
-		// ******** Display Disparity Maps  ******** //
+	cv::cvtColor(lDispMap, leftDispMap, cv::COLOR_GRAY2RGB);
+	cv::applyColorMap(leftDispMap, leftDispMap, COLORMAP_JET);
+	cv::cvtColor(rDispMap, rightDispMap, cv::COLOR_GRAY2RGB);
+	cv::applyColorMap(rightDispMap, rightDispMap, COLORMAP_JET);
+	dispMap_m.unlock();
 
 #ifdef DEBUG_APP_MONITORS
-		cvc_time_avg = (cvc_time_avg*frame_count + cvc_time)/(frame_count + 1);
-		printf("STEREO GIF Module Times:\n");
-		printf("CVC Time:\t %4.2f ms   Avg Time:\t %4.2f\n", cvc_time/1000, cvc_time_avg/1000);
-		printf("CVF Time:\t %4.2f ms\n",cvf_time/1000);
-		printf("DispSel Time:\t %4.2f ms\n",dispsel_time/1000);
-		printf("PP Time:\t %4.2f ms\n",pp_time/1000);
+	cvc_time_avg = (cvc_time_avg*frame_count + cvc_time)/(frame_count + 1);
+	printf("STEREO GIF Module Times:\n");
+	printf("CVC Time:\t %4.2f ms   Avg Time:\t %4.2f\n", cvc_time/1000, cvc_time_avg/1000);
+	printf("CVF Time:\t %4.2f ms\n",cvf_time/1000);
+	printf("DispSel Time:\t %4.2f ms\n",dispsel_time/1000);
+	printf("PP Time:\t %4.2f ms\n",pp_time/1000);
 #endif //DEBUG_APP_MONITORS
-		frame_count++;
-	}
+	frame_count++;
+
 #ifdef DEBUG_APP_MONITORS
 	de_time_ms = (get_rt() - start_time)/1000;
 	printf("DE Time:\t %4.2f ms\n", de_time_ms);
@@ -271,11 +265,208 @@ int StereoMatch::compute(float& de_time_ms)
 	cv::imwrite("leftDisparityMap.png", leftDispMap);
 	cv::imwrite("rightDisparityMap.png", rightDispMap);
 #endif
+	return 0;
+}
 
+//#############################################################################
+//# SGBM stereo matching process
+//#############################################################################
+int StereoMatch::computeStereoSGBM(float& de_time_ms)
+{
+#ifdef DEBUG_APP
+	std::cout << "Computing Depth Map using SGBM" << std::endl;
+#endif // DEBUG_APP
+
+	float start_time = get_rt();
+	//#########################################################################
+	//# Frame Capture and Preprocessing (that we have to repeat)
+	//#########################################################################
+	if(media_mode == DE_VIDEO)
+	{
+		cap_m.lock();
+		cap >> vFrame; //capture a frame from the camera
+		cap_m.unlock();
+		if(vFrame.empty())
+		{
+			printf("Could not load camera frame\n");
+			return -1;
+		}
+
+		lFrame = vFrame(Rect(0,0, vFrame.cols/2,vFrame.rows)); //split the frame into left
+		rFrame = vFrame(Rect(vFrame.cols/2, 0, vFrame.cols/2, vFrame.rows)); //and right images
+
+		if(lFrame.empty() || rFrame.empty())
+		{
+			printf("No data in left or right frames\n");
+			return -1;
+		}
+
+		//Applies a generic geometrical transformation to an image.
+		//http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html#remap
+		remap(lFrame, lFrame_rec, mapl[0], mapl[1], cv::INTER_LINEAR);
+		remap(rFrame, rFrame_rec, mapr[0], mapr[1], cv::INTER_LINEAR);
+
+		lFrame = lFrame_rec(cropBox);
+		rFrame = rFrame_rec(cropBox);
+
+		lFrame.copyTo(leftInputImg);
+		rFrame.copyTo(rightInputImg);
+	}
+
+	//#########################################################################
+	//# Start of Disparity Map Creation
+	//#########################################################################
+	input_data_m.lock();
+
+	if((lFrame.type() & CV_MAT_DEPTH_MASK) != CV_8U){
+		lFrame.convertTo(lFrame, CV_8U, 255);
+		rFrame.convertTo(rFrame, CV_8U, 255);
+	}
+
+	//Compute the disparity map
+	ssgbm->compute(lFrame, rFrame, imgDisparity16S);
+	minMaxLoc(imgDisparity16S, &minVal, &maxVal); //Check its extreme values
+
+	input_data_m.unlock();
+	dispMap_m.lock();
+	//Load the disparity map to the display
+	imgDisparity16S.convertTo(lDispMap, CV_8U, 255/(maxVal - minVal));
+	lDispMap = (lDispMap/4) * scale_factor;
+	cvtColor(lDispMap, leftDispMap, cv::COLOR_GRAY2RGB);
+	cv::applyColorMap(leftDispMap, leftDispMap, COLORMAP_JET);
+	dispMap_m.unlock();
+
+#ifdef DEBUG_APP_MONITORS
+	de_time_ms = (get_rt() - start_time)/1000;
+	printf("DE Time:\t %4.2f ms\n", de_time_ms);
+#endif //DEBUG_APP_MONITORS
+
+#ifdef DEBUG_APP
+	cv::imwrite("leftDisparityMap.png", leftDispMap);
+	cv::imwrite("rightDisparityMap.png", rightDispMap);
+#endif
+	return 0;
+}
+
+//#############################################################################
+//# Do stereo matching process
+//#############################################################################
+int StereoMatch::sgbm_thread(int tid)
+{
+	//Frame Holders & Camera object
+	cv::Mat lFrame_thread, rFrame_thread, vFrame_thread;
+	cv::Mat lFrame_rec_thread, rFrame_rec_thread;
+
+	//local disparity map containers
+	cv::Ptr<StereoSGBM> ssgbm_t;
+	setupOpenCVSGBM(ssgbm_t, lFrame.channels(), maxDis);
+    cv::Mat imgDisparity16S_thread = cv::Mat(lFrame.rows, lFrame.cols, CV_16S);
+
+    cv::Mat lDispMap_thread;
+	double minVal, maxVal;
+	unsigned long long start_time, end_time;
+
+    while(!end_de)
+    {
+    	if(MatchingAlgorithm != STEREO_SGBM){
+			std::this_thread::sleep_for (std::chrono::duration<int, std::milli>(100));
+    	}
+		else
+		{
+			start_time = get_timestamp();
+			//#########################################################################
+			//# Frame Capture and Preprocessing (that we have to repeat)
+			//#########################################################################
+			if(media_mode == DE_VIDEO)
+			{
+	#ifdef DEBUG_APP
+				std::cout << "media_mode == DE_VIDEO" << std::endl;
+	#endif // DEBUG_APP
+
+				cap_m.lock();
+				cap >> vFrame_thread; //capture a frame from the camera
+				cap_m.unlock();
+
+				if(vFrame_thread.empty())
+				{
+					printf("Could not load camera frame\n");
+					return -1;
+				}
+
+				lFrame_thread = vFrame_thread(Rect(0,0, vFrame_thread.cols/2,vFrame_thread.rows)); //split the frame into left
+				rFrame_thread = vFrame_thread(Rect(vFrame_thread.cols/2, 0, vFrame_thread.cols/2, vFrame_thread.rows)); //and right images
+
+				if(lFrame_thread.empty() || rFrame_thread.empty())
+				{
+					printf("No data in left or right frames\n");
+					return -1;
+				}
+
+				//Applies a generic geometrical transformation to an image.
+				//http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html#remap
+				remap(lFrame_thread, lFrame_rec_thread, mapl[0], mapl[1], INTER_LINEAR);
+				remap(rFrame_thread, rFrame_rec_thread, mapr[0], mapr[1], INTER_LINEAR);
+
+				lFrame_thread = lFrame_rec_thread(cropBox);
+				rFrame_thread = rFrame_rec_thread(cropBox);
+
+			}
+			else{
+				input_data_m.lock();
+				lFrame.copyTo(lFrame_thread);
+				rFrame.copyTo(rFrame_thread);
+				input_data_m.unlock();
+			}
+
+			//#########################################################################
+			//# Start of Disparity Map Creation
+			//#########################################################################
+
+			if((lFrame_thread.type() & CV_MAT_DEPTH_MASK) != CV_8U){
+				lFrame_thread.convertTo(lFrame_thread, CV_8U, 255);
+				rFrame_thread.convertTo(rFrame_thread, CV_8U, 255);
+			}
+
+			ssgbm_t->setMode(sgbm_mode);
+			ssgbm_t->compute(lFrame_thread, rFrame_thread, imgDisparity16S_thread); //Compute the disparity map
+			minMaxLoc(imgDisparity16S_thread, &minVal, &maxVal); //Check its extreme values
+			imgDisparity16S_thread.convertTo(lDispMap_thread, CV_8U, 255/(maxVal - minVal));
+			cvtColor(lDispMap_thread, lDispMap_thread, CV_GRAY2RGB);
+
+			end_time = get_timestamp();
+
+			dispMap_m.lock();
+			if(media_mode == DE_VIDEO)
+			{
+				lFrame_thread.copyTo(leftInputImg);
+				rFrame_thread.copyTo(rightInputImg);
+				blankDispMap.copyTo(rightDispMap);
+			}
+			cv::applyColorMap(lDispMap_thread, leftDispMap, COLORMAP_JET);
+	#ifdef DEBUG_APP
+			if(!tid)
+				cv::imwrite("outputDispMap.png", leftDispMap);
+	#endif // DEBUG_APP
+			//TODO: call calcAccuracy on each thread.
+
+			frame_rates.push_back(1000000/(double)(end_time - start_time));
+			dispMap_m.unlock();
+		}
+    }
+	return 0;
+}
+
+
+//#############################################################################
+//# Calculate accuracy if ground truth is provided with images
+//#############################################################################
+//int StereoMatch::calcAccuracy(cv::Mat &input, cv::Mat &gTruth, cv::Mat &output, int mask_mode)
+int StereoMatch::calcAccuracy(void)
+{
 	if(media_mode == DE_IMAGE && ground_truth_data)
 	{
 		//Check pixel errors against ground truth depth map here.
-		//Can only be done with images as golden reference is required.
+		//Can only be done for images with a golden reference/ground truth.
 		cv::absdiff(lDispMap, gtFrame, eDispMap);
 		eDispMap(cv::Rect(0,0,maxDis+1,eDispMap.rows)).setTo(cv::Scalar(0));
 		cv::threshold(eDispMap, eDispMap, error_threshold*(CHAR_MAX/maxDis), 255, cv::THRESH_TOZERO);
@@ -309,14 +500,6 @@ int StereoMatch::compute(float& de_time_ms)
 		printf("%%BP = %.2f%% \t Avg Err = %.2f\n", num_bad_pixels*100/num_pixels, avg_err);
 #endif //DEBUG_APP_MONITORS
 	}
-
-	if(media_mode == DE_IMAGE){
-		input_data_m.unlock();
-	}
-
-#ifdef DISPLAY
-	imshow("InputOutput", display_container);
-#endif
 	return 0;
 }
 
@@ -325,36 +508,32 @@ int StereoMatch::compute(float& de_time_ms)
 //#############################################################################
 int StereoMatch::setCameraResolution(unsigned int height, unsigned int width)
 {
-	if(cap.get(CAP_PROP_FRAME_HEIGHT) != 376){
-		cap.set(CAP_PROP_FRAME_HEIGHT, 376); //  376  (was 480),  720, 1080, 1242
-		cap.set(CAP_PROP_FRAME_WIDTH, 1344); // 1344 (was 1280), 2560, 3840, 4416
-		cap.set(CAP_PROP_FPS, 30); //376: {15, 30, 60, 100}, 720: {15, 30, 60}, 1080: {15, 30}, 1242: {15},
+	if(cap.get(CAP_PROP_FRAME_HEIGHT) != height){
+		cap.set(CAP_PROP_FRAME_HEIGHT, height); //  376  (was 480),  720, 1080, 1242
+		cap.set(CAP_PROP_FRAME_WIDTH, width); // 1344 (was 1280), 2560, 3840, 4416
+		cap.set(CAP_PROP_FPS, 15); //376: {15, 30, 60, 100}, 720: {15, 30, 60}, 1080: {15, 30}, 1242: {15},
 
-		if(cap.get(CAP_PROP_FRAME_HEIGHT) != 376){
+		if(cap.get(CAP_PROP_FRAME_HEIGHT) != height){
 			std::cout << "Could not set correct frame resolution:" << std::endl;
-			std::cout << "\t Target Height: " << 376 << std::endl;
+			std::cout << "\t Target Height: " << height << std::endl;
 			std::cout << "\t CAP_PROP_FRAME_HEIGHT: " << cap.get(CAP_PROP_FRAME_HEIGHT) << std::endl;
 			std::cout << "\t CAP_PROP_FRAME_WIDTH: " << cap.get(CAP_PROP_FRAME_WIDTH) << std::endl;
 
-			return 0; //Comment this line to search for vaild resolutions
-			std::vector<Resolution> valid_res = resolution_search();
-			cap.set(CAP_PROP_FRAME_HEIGHT, valid_res[0].height);
-			cap.set(CAP_PROP_FRAME_WIDTH, valid_res[0].width);
-			std::cout << "Set frame resolution to: " << valid_res[0].height << " x " << valid_res[0].width << std::endl;
-		}
-		else
-		{
-			std::cout << "Camera Settings:\n" << std::endl;
-			std::cout << "\t CAP_PROP_FPS: " << cap.get(CAP_PROP_FPS) << std::endl;
-			std::cout << "\t CAP_PROP_FRAME_HEIGHT: " << cap.get(CAP_PROP_FRAME_HEIGHT) << std::endl;
-			std::cout << "\t CAP_PROP_FRAME_WIDTH: " << cap.get(CAP_PROP_FRAME_WIDTH) << std::endl;
+//			std::vector<Resolution> valid_res = resolutionSearch();
+//			cap.set(CAP_PROP_FRAME_HEIGHT, valid_res[0].height);
+//			cap.set(CAP_PROP_FRAME_WIDTH, valid_res[0].width);
+//			std::cout << "Set frame resolution to: " << valid_res[0].height << " x " << valid_res[0].width << std::endl;
 		}
 	}
 
+	std::cout << "Camera Settings:" << std::endl;
+	std::cout << "\t CAP_PROP_FPS: " << cap.get(CAP_PROP_FPS) << std::endl;
+	std::cout << "\t CAP_PROP_FRAME_HEIGHT: " << cap.get(CAP_PROP_FRAME_HEIGHT) << std::endl;
+	std::cout << "\t CAP_PROP_FRAME_WIDTH: " << cap.get(CAP_PROP_FRAME_WIDTH) << std::endl;
 	return 0;
 }
 
-std::vector<Resolution> StereoMatch::resolution_search(void)
+std::vector<Resolution> StereoMatch::resolutionSearch(void)
 {
 	unsigned int test_hei = 200, max_hei = 2162;
 	float aspect_ratios[] = {4.f/3.f, 16.f/9.f};
@@ -399,7 +578,7 @@ int StereoMatch::stereoCameraSetup(void)
 		printf("Display window required for calibration. Please recompile with #define DISPLAY\n");
 		return -1;
 #endif // DISPLAY
-		update_display();
+		updateDisplay();
 		imshow("InputOutput", display_container);
 
 		//###########################################################################################################
@@ -457,6 +636,8 @@ int StereoMatch::stereoCameraSetup(void)
 						camProps.imgSize, camProps.R, camProps.T, camProps.R1, camProps.R2, camProps.P1, camProps.P2, camProps.Q,
 						CALIB_ZERO_DISPARITY, 1, camProps.imgSize, &camProps.roi[0], &camProps.roi[1]);
 	}
+	printf("Valid ROI: Left: %d x %d, Right: %d x %d.\n", (int)camProps.roi[0].height, camProps.roi[0].width, camProps.roi[1].height, camProps.roi[1].width);
+	assert((camProps.roi[0].height > 0) && (camProps.roi[0].width > 0) && (camProps.roi[1].height > 0) && (camProps.roi[1].width > 0));
 
 	///Computes the undistortion and rectification transformation map.
 	///http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html#initundistortrectifymap
@@ -525,7 +706,7 @@ int StereoMatch::captureChessboards(void)
 	return 0;
 }
 
-int StereoMatch::update_dataset(std::string dataset_name)
+int StereoMatch::updateDataset(std::string dataset_name)
 {
 	curr_dataset = dataset_name;
 	std:string data_dir = "../data/";
@@ -596,9 +777,10 @@ int StereoMatch::update_dataset(std::string dataset_name)
 	imgDisparity16S = cv::Mat(lFrame.rows, lFrame.cols, CV_16S);
 	blankDispMap = cv::Mat(rFrame.rows, rFrame.cols, CV_8UC3, cv::Scalar(0, 0, 0));
 #ifdef DISPLAY
-	update_display();
+	updateDisplay();
 #endif // DISPLAY
-	delete SMDE;
+
+	if(SMDE != NULL) delete SMDE;
 	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
 
 	error_threshold = (error_threshold/scale_factor)*scale_factor_next;
@@ -608,7 +790,7 @@ int StereoMatch::update_dataset(std::string dataset_name)
 	return 0;
 }
 
-int StereoMatch::update_display(void)
+int StereoMatch::updateDisplay(void)
 {
 	if((media_mode == DE_IMAGE) && ground_truth_data)
 	{
@@ -636,13 +818,13 @@ int StereoMatch::update_display(void)
 //#############################################################################################
 //# Setup for OpenCV implementation of Stereo matching using Semi-Global Block Matching (SGBM)
 //#############################################################################################
-int StereoMatch::setupOpenCVSGBM(int channels, int ndisparities)
+int StereoMatch::setupOpenCVSGBM(cv::Ptr<StereoSGBM>& ssgbm, int channels, int ndisparities)
 {
 	int mindisparity = 0;
 	int SADWindowSize = 5;
 
 	// Call the constructor for StereoSGBM
-	ssgbm = StereoSGBM::create(
+	ssgbm = cv::StereoSGBM::create(
 		mindisparity, 								//minDisparity = 0,
 		ndisparities, 								//numDisparities = 16,
 		SADWindowSize, 								//blockSize = 3,
@@ -659,7 +841,7 @@ int StereoMatch::setupOpenCVSGBM(int channels, int ndisparities)
     return 0;
 }
 
-int StereoMatch::parse_cli(int argc, const char * argv[])
+int StereoMatch::parseCLI(int argc, const char * argv[])
 {
     args::ArgumentParser parser("Application: Stereo Matching for Depth Estimation.","PRiME Project.\n");
     args::HelpFlag help(parser, "help", "Displays this help menu", {'h', "help"});

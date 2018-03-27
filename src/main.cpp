@@ -13,62 +13,62 @@
 #include <opencv2/highgui.hpp>
 
 //Functions in main
-void getDepthMap(StereoMatch *sm);
-void HCI(StereoMatch *sm);
-
-//Global variables
-bool end_de = false;
-int nOpenCLDev = 0;
-int sgbm_mode = StereoSGBM::MODE_HH;
+void getDepthMap(StereoMatch &sm, bool &end_de);
+void HCI(StereoMatch &sm);
 
 int main(int argc, const char* argv[])
 {
     //#############################################################################################################
     //# Introduction and Setup - poll for OpenCL devices
     //#############################################################################################################
-	nOpenCLDev = openCLdevicepoll();
 #ifdef DISPLAY
-	namedWindow("InputOutput", CV_WINDOW_AUTOSIZE);
+	cv::namedWindow("InputOutput", CV_WINDOW_AUTOSIZE);
 #endif
 	//#############################################################################################################
     //# Start Application Processes
     //#############################################################################################################
 	printf("Starting Stereo Matching Application.\n");
-	StereoMatch *sm = new StereoMatch(argc, argv, nOpenCLDev);
-	//printf("MAIN: Press h for help text.\n\n");
+	StereoMatch sm(argc, argv, openCLdevicepoll());
 
+	bool end_de = false;
 	std::thread de_thread;
 	//de_thread = std::thread(&StereoMatch::compute, sm, std::ref(de_time));
-    de_thread = std::thread(&getDepthMap, sm);
+    de_thread = std::thread(&getDepthMap, std::ref(sm), std::ref(end_de));
 
 #ifdef DISPLAY
 	//User interface function
 	HCI(sm);
+	end_de = true;
 #else
 	while(1){
-		std::this_thread::sleep_for (std::chrono::duration<int, std::milli>(1000));
+		std::this_thread::sleep_for (std::chrono::duration<int, std::milli>(100));
 	}
 #endif
     //#############################################################################################################
     //# Clean up threads once quit signal called
     //#############################################################################################################
-	end_de = true;
 	printf("MAIN: Quit signal sent\n");
     de_thread.join();
+	//delete sm;
 
-	delete sm;
 	printf("MAIN: Disparity Estimation Halted\n");
     return 0;
 }
 
-void getDepthMap(StereoMatch *sm)
+void getDepthMap(StereoMatch &sm, bool &end_de)
 {
 	int ret = 0;
 	float de_time;
 
 	while(!(end_de || ret)){
-		ret = sm->compute(de_time);
+		if(sm.MatchingAlgorithm == STEREO_GIF){
+			ret = sm.computeStereoGIF(de_time);
+			ret = sm.calcAccuracy();
+		} else {
+			//ret = sm.computeStereoSGBM(de_time);
+		}
 	}
+
 	return;
 }
 
@@ -77,24 +77,24 @@ static void on_trackbar_err(int value, void* ptr)
 	printf("HCI: Error threshold set to %d.\n", value);
 }
 
-void HCI(StereoMatch *sm)
+void HCI(StereoMatch &sm)
 {
 	//User interface input handler
     char key = ' ';
 	float de_time;
 	int dataset_idx = 0;
+    double frame_rate = 0;
+    auto step_time = std::chrono::high_resolution_clock::now();
 
-#ifdef DISPLAY
-		imshow("InputOutput", sm->display_container);
-
-		if(sm->media_mode == DE_IMAGE){
-			cv::createTrackbar("Error Threshold", "InputOutput", &sm->error_threshold, 64, on_trackbar_err);
-			on_trackbar_err(sm->error_threshold, (void*)4);
-		}
-#endif
+	if(sm.media_mode == DE_IMAGE){
+		cv::createTrackbar("Error Threshold", "InputOutput", &sm.error_threshold, 64, on_trackbar_err);
+		on_trackbar_err(sm.error_threshold, (void*)4);
+	}
 
     while(key != 'q')
     {
+		cv::imshow("InputOutput", sm.display_container);
+        key = cv::waitKey(1);
         switch(key)
         {
             case 'h':
@@ -115,84 +115,105 @@ void HCI(StereoMatch *sm)
                 printf("|   -/=: Increase or decrease the error threshold\n");
                 printf("|-------------------------------------------------------------------|\n");
                 printf("| Current Options:\n");
-                printf("|   a:   Matching Algorithm: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
-                printf("|   d:   Dataset: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
-                printf("|   m:   Computation mode: %s\n", sm->MatchingAlgorithm ? (sm->de_mode ? "OpenCL" : "pthreads") : (
-														sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
-														sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" : "MODE_SGBM_3WAY" ));
-                printf("|   -/=: Error Threshold: %d\n", sm->error_threshold);
+                printf("|   a:   Matching Algorithm: %s\n", sm.MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
+                printf("|   d:   Dataset: %s\n", sm.MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
+                printf("|   m:   Computation mode: %s\n", sm.MatchingAlgorithm ? (sm.de_mode ? "OpenCL" : "pthreads") : (
+														sm.sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
+														sm.sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" : "MODE_SGBM_3WAY" ));
+                printf("|   -/=: Error Threshold: %d\n", sm.error_threshold);
                 printf("|-------------------------------------------------------------------|\n");
                 break;
             }
             case 'a':
             {
-				sm->MatchingAlgorithm = sm->MatchingAlgorithm ? STEREO_SGBM : STEREO_GIF;
-				printf("| a: Matching Algorithm Changed to: %s |\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
+				sm.MatchingAlgorithm = sm.MatchingAlgorithm == STEREO_GIF ? STEREO_SGBM : STEREO_GIF;
+				printf("| a: Matching Algorithm Changed to: %s |\n", sm.MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
 				break;
             }
             case 'd':
             {
-				if(sm->media_mode == DE_VIDEO){
+				if(sm.media_mode == DE_VIDEO){
 					printf("| d: Must be in image mode to use datasets.\n");
 					break;
 				}
-				if(sm->user_dataset){
+				if(sm.user_dataset){
 					printf("| d: User dataset has been specified.\n");
 					break;
 				}
 				dataset_idx = dataset_idx < dataset_names.size()-1 ? dataset_idx + 1 : 0;
 				printf("| d: Dataset changed to: %s\n", dataset_names[dataset_idx].c_str());
-				sm->update_dataset(dataset_names[dataset_idx]);
+				sm.updateDataset(dataset_names[dataset_idx]);
 				break;
             }
             case 'm':
             {
-				if(sm->MatchingAlgorithm == STEREO_GIF){
-					if(nOpenCLDev){
-						sm->de_mode = sm->de_mode ? OCV_DE : OCL_DE;
+				if(sm.MatchingAlgorithm == STEREO_GIF){
+					if(sm.gotOCLDev){
+						sm.de_mode = sm.de_mode ? OCV_DE : OCL_DE;
 						printf("| m: STEREO_GIF Matching Algorithm:\n");
-						printf("| m: Mode changed to %s |\n", sm->de_mode ? "OpenCL on the GPU" : "C++ & pthreads on the CPU");
+						printf("| m: Mode changed to %s |\n", sm.de_mode ? "OpenCL on the GPU" : "C++ & pthreads on the CPU");
 					}
 					else{
 						printf("| m: Platform must contain an OpenCL compatible device to use OpenCL Mode.\n");
 					}
 				}
-				else if(sm->MatchingAlgorithm == STEREO_SGBM){
-					sgbm_mode = (sgbm_mode == StereoSGBM::MODE_HH ? StereoSGBM::MODE_SGBM :
-								sgbm_mode == StereoSGBM::MODE_SGBM ? StereoSGBM::MODE_SGBM_3WAY :
+				else if(sm.MatchingAlgorithm == STEREO_SGBM){
+					sm.sgbm_mode = (sm.sgbm_mode == StereoSGBM::MODE_HH ? StereoSGBM::MODE_SGBM :
+								sm.sgbm_mode == StereoSGBM::MODE_SGBM ? StereoSGBM::MODE_SGBM_3WAY :
 								StereoSGBM::MODE_HH);
-					sm->ssgbm->setMode(sgbm_mode);
 					printf("| m: STEREO_GIF Matching Algorithm:\n");
-					printf("| m: Mode changed to %s |\n", sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
-															sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" :
+					printf("| m: Mode changed to %s |\n", sm.sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
+															sm.sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" :
 															"MODE_SGBM_3WAY");
 				}
 				break;
             }
             case 'o':
             {
-            	if(sm->mask_mode == NO_MASKS){
+				if(sm.media_mode == DE_VIDEO){
+					printf("| d: Must be in image mode to use masks.\n");
+					break;
+				}
+            	if(sm.mask_mode == NO_MASKS){
 					printf("| o: Disparity error masks not provided for the chosen dataset.\n");
 					break;
             	}
-				sm->mask_mode = (sm->mask_mode == MASK_NONE ? MASK_NONOCC :
-								sm->mask_mode == MASK_NONOCC ? MASK_DISC :
+				sm.mask_mode = (sm.mask_mode == MASK_NONE ? MASK_NONOCC :
+								sm.mask_mode == MASK_NONOCC ? MASK_DISC :
 								MASK_NONE);
-				printf("| o: Disparity error mask set to: %s |\n", sm->mask_mode == MASK_NONE ? "None" :
-																	sm->mask_mode == MASK_NONOCC ? "Nonocc" :
+				printf("| o: Disparity error mask set to: %s |\n", sm.mask_mode == MASK_NONE ? "None" :
+																	sm.mask_mode == MASK_NONOCC ? "Nonocc" :
 																	"Disc");
 				break;
             }
             case 's':
             {
-				sm->subsample_rate *= 2;
-				if(sm->subsample_rate > 8)
-					sm->subsample_rate = 2;
-				printf("| =: Subsample rate changed to %d.\n", sm->subsample_rate);
+				sm.subsample_rate *= 2;
+				if(sm.subsample_rate > 8)
+					sm.subsample_rate = 2;
+				printf("| =: Subsample rate changed to %d.\n", sm.subsample_rate);
 				break;
 			}
         }
-        key = waitKey(1);
+
+        auto now_time = (std::chrono::high_resolution_clock::now() - step_time).count();
+        if(now_time > 1000000000)
+        {
+            sm.dispMap_m.lock();
+
+            if(sm.frame_rates.size())
+            {
+				for(double ft : sm.frame_rates){
+					frame_rate += ft;
+				}
+				frame_rate = frame_rate/sm.frame_rates.size();
+				sm.frame_rates.clear();
+				std::cout << "Average frame rate: " << frame_rate << std::endl;
+				frame_rate = 0;
+            }
+			sm.dispMap_m.unlock();
+			step_time = std::chrono::high_resolution_clock::now();
+        }
     }
     return;
 }

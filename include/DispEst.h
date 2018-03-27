@@ -60,7 +60,7 @@ private:
     int maxDis;
     int threads;
     bool useOCL;
-    unsigned int subsample_rate = 4;
+    unsigned int subsample_rate = 8;
 
 	//CVC
     cv::Mat lGrdX;

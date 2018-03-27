@@ -12,6 +12,7 @@
 #include "StereoCalib.h"
 #include "DispEst.h"
 #include "args.hxx"
+#include <sys/sysinfo.h>
 
 #define DE_VIDEO 1
 #define DE_IMAGE 2
@@ -38,26 +39,34 @@ public:
 	StereoMatch(int argc, const char *argv[], int gotOpenCLDev);
 	~StereoMatch(void);
 
+	int gotOCLDev;
 	int de_mode;
 	int MatchingAlgorithm;
 	int error_threshold;
 	int mask_mode;
 	int media_mode;
 	cv::Mat display_container;
-
-	int compute(float& de_time);
-	int update_dataset(std::string dataset_name);
+	std::deque<double> frame_rates;
 	bool user_dataset;
 
 	//StereoSGBM Variables
 	cv::Ptr<StereoSGBM> ssgbm;
+	int sgbm_mode;
+	std::mutex dispMap_m;
 
 	//Stereo GIF Variables
-	unsigned int subsample_rate = 4;;
+	unsigned int subsample_rate = 4;
+
+	//Methods
+	int createSGBMThreads(void);
+	int computeStereoGIF(float& de_time);
+	int computeStereoSGBM(float& de_time);
+	int calcAccuracy(void);
+	int updateDataset(std::string dataset_name);
+
 private:
 	//Variables
 	bool end_de, recaptureChessboards, recalibrate;
-	int gotOCLDev;
 	char cap_key;
 
 	std::string left_img_filename, right_img_filename;
@@ -88,8 +97,9 @@ private:
 
     //Frame Holders & Camera object
 	cv::Mat lFrame, rFrame, vFrame;
-
 	VideoCapture cap;
+	std::mutex cap_m;
+
 	//Image rectification maps
 	cv::Mat mapl[2], mapr[2];
 	cv::Rect cropBox;
@@ -101,19 +111,21 @@ private:
 	double minVal, maxVal;
 	double minVal_gt, maxVal_gt;
 	cv::Mat imgDisparity16S;
+	std::vector<std::thread> sgbm_threads;
 
 	//StereoGIF Variables
 	DispEst* SMDE;
 	int num_threads;
 
-	//Function prototypes
+	//Method prototypes
+    int sgbm_thread(int tid);
 	int setCameraResolution(unsigned int height, unsigned int width);
-	std::vector<Resolution> resolution_search(void);
+	std::vector<Resolution> resolutionSearch(void);
 	int stereoCameraSetup(void);
 	int captureChessboards(void);
-	int setupOpenCVSGBM(int, int);
-	int update_display(void);
-	int parse_cli(int argc, const char * argv[]);
+	int setupOpenCVSGBM(cv::Ptr<StereoSGBM>& ssgbm, int channels, int ndisparities);
+	int updateDisplay(void);
+	int parseCLI(int argc, const char * argv[]);
 };
 
 #endif //STEREOMATCH_H

@@ -55,7 +55,7 @@
 #define MAX_GPU_THREADS 256
 #define MIN_GPU_THREADS 4
 
-#define OCL_STATS 0
+#define OCL_STATS 1
 
 using namespace cv;
 

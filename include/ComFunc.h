@@ -22,18 +22,6 @@
 #include <omp.h>
 #include <mutex>
 
-//POSIX Threads
-#include <pthread.h>
-
-//OpenCL Header
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-#ifdef __APPLE__
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif
-#include <CL/cl_ext.h>
-
 //OpenCV Header
 #include <opencv2/opencv.hpp>
 
@@ -61,8 +49,6 @@ using namespace cv;
 
 #ifndef COMFUNC_H
 #define COMFUNC_H
-
-enum buff_id {CVC_LIMGR, CVC_LIMGG, CVC_LIMGB, CVC_RIMGR, CVC_RIMGG, CVC_RIMGB, CVC_LGRDX, CVC_RGRDX, CV_LCV, CV_RCV, DS_LDM, DS_RDM};
 
 static float get_rt(){
 	struct timespec realtime;

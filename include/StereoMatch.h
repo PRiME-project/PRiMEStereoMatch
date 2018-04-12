@@ -35,7 +35,7 @@ struct Resolution{
 class StereoMatch
 {
 public:
-	StereoMatch(int argc, const char *argv[], int gotOpenCLDev);
+	StereoMatch(int argc, const char *argv[]);
 	~StereoMatch(void);
 
 	int de_mode;
@@ -53,11 +53,13 @@ public:
 	cv::Ptr<StereoSGBM> ssgbm;
 
 	//Stereo GIF Variables
-	unsigned int subsample_rate = 4;;
+	unsigned int subsample_rate = 4;
+
+	int setThreads(unsigned int newThreads);
+
 private:
 	//Variables
 	bool end_de, recaptureChessboards, recalibrate;
-	int gotOCLDev;
 	char cap_key;
 
 	std::string left_img_filename, right_img_filename;

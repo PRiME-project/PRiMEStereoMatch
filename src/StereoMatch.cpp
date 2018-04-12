@@ -10,7 +10,7 @@
 //#############################################################################
 //# SM Preprocessing that we don't want to repeat
 //#############################################################################
-StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
+StereoMatch::StereoMatch(int argc, const char *argv[]) :
 	end_de(false), user_dataset(false), ground_truth_data(false)
 {
 #ifdef DEBUG_APP
@@ -32,7 +32,6 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 	//de_mode = OCV_DE;
 	//num_threads = MIN_CPU_THREADS;
 	num_threads = MAX_CPU_THREADS;
-	gotOCLDev = gotOpenCLDev;
 	mask_mode = MASK_NONOCC;
 	error_threshold = 4;
 	scale_factor = 3;
@@ -75,7 +74,7 @@ StereoMatch::StereoMatch(int argc, const char *argv[], int gotOpenCLDev) :
 #ifdef DISPLAY
 		update_display();
 #endif // DISPLAY
-		SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
+		SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads);
 	}
 	else if(media_mode == DE_IMAGE)
 	{
@@ -110,6 +109,16 @@ StereoMatch::~StereoMatch(void)
 	if(media_mode == DE_VIDEO)
 		cap.release();
 	printf("Application Shut down\n");
+}
+
+int StereoMatch::setThreads(unsigned int newThreads)
+{
+	if(newThreads > MAX_CPU_THREADS)
+		return -1;
+
+	num_threads = newThreads;
+	SMDE->setThreads(num_threads);
+	return 0;
 }
 
 //#############################################################################
@@ -204,42 +213,22 @@ int StereoMatch::compute(float& de_time_ms)
 		std::cout <<  "Disparity Estimation Started..." << std::endl;
 #endif // DEBUG_APP
 
-		if(de_mode == OCV_DE || !gotOCLDev)
-		{
-			cvc_time = get_rt();
-			SMDE->CostConst();
-			cvc_time = get_rt() - cvc_time;
+		cvc_time = get_rt();
+		SMDE->CostConst_OMP();
+		cvc_time = get_rt() - cvc_time;
 
-			cvf_time = get_rt();
-			SMDE->CostFilter_FGF();
-			cvf_time = get_rt()- cvf_time;
+		cvf_time = get_rt();
+		SMDE->CostFilter_FGF_OMP();
+		cvf_time = get_rt()- cvf_time;
 
-			dispsel_time = get_rt();
-			SMDE->DispSelect_CPU();
-			dispsel_time = get_rt() - dispsel_time;
+		dispsel_time = get_rt();
+		SMDE->DispSelect_CPU();
+		dispsel_time = get_rt() - dispsel_time;
 
-			pp_time = get_rt();
-			SMDE->PostProcess_CPU();
-			pp_time = get_rt() - pp_time;
-		}
-		else
-		{
-			cvc_time = get_rt();
-			SMDE->CostConst_GPU();
-			cvc_time = get_rt() - cvc_time;
+		pp_time = get_rt();
+		SMDE->PostProcess_CPU();
+		pp_time = get_rt() - pp_time;
 
-			cvf_time = get_rt();
-			SMDE->CostFilter_GPU();
-			cvf_time = get_rt()- cvf_time;
-
-			dispsel_time = get_rt();
-			SMDE->DispSelect_GPU();
-			dispsel_time = get_rt() - dispsel_time;
-
-			pp_time = get_rt();
-			SMDE->PostProcess_GPU();
-			pp_time = get_rt() - pp_time;
-		}
 #ifdef DEBUG_APP
 		std::cout <<  "Disparity Estimation Complete." << std::endl;
 #endif // DEBUG_APP
@@ -255,7 +244,7 @@ int StereoMatch::compute(float& de_time_ms)
 #ifdef DEBUG_APP_MONITORS
 		cvc_time_avg = (cvc_time_avg*frame_count + cvc_time)/(frame_count + 1);
 		printf("STEREO GIF Module Times:\n");
-		printf("CVC Time:\t %4.2f ms   Avg Time:\t %4.2f\n", cvc_time/1000, cvc_time_avg/1000);
+		printf("CVC Time:\t %4.2f ms\n", cvc_time/1000);
 		printf("CVF Time:\t %4.2f ms\n",cvf_time/1000);
 		printf("DispSel Time:\t %4.2f ms\n",dispsel_time/1000);
 		printf("PP Time:\t %4.2f ms\n",pp_time/1000);
@@ -599,7 +588,7 @@ int StereoMatch::update_dataset(std::string dataset_name)
 	update_display();
 #endif // DISPLAY
 	delete SMDE;
-	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads, gotOCLDev);
+	SMDE = new DispEst(lFrame, rFrame, maxDis, num_threads);
 
 	error_threshold = (error_threshold/scale_factor)*scale_factor_next;
 	scale_factor = scale_factor_next;
@@ -668,8 +657,8 @@ int StereoMatch::parse_cli(int argc, const char * argv[])
 
     args::Command cmd_video(parser, "video", "Use video as the input source.", [&](args::Subparser &s_parser)
     {
-		args::Flag arg_recalibrate(s_parser, "RECALIBRATE", "Recalibrate the camera to find ROIs.", {"RECALIBRATE"});
-		args::Flag arg_recapture(s_parser, "RECAPTURE", "Recapture chessboard image pairs for recalibration.", {"RECAPTURE"});
+		args::Flag arg_recalibrate(s_parser, "RECAL", "Recalibrate the camera to find ROIs.", {"RECAL"});
+		args::Flag arg_recapture(s_parser, "RECAP", "Recapture chessboard image pairs for recalibration.", {"RECAP"});
 
 		s_parser.Parse();
 

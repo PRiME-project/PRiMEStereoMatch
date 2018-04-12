@@ -16,15 +16,6 @@ add_executable(PRiMEStereoMatch ${SOURCES})
 set_property(TARGET PRiMEStereoMatch PROPERTY CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-#pthread libraries
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-if(Threads_FOUND)
-	include_directories(${THREAD_INCLUDE_DIRS})
-else(Threads_FOUND)
-	message(FATAL_ERROR ">> Some form of threading library is requried for compilation, preferably PThreads.")
-endif(Threads_FOUND)
-
 #OpenCV libraries
 find_package(OpenCV REQUIRED COMPONENTS core calib3d imgproc highgui video)
 if(OpenCV_FOUND)
@@ -32,14 +23,6 @@ if(OpenCV_FOUND)
 else(OpenCV_FOUND)
 	message(">> OpenCV Required")
 endif(OpenCV_FOUND)
-
-#OpenCL libraries
-find_package(OpenCL REQUIRED)
-if(OpenCL_FOUND)
-	include_directories(${OpenCL_INCLUDE_DIRS})
-else(OpenCL_FOUND)
-	message(">> OpenCL not found. OpenCL is required for GPGPU/FPGA/Accelerator use.")
-endif(OpenCL_FOUND)
 	
 #OpenMP libraries
 find_package(OpenMP REQUIRED)

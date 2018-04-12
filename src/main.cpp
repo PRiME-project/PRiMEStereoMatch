@@ -6,7 +6,6 @@
    Copyright (c) 2016 Charlie Leech, University of Southampton.
   ---------------------------------------------------------------------------*/
 #include "ComFunc.h"
-#include "oclUtil.h"
 #include "StereoMatch.h"
 #include <chrono>
 #include <thread>
@@ -18,23 +17,22 @@ void HCI(StereoMatch *sm);
 
 //Global variables
 bool end_de = false;
-int nOpenCLDev = 0;
 int sgbm_mode = StereoSGBM::MODE_HH;
 
 int main(int argc, const char* argv[])
 {
     //#############################################################################################################
-    //# Introduction and Setup - poll for OpenCL devices
+    //# Introduction and Setup
     //#############################################################################################################
-	nOpenCLDev = openCLdevicepoll();
 #ifdef DISPLAY
 	namedWindow("InputOutput", CV_WINDOW_AUTOSIZE);
 #endif
+	omp_set_num_threads(MAX_CPU_THREADS);
 	//#############################################################################################################
     //# Start Application Processes
     //#############################################################################################################
 	printf("Starting Stereo Matching Application.\n");
-	StereoMatch *sm = new StereoMatch(argc, argv, nOpenCLDev);
+	StereoMatch *sm = new StereoMatch(argc, argv);
 	//printf("MAIN: Press h for help text.\n\n");
 
 	std::thread de_thread;
@@ -95,104 +93,106 @@ void HCI(StereoMatch *sm)
 
     while(key != 'q')
     {
-        switch(key)
-        {
-            case 'h':
-            {
-                printf("|-------------------------------------------------------------------|\n");
-                printf("| Input Options:\n");
-                printf("| h: Display this help text.\n");
-                printf("| q: Quit.\n");
-                printf("|-------------------------------------------------------------------|\n");
-                printf("| Control Options:\n");
-                printf("|   1-8: Change thread/core number.\n");
-                printf("|   a:   Switch matching algorithm: STEREO_GIF, STEREO_SGBM\n");
-                printf("|   d:   Cycle between images datasets:\n");
-				printf("|   d:   	Art, Books, Cones, Dolls, Laundry, Moebius, Teddy.n");
-                printf("|   m:   Switch computation mode:\n");
-                printf("|   m:      STEREO_GIF:  OpenCL <-> pthreads.\n");
-                printf("|   m:      STEREO_SGBM: MODE_SGBM, MODE_HH, MODE_SGBM_3WAY\n");
-                printf("|   -/=: Increase or decrease the error threshold\n");
-                printf("|-------------------------------------------------------------------|\n");
-                printf("| Current Options:\n");
-                printf("|   a:   Matching Algorithm: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
-                printf("|   d:   Dataset: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
-                printf("|   m:   Computation mode: %s\n", sm->MatchingAlgorithm ? (sm->de_mode ? "OpenCL" : "pthreads") : (
-														sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
-														sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" : "MODE_SGBM_3WAY" ));
-                printf("|   -/=: Error Threshold: %d\n", sm->error_threshold);
-                printf("|-------------------------------------------------------------------|\n");
-                break;
-            }
-            case 'a':
-            {
-				sm->MatchingAlgorithm = sm->MatchingAlgorithm ? STEREO_SGBM : STEREO_GIF;
-				printf("| a: Matching Algorithm Changed to: %s |\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
-				break;
-            }
-            case 'd':
-            {
-				if(sm->media_mode == DE_VIDEO){
-					printf("| d: Must be in image mode to use datasets.\n");
+    	if((0 < atoi(&key)) & (atoi(&key) < 9))
+		{
+			int curr_threads = omp_get_max_threads();
+			int next_threads = atoi(&key);
+			omp_set_num_threads(next_threads);
+			sm->setThreads(next_threads);
+			printf("Number of OMP threads changed from %d to %d\n", curr_threads, next_threads);
+		} else {
+			switch(key)
+			{
+				case 'h':
+				{
+					printf("|-------------------------------------------------------------------|\n");
+					printf("| Input Options:\n");
+					printf("| h: Display this help text.\n");
+					printf("| q: Quit.\n");
+					printf("|-------------------------------------------------------------------|\n");
+					printf("| Control Options:\n");
+					printf("|   1-8: Change number of simultaneous threads/cores.\n");
+					printf("|   a:   Switch matching algorithm: STEREO_GIF, STEREO_SGBM\n");
+					printf("|   d:   Cycle between images datasets:\n");
+					printf("|   d:   	Art, Books, Cones, Dolls, Laundry, Moebius, Teddy.n");
+					printf("|   m:   Switch computation mode:\n");
+					printf("|   m:      STEREO_GIF:  OpenCL <-> pthreads.\n");
+					printf("|   m:      STEREO_SGBM: MODE_SGBM, MODE_HH, MODE_SGBM_3WAY\n");
+					printf("|   -/=: Increase or decrease the error threshold\n");
+					printf("|-------------------------------------------------------------------|\n");
+					printf("| Current Options:\n");
+					printf("|   a:   Matching Algorithm: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
+					printf("|   d:   Dataset: %s\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
+					printf("|   m:   Computation mode: %s\n", sm->MatchingAlgorithm ? (sm->de_mode ? "OpenCL" : "pthreads") : (
+															sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
+															sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" : "MODE_SGBM_3WAY" ));
+					printf("|   -/=: Error Threshold: %d\n", sm->error_threshold);
+					printf("|-------------------------------------------------------------------|\n");
 					break;
 				}
-				if(sm->user_dataset){
-					printf("| d: User dataset has been specified.\n");
+				case 'a':
+				{
+					sm->MatchingAlgorithm = sm->MatchingAlgorithm ? STEREO_SGBM : STEREO_GIF;
+					printf("| a: Matching Algorithm Changed to: %s |\n", sm->MatchingAlgorithm ? "STEREO_GIF" : "STEREO_SGBM");
 					break;
 				}
-				dataset_idx = dataset_idx < dataset_names.size()-1 ? dataset_idx + 1 : 0;
-				printf("| d: Dataset changed to: %s\n", dataset_names[dataset_idx].c_str());
-				sm->update_dataset(dataset_names[dataset_idx]);
-				break;
-            }
-            case 'm':
-            {
-				if(sm->MatchingAlgorithm == STEREO_GIF){
-					if(nOpenCLDev){
-						sm->de_mode = sm->de_mode ? OCV_DE : OCL_DE;
-						printf("| m: STEREO_GIF Matching Algorithm:\n");
-						printf("| m: Mode changed to %s |\n", sm->de_mode ? "OpenCL on the GPU" : "C++ & pthreads on the CPU");
+				case 'd':
+				{
+					if(sm->media_mode == DE_VIDEO){
+						printf("| d: Must be in image mode to use datasets.\n");
+						break;
 					}
-					else{
-						printf("| m: Platform must contain an OpenCL compatible device to use OpenCL Mode.\n");
+					if(sm->user_dataset){
+						printf("| d: User dataset has been specified.\n");
+						break;
 					}
-				}
-				else if(sm->MatchingAlgorithm == STEREO_SGBM){
-					sgbm_mode = (sgbm_mode == StereoSGBM::MODE_HH ? StereoSGBM::MODE_SGBM :
-								sgbm_mode == StereoSGBM::MODE_SGBM ? StereoSGBM::MODE_SGBM_3WAY :
-								StereoSGBM::MODE_HH);
-					sm->ssgbm->setMode(sgbm_mode);
-					printf("| m: STEREO_GIF Matching Algorithm:\n");
-					printf("| m: Mode changed to %s |\n", sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
-															sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" :
-															"MODE_SGBM_3WAY");
-				}
-				break;
-            }
-            case 'o':
-            {
-            	if(sm->mask_mode == NO_MASKS){
-					printf("| o: Disparity error masks not provided for the chosen dataset.\n");
+					dataset_idx = dataset_idx < dataset_names.size()-1 ? dataset_idx + 1 : 0;
+					printf("| d: Dataset changed to: %s\n", dataset_names[dataset_idx].c_str());
+					sm->update_dataset(dataset_names[dataset_idx]);
 					break;
-            	}
-				sm->mask_mode = (sm->mask_mode == MASK_NONE ? MASK_NONOCC :
-								sm->mask_mode == MASK_NONOCC ? MASK_DISC :
-								MASK_NONE);
-				printf("| o: Disparity error mask set to: %s |\n", sm->mask_mode == MASK_NONE ? "None" :
-																	sm->mask_mode == MASK_NONOCC ? "Nonocc" :
-																	"Disc");
-				break;
-            }
-            case 's':
-            {
-				sm->subsample_rate *= 2;
-				if(sm->subsample_rate > 8)
-					sm->subsample_rate = 2;
-				printf("| =: Subsample rate changed to %d.\n", sm->subsample_rate);
-				break;
+				}
+				case 'm':
+				{
+					if(sm->MatchingAlgorithm == STEREO_GIF){
+						printf("| m: Switch to STEREO_SGBM to change algorithm mode.\n");
+					}
+					else if(sm->MatchingAlgorithm == STEREO_SGBM){
+						sgbm_mode = (sgbm_mode == StereoSGBM::MODE_HH ? StereoSGBM::MODE_SGBM :
+									sgbm_mode == StereoSGBM::MODE_SGBM ? StereoSGBM::MODE_SGBM_3WAY :
+									StereoSGBM::MODE_HH);
+						sm->ssgbm->setMode(sgbm_mode);
+						printf("| m: STEREO_SGBM Matching Algorithm:\n");
+						printf("| m: Mode changed to %s |\n", sgbm_mode == StereoSGBM::MODE_HH ? "MODE_HH" :
+																sgbm_mode == StereoSGBM::MODE_SGBM ? "MODE_SGBM" :
+																"MODE_SGBM_3WAY");
+					}
+					break;
+				}
+				case 'o':
+				{
+					if(sm->mask_mode == NO_MASKS){
+						printf("| o: Disparity error masks not provided for the chosen dataset.\n");
+						break;
+					}
+					sm->mask_mode = (sm->mask_mode == MASK_NONE ? MASK_NONOCC :
+									sm->mask_mode == MASK_NONOCC ? MASK_DISC :
+									MASK_NONE);
+					printf("| o: Disparity error mask set to: %s |\n", sm->mask_mode == MASK_NONE ? "None" :
+																		sm->mask_mode == MASK_NONOCC ? "Nonocc" :
+																		"Disc");
+					break;
+				}
+				case 's':
+				{
+					sm->subsample_rate *= 2;
+					if(sm->subsample_rate > 8)
+						sm->subsample_rate = 2;
+					printf("| =: Subsample rate changed to %d.\n", sm->subsample_rate);
+					break;
+				}
 			}
-        }
-        key = waitKey(1);
+		}
+        key = cv::waitKey(1);
     }
     return;
 }

@@ -35,16 +35,6 @@ public:
 
 	int preprocess(const Mat& Img, Mat& GrdX);
 
-	int buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol);
-	int buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol);
-};
-
-//CVC thread data struct
-struct buildCV_TD{
-	Mat* lImg;
-	Mat* rImg;
-	Mat* lGrdX;
-	Mat* rGrdX;
-	int d;
-	Mat* costVol;
+	int __attribute__((target(mic))) buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol);
+	int __attribute__((target(mic))) buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol);
 };

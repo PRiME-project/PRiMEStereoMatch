@@ -140,8 +140,8 @@ int DispEst::CostConst_OMP()
 //#############################################################################################################
 int DispEst::CostFilter_FGF_OMP()
 {
-    FastGuidedFilter fgf_left(lImg, GIF_R_WIN, GIF_EPS, subsample_rate);
-    FastGuidedFilter fgf_right(rImg, GIF_R_WIN, GIF_EPS, subsample_rate);
+    __attribute__((target(mic))) FastGuidedFilter fgf_left(lImg, GIF_R_WIN, GIF_EPS, subsample_rate);
+    __attribute__((target(mic))) FastGuidedFilter fgf_right(rImg, GIF_R_WIN, GIF_EPS, subsample_rate);
 
 	#pragma offload target(mic)
 	{

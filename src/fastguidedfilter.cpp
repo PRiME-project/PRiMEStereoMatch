@@ -2,14 +2,14 @@
 // Literature: https://arxiv.org/pdf/1505.00996.pdf
 #include "fastguidedfilter.h"
 
-static cv::Mat boxfilter(const cv::Mat &I, int r)
+static cv::Mat __attribute__((target(mic))) boxfilter(const cv::Mat &I, int r)
 {
     cv::Mat result;
     cv::blur(I, result, cv::Size(r, r));
     return result;
 }
 
-static cv::Mat convertTo(const cv::Mat &mat, int depth)
+static cv::Mat __attribute__((target(mic))) convertTo(const cv::Mat &mat, int depth)
 {
     if (mat.depth() == depth)
         return mat;

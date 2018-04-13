@@ -37,8 +37,8 @@ public:
 
 private:
     //Private Variable
-    cv::Mat lImg;
-    cv::Mat rImg;
+    __attribute__((target(mic))) cv::Mat lImg;
+    __attribute__((target(mic))) cv::Mat rImg;
 
     int hei;
     int wid;
@@ -47,20 +47,20 @@ private:
     unsigned int subsample_rate;
 
 	//CVC
-    cv::Mat lGrdX;
-    cv::Mat rGrdX;
+    __attribute__((target(mic))) cv::Mat lGrdX;
+    __attribute__((target(mic))) cv::Mat rGrdX;
 	//CVC & CVF
-    cv::Mat* lcostVol;
-    cv::Mat* rcostVol;
+    __attribute__((target(mic))) cv::Mat* lcostVol;
+    __attribute__((target(mic))) cv::Mat* rcostVol;
     //CVF
     //PP
     cv::Mat lValid;
     cv::Mat rValid;
 
-    CVC* constructor;
-    CVF* filter;
-    DispSel* selector;
-    PP* postProcessor;
+    __attribute__((target(mic))) CVC* constructor;
+    __attribute__((target(mic))) CVF* filter;
+    __attribute__((target(mic))) DispSel* selector;
+    __attribute__((target(mic))) PP* postProcessor;
 
     //Private Methods
     //None

@@ -15,7 +15,7 @@ CVC::CVC(void)
 }
 CVC::~CVC(void) {}
 
-float myCostGrd(float* lC, float* rC, float* lG, float* rG)
+float __attribute__((target(mic))) myCostGrd(float* lC, float* rC, float* lG, float* rG)
 {
     // three color diff
 	float clrDiff = fabs(lC[0] - rC[0]) + fabs(lC[1] - rC[1]) + fabs(lC[2] - rC[2]);
@@ -27,7 +27,7 @@ float myCostGrd(float* lC, float* rC, float* lG, float* rG)
 }
 
 // special handle for border region
-float myCostGrd(float* lC, float* lG)
+float __attribute__((target(mic))) myCostGrd(float* lC, float* lG)
 {
     // three color diff
     float clrDiff = fabs(lC[0] - BC_32F) + fabs(lC[1] - BC_32F) + fabs(lC[2] - BC_32F);
@@ -45,7 +45,7 @@ int CVC::preprocess(const Mat& Img, Mat& GrdX)
 	return 0;
 }
 
-int CVC::buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol)
+int __attribute__((target(mic))) CVC::buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol)
 {
 	int wid = lImg.cols;
 	int hei = lImg.rows;
@@ -74,7 +74,7 @@ int CVC::buildCV_left(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const 
 	return 0;
 }
 
-int CVC::buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol)
+int __attribute__((target(mic))) CVC::buildCV_right(const Mat& lImg, const Mat& rImg, const Mat& lGrdX, const Mat& rGrdX, const int d, Mat& costVol)
 {
 	int wid = lImg.cols;
 	int border = wid - d;

@@ -13,9 +13,21 @@ project (PRiMEStereoMatch)
 include_directories(include)
 file(GLOB SOURCES "src/*.cpp")
 
+#set(CMAKE_C_COMPILER "icc")
+#set(CMAKE_CXX_COMPILER "icpc")
+
+# the complete system name
+MESSAGE( STATUS "CMAKE_SYSTEM: " ${CMAKE_SYSTEM} )
+# the processor name
+MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR} )
+# the compiler used for C files 
+MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} )
+# the compiler used for C++ files 
+MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
+
 add_executable(PRiMEStereoMatch ${SOURCES})
-#set_property(TARGET PRiMEStereoMatch PROPERTY CXX_STANDARD 11)
-#set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set_property(TARGET PRiMEStereoMatch PROPERTY CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -openmp -openmp-report=1")
 
 #OpenCV libraries
 find_package(OpenCV REQUIRED COMPONENTS core calib3d imgproc highgui video)
@@ -27,7 +39,8 @@ else(OpenCV_FOUND)
 endif(OpenCV_FOUND)
 	
 #OpenMP libraries
-find_package(OpenMP REQUIRED)
+SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -liomp5 -lrt -lscif -lmicmgmt" )
+#find_package(OpenMP REQUIRED)
 if(OPENMP_FOUND)
 	include_directories(${OpenMP_INCLUDE_DIRS})
 	message("Found OpenMP, setting Flags.")
@@ -38,9 +51,12 @@ else(OPENMP_FOUND)
 	message(">> OpenMP not found. OpenMP is required for multi-threading of some intermediate processing.")
 endif(OPENMP_FOUND)
 
+target_link_libraries(PRiMEStereoMatch ${OpenCV_LIBS})
+
 #Can still compile without OpenCL
 if(OpenCV_FOUND AND OPENMP_FOUND)
 	target_link_libraries(PRiMEStereoMatch ${OpenCV_LIBS} ${OpenMP_LIBRARIES})
 else(OpenCV_FOUND AND OPENMP_FOUND)
-	message(FATAL_ERROR ">> Some form of threading library is requried for compilation.")
+	#message(FATAL_ERROR ">> Some form of threading library is requried for compilation.")
 endif(OpenCV_FOUND AND OPENMP_FOUND)
+

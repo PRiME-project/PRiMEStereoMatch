@@ -44,7 +44,7 @@ private:
     int wid;
     int maxDis;
     int threads;
-    unsigned int subsample_rate = 4;
+    unsigned int subsample_rate;
 
 	//CVC
     cv::Mat lGrdX;

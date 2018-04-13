@@ -8,7 +8,7 @@
 #include "DispEst.h"
 
 DispEst::DispEst(cv::Mat l, cv::Mat r, const int d, int t)
-    : lImg(l), rImg(r), maxDis(d), threads(t)
+    : lImg(l), rImg(r), maxDis(d), threads(t), subsample_rate(4)
 {
 #ifdef DEBUG_APP
     std::cout << "Disparity Estimation for Depth Analysis in Stereo Vision Applications." << std::endl;
@@ -104,29 +104,32 @@ int DispEst::CostConst_OMP()
 	if(ret_val = constructor->preprocess(rImg, rGrdX))
 		return ret_val;
 
-    // Build Cost Volume
-    for(int level = 0; level <= maxDis/threads; ++level)
+	#pragma offload target(mic)
 	{
-	    //Handle remainder if threads is not power of 2.
-	    int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
+		// Build Cost Volume
+		for(int level = 0; level <= maxDis/threads; ++level)
+		{
+			//Handle remainder if threads is not power of 2.
+			int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
 
-		#pragma omp parallel for num_threads(threads)
-	    for(int iter=0; iter < block_size; ++iter)
-	    {
-	        int d = level*threads + iter;
-			constructor->buildCV_left(lImg, rImg, lGrdX, rGrdX, d, lcostVol[d]);
+			#pragma omp parallel for num_threads(threads)
+			for(int iter=0; iter < block_size; ++iter)
+			{
+				int d = level*threads + iter;
+				constructor->buildCV_left(lImg, rImg, lGrdX, rGrdX, d, lcostVol[d]);
+			}
 		}
-	}
-	for(int level = 0; level <= maxDis/threads; ++level)
-	{
-        //Handle remainder if threads is not power of 2.
-	    int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
+		for(int level = 0; level <= maxDis/threads; ++level)
+		{
+			//Handle remainder if threads is not power of 2.
+			int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
 
-		#pragma omp parallel for num_threads(threads)
-	    for(int iter=0; iter < block_size; ++iter)
-	    {
-	        int d = level*threads + iter;
-			constructor->buildCV_right(rImg, lImg, rGrdX, lGrdX, d, rcostVol[d]);
+			#pragma omp parallel for num_threads(threads)
+			for(int iter=0; iter < block_size; ++iter)
+			{
+				int d = level*threads + iter;
+				constructor->buildCV_right(rImg, lImg, rGrdX, lGrdX, d, rcostVol[d]);
+			}
 		}
 	}
     return 0;
@@ -140,29 +143,32 @@ int DispEst::CostFilter_FGF_OMP()
     FastGuidedFilter fgf_left(lImg, GIF_R_WIN, GIF_EPS, subsample_rate);
     FastGuidedFilter fgf_right(rImg, GIF_R_WIN, GIF_EPS, subsample_rate);
 
-    // Filter Cost Volume
-    for(int level = 0; level <= maxDis/threads; ++level)
+	#pragma offload target(mic)
 	{
-	    //Handle remainder if threads is not power of 2.
-	    int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
+		// Filter Cost Volume
+		for(int level = 0; level <= maxDis/threads; ++level)
+		{
+			//Handle remainder if threads is not power of 2.
+			int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
 
-		#pragma omp parallel for num_threads(threads)
-	    for(int iter=0; iter < block_size; ++iter)
-	    {
-	        int d = level*threads + iter;
-			lcostVol[d] = fgf_left.filter(lcostVol[d]);
+			#pragma omp parallel for num_threads(threads)
+			for(int iter=0; iter < block_size; ++iter)
+			{
+				int d = level*threads + iter;
+				lcostVol[d] = fgf_left.filter(lcostVol[d]);
+			}
 		}
-	}
-	for(int level = 0; level <= maxDis/threads; ++level)
-	{
-        //Handle remainder if threads is not power of 2.
-	    int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
+		for(int level = 0; level <= maxDis/threads; ++level)
+		{
+			//Handle remainder if threads is not power of 2.
+			int block_size = (level < maxDis/threads) ? threads : (maxDis%threads);
 
-		#pragma omp parallel for num_threads(threads)
-	    for(int iter=0; iter < block_size; ++iter)
-	    {
-	        int d = level*threads + iter;
-			rcostVol[d] = fgf_right.filter(rcostVol[d]);
+			#pragma omp parallel for num_threads(threads)
+			for(int iter=0; iter < block_size; ++iter)
+			{
+				int d = level*threads + iter;
+				rcostVol[d] = fgf_right.filter(rcostVol[d]);
+			}
 		}
 	}
 	return 0;

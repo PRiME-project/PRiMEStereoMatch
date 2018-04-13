@@ -26,7 +26,7 @@ MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} )
 MESSAGE( STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER} )
 
 add_executable(PRiMEStereoMatch ${SOURCES})
-set_property(TARGET PRiMEStereoMatch PROPERTY CXX_STANDARD 11)
+#set_property(TARGET PRiMEStereoMatch PROPERTY CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -openmp -openmp-report=1")
 
 #OpenCV libraries
@@ -39,8 +39,8 @@ else(OpenCV_FOUND)
 endif(OpenCV_FOUND)
 	
 #OpenMP libraries
-SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -liomp5 -lrt -lscif -lmicmgmt" )
-#find_package(OpenMP REQUIRED)
+#SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -liomp5 -lrt -lscif -lmicmgmt" )
+find_package(OpenMP REQUIRED)
 if(OPENMP_FOUND)
 	include_directories(${OpenMP_INCLUDE_DIRS})
 	message("Found OpenMP, setting Flags.")
@@ -51,12 +51,9 @@ else(OPENMP_FOUND)
 	message(">> OpenMP not found. OpenMP is required for multi-threading of some intermediate processing.")
 endif(OPENMP_FOUND)
 
-target_link_libraries(PRiMEStereoMatch ${OpenCV_LIBS})
-
-#Can still compile without OpenCL
 if(OpenCV_FOUND AND OPENMP_FOUND)
 	target_link_libraries(PRiMEStereoMatch ${OpenCV_LIBS} ${OpenMP_LIBRARIES})
 else(OpenCV_FOUND AND OPENMP_FOUND)
-	#message(FATAL_ERROR ">> Some form of threading library is requried for compilation.")
+	message(FATAL_ERROR ">> Some form of threading library is requried for compilation.")
 endif(OpenCV_FOUND AND OPENMP_FOUND)
 

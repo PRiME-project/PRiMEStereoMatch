@@ -11,7 +11,7 @@
 #include "ComFunc.h"
 #include "StereoCalib.h"
 #include "DispEst.h"
-#include "args.hxx"
+//#include "args.hxx"
 
 #define DE_VIDEO 1
 #define DE_IMAGE 2

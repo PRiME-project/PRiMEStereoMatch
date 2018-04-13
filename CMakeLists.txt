@@ -14,8 +14,8 @@ include_directories(include)
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(PRiMEStereoMatch ${SOURCES})
-set_property(TARGET PRiMEStereoMatch PROPERTY CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+#set_property(TARGET PRiMEStereoMatch PROPERTY CXX_STANDARD 11)
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 #OpenCV libraries
 find_package(OpenCV REQUIRED COMPONENTS core calib3d imgproc highgui video)

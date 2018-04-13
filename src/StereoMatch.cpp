@@ -21,8 +21,10 @@ StereoMatch::StereoMatch(int argc, const char *argv[]) :
 	//#########################################################################
     //# Setup - check input arguments
     //#########################################################################
-	if(parse_cli(argc, argv))
-		exit(1);
+//	if(parse_cli(argc, argv))
+//		exit(1);
+	MatchingAlgorithm = STEREO_GIF;
+	media_mode = DE_IMAGE;
 
     unsigned int cam_height = 376; //  376  (was 480),  720, 1080, 1242
 	unsigned int cam_width = 1344; // 1344 (was 1280), 2560, 3840, 4416
@@ -648,94 +650,94 @@ int StereoMatch::setupOpenCVSGBM(int channels, int ndisparities)
     return 0;
 }
 
-int StereoMatch::parse_cli(int argc, const char * argv[])
-{
-    args::ArgumentParser parser("Application: Stereo Matching for Depth Estimation.","PRiME Project.\n");
-    args::HelpFlag help(parser, "help", "Displays this help menu", {'h', "help"});
-
-    //args::Group group_cmds(parser, "Commands (1 must be specified):", args::Group::Validators::Xor);
-
-    args::Command cmd_video(parser, "video", "Use video as the input source.", [&](args::Subparser &s_parser)
-    {
-		args::Flag arg_recalibrate(s_parser, "RECAL", "Recalibrate the camera to find ROIs.", {"RECAL"});
-		args::Flag arg_recapture(s_parser, "RECAP", "Recapture chessboard image pairs for recalibration.", {"RECAP"});
-
-		s_parser.Parse();
-
-        std::cout << "Input Source: Video" << std::endl;
-        std::cout << "Parsing command-specific arguments." << std::endl;
-
-		media_mode = DE_VIDEO;
-		recalibrate = false;
-		recaptureChessboards = false;
-		if(arg_recalibrate){
-			recalibrate = true;
-			if(arg_recapture){
-				recaptureChessboards = true;
-			}
-		}
-    });
-
-    args::Command cmd_image(parser, "image", "Use images as the input source.", [&](args::Subparser &s_parser)
-    {
-		//TODO: Fix this to correctly perform group validation on filenames - errors currently handled during imread in StereoMatch constructor
-		args::Group filenames(s_parser, "Left and right filenames must be specified if using custom images.", args::Group::Validators::AllOrNone);
-		args::ValueFlag<std::string> arg_left(filenames, "left", "Left image filename.", {'l', "left"});
-		args::ValueFlag<std::string> arg_right(filenames, "right", "Right image filename.", {'r', "right"});
-		args::ValueFlag<std::string> arg_gt(filenames, "gt", "Ground truth image filename.", {'g', "gt"});
-
-		s_parser.Parse();
-
-        std::cout << "Input Source: Images" << std::endl;
-        std::cout << "Parsing command-specific arguments." << std::endl;
-
-		media_mode = DE_IMAGE;
-		if(arg_left)
-		{
-			std::cout << "User Dataset filenames provided." << std::endl;
-			left_img_filename = args::get(arg_left);
-			right_img_filename = args::get(arg_right);
-			if(arg_gt)
-			{
-				gt_img_filename = args::get(arg_gt);
-				ground_truth_data = true;
-			}
-			curr_dataset = "User";
-			user_dataset = true;
-		}
-		else{
-			curr_dataset = dataset_names[2];
-			ground_truth_data = true;
-		}
-        std::cout << "Image command arguments parsed." << std::endl;
-    });
-
-	args::Options ReqGlobal = args::Options::Required | args::Options::Global;
-    args::ValueFlag<std::string> arg_alg_mode(parser, "mode", "The stereo matching algorithm to use. Valid options: {STEREO_SGBM, STEREO_GIF}.", {'a', "alg"}, ReqGlobal);
-
-    try {
-        parser.ParseCLI(argc, argv);
-    } catch (args::Help) {
-		std::cerr << parser;
-        return -1;
-    } catch (args::ParseError e) {
-        std::cerr << e.what() << std::endl;
-		std::cerr << parser;
-        return -1;
-    } catch (args::ValidationError e) {
-        std::cerr << e.what() << std::endl;
-		std::cerr << parser;
-        return -1;
-    }
-
-	std::cout << "Global arguments:" << std::endl;
-    if(args::get(arg_alg_mode) == "STEREO_GIF"){
-		MatchingAlgorithm = STEREO_GIF;
-		std::cout << "\t Matching Algorithm: STEREO_GIF" << std::endl;
-    } else {
-		MatchingAlgorithm = STEREO_SGBM;
-		std::cout << "\t Matching Algorithm: STEREO_SGBM" << std::endl;
-	}
-
-    return 0;
-}
+//int StereoMatch::parse_cli(int argc, const char * argv[])
+//{
+//    args::ArgumentParser parser("Application: Stereo Matching for Depth Estimation.","PRiME Project.\n");
+//    args::HelpFlag help(parser, "help", "Displays this help menu", {'h', "help"});
+//
+//    //args::Group group_cmds(parser, "Commands (1 must be specified):", args::Group::Validators::Xor);
+//
+//    args::Command cmd_video(parser, "video", "Use video as the input source.", [&](args::Subparser &s_parser)
+//    {
+//		args::Flag arg_recalibrate(s_parser, "RECAL", "Recalibrate the camera to find ROIs.", {"RECAL"});
+//		args::Flag arg_recapture(s_parser, "RECAP", "Recapture chessboard image pairs for recalibration.", {"RECAP"});
+//
+//		s_parser.Parse();
+//
+//        std::cout << "Input Source: Video" << std::endl;
+//        std::cout << "Parsing command-specific arguments." << std::endl;
+//
+//		media_mode = DE_VIDEO;
+//		recalibrate = false;
+//		recaptureChessboards = false;
+//		if(arg_recalibrate){
+//			recalibrate = true;
+//			if(arg_recapture){
+//				recaptureChessboards = true;
+//			}
+//		}
+//    });
+//
+//    args::Command cmd_image(parser, "image", "Use images as the input source.", [&](args::Subparser &s_parser)
+//    {
+//		//TODO: Fix this to correctly perform group validation on filenames - errors currently handled during imread in StereoMatch constructor
+//		args::Group filenames(s_parser, "Left and right filenames must be specified if using custom images.", args::Group::Validators::AllOrNone);
+//		args::ValueFlag<std::string> arg_left(filenames, "left", "Left image filename.", {'l', "left"});
+//		args::ValueFlag<std::string> arg_right(filenames, "right", "Right image filename.", {'r', "right"});
+//		args::ValueFlag<std::string> arg_gt(filenames, "gt", "Ground truth image filename.", {'g', "gt"});
+//
+//		s_parser.Parse();
+//
+//        std::cout << "Input Source: Images" << std::endl;
+//        std::cout << "Parsing command-specific arguments." << std::endl;
+//
+//		media_mode = DE_IMAGE;
+//		if(arg_left)
+//		{
+//			std::cout << "User Dataset filenames provided." << std::endl;
+//			left_img_filename = args::get(arg_left);
+//			right_img_filename = args::get(arg_right);
+//			if(arg_gt)
+//			{
+//				gt_img_filename = args::get(arg_gt);
+//				ground_truth_data = true;
+//			}
+//			curr_dataset = "User";
+//			user_dataset = true;
+//		}
+//		else{
+//			curr_dataset = dataset_names[2];
+//			ground_truth_data = true;
+//		}
+//        std::cout << "Image command arguments parsed." << std::endl;
+//    });
+//
+//	args::Options ReqGlobal = args::Options::Required | args::Options::Global;
+//    args::ValueFlag<std::string> arg_alg_mode(parser, "mode", "The stereo matching algorithm to use. Valid options: {STEREO_SGBM, STEREO_GIF}.", {'a', "alg"}, ReqGlobal);
+//
+//    try {
+//        parser.ParseCLI(argc, argv);
+//    } catch (args::Help) {
+//		std::cerr << parser;
+//        return -1;
+//    } catch (args::ParseError e) {
+//        std::cerr << e.what() << std::endl;
+//		std::cerr << parser;
+//        return -1;
+//    } catch (args::ValidationError e) {
+//        std::cerr << e.what() << std::endl;
+//		std::cerr << parser;
+//        return -1;
+//    }
+//
+//	std::cout << "Global arguments:" << std::endl;
+//    if(args::get(arg_alg_mode) == "STEREO_GIF"){
+//		MatchingAlgorithm = STEREO_GIF;
+//		std::cout << "\t Matching Algorithm: STEREO_GIF" << std::endl;
+//    } else {
+//		MatchingAlgorithm = STEREO_SGBM;
+//		std::cout << "\t Matching Algorithm: STEREO_SGBM" << std::endl;
+//	}
+//
+//    return 0;
+//}

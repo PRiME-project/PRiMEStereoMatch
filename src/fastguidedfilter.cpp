@@ -25,7 +25,7 @@ public:
     FastGuidedFilterImpl(int r, double eps,int s):r(r),eps(eps),s(s){}
     virtual ~FastGuidedFilterImpl() {}
 
-    cv::Mat filter(const cv::Mat &p, int depth);
+    cv::Mat __attribute__((target(mic))) filter(const cv::Mat &p, int depth);
 
 protected:
     int Idepth,r,s;
@@ -41,7 +41,7 @@ public:
     FastGuidedFilterMono(const cv::Mat &I, int r, double eps,int s);
 
 private:
-    virtual cv::Mat filterSingleChannel(const cv::Mat &p) const;
+    virtual cv::Mat __attribute__((target(mic))) filterSingleChannel(const cv::Mat &p) const;
 
 private:
 
@@ -54,7 +54,7 @@ public:
     FastGuidedFilterColor(const cv::Mat &I, int r, double eps,int s);
 
 private:
-    virtual cv::Mat filterSingleChannel(const cv::Mat &p) const;
+    virtual cv::Mat __attribute__((target(mic))) filterSingleChannel(const cv::Mat &p) const;
 
 private:
     std::vector<cv::Mat> origIchannels,Ichannels;

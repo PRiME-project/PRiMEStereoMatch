@@ -104,7 +104,7 @@ int DispEst::CostConst_OMP()
 	if(ret_val = constructor->preprocess(rImg, rGrdX))
 		return ret_val;
 
-	#pragma offload target(mic)
+	#pragma offload target(mic) in(lImg, rImg)
 	{
 		// Build Cost Volume
 		for(int level = 0; level <= maxDis/threads; ++level)

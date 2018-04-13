@@ -6,7 +6,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-cmake_minimum_required (VERSION 3.2)
+#cmake_minimum_required (VERSION 3.2)
+cmake_minimum_required (VERSION 2.8)
 project (PRiMEStereoMatch)
 
 include_directories(include)
@@ -26,7 +27,7 @@ endif(OpenCV_FOUND)
 	
 #OpenMP libraries
 find_package(OpenMP REQUIRED)
-if(OpenMP_FOUND)
+if(OPENMP_FOUND)
 	include_directories(${OpenMP_INCLUDE_DIRS})
 	message("Found OpenMP, setting Flags.")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -38,7 +39,7 @@ endif(OpenMP_FOUND)
 
 #Can still compile without OpenCL
 if(OpenCV_FOUND AND OpenMP_FOUND)
-	target_link_libraries(PRiMEStereoMatch ${CMAKE_THREAD_LIBS_INIT} ${OpenCV_LIBS} ${OpenCL_LIBRARIES} 	${OpenMP_LIBRARIES})
+	target_link_libraries(PRiMEStereoMatch ${OpenCV_LIBS} ${OpenMP_LIBRARIES})
 else(OpenCV_FOUND AND OpenMP_FOUND)
-	message(FATAL_ERROR ">> Some form of threading library is requried for compilation, preferably PThreads.")
+	message(FATAL_ERROR ">> Some form of threading library is requried for compilation.")
 endif(OpenCV_FOUND AND OpenMP_FOUND)

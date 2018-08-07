@@ -1,9 +1,12 @@
 # PRiMEStereoMatch
 
-Please use this citation in your publication if you use this work ([bibtex here](https://github.com/PRiME-project/PRiMEStereoMatch#license)):  
+**Please use these citations in your publication if you use this work:** ([bibtex here](https://github.com/PRiME-project/PRiMEStereoMatch#license))  
 
 Charles Leech, Charan Kumar, Amit Acharyya, Sheng Yang, Geoff V. Merrett, and Bashir M. Al-Hashimi. 2017. Runtime Performance and Power Optimization of Parallel Disparity Estimation on Many-Core Platforms. ACM Transactions on Embedded Computing Systems (TECS) Volume 17 Issue 2, Article 41 (November 2017), 19 pages. DOI: https://doi.org/10.1145/3133560  
 
+Leech, Charles (2018) [Runtime energy management of multi-core processors.](https://eprints.soton.ac.uk/422287/) University of Southampton, Doctoral Thesis, 293pp. 
+
+---
 <p align="center">
 <img src="docs/de_examples.png" alt="Examples Image Pairs" width=80%>
 </p>

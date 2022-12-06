@@ -88,7 +88,7 @@ A heterogeneous and fully parallel stereo matching algorithm for depth estimatio
 		* m: switch the computational mode between OpenCL (GPU) and pthreads (CPU)
 		* t: switch the data type use for processing between 32-bit float and 8-bit char
 	* STEREO_SGBM:
-		* m: switch the computational mode between MODE_SGBM, MODE_HH and MODE_SGDM_3WAY
+		* m: switch the computational mode between MODE_SGBM, MODE_HH and MODE_SGBM_3WAY
 
 ## Directory Structure
 
